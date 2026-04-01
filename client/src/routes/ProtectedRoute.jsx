@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 import { useAuth } from "../store/AuthContext.jsx";
 
-const PublicRoute = () => {
+const ProtectedRoute = () => {
   const { isAuthenticated, authChecked } = useAuth();
 
   if (!authChecked) {
@@ -20,7 +20,7 @@ const PublicRoute = () => {
     );
   }
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
-export default PublicRoute;
+export default ProtectedRoute;

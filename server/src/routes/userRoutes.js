@@ -9,32 +9,27 @@ import { protect, authorizeRoles } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get(
-  "/",
-  protect,
-  authorizeRoles("superadmin", "admin"),
-  getAllUsers
-);
+router.get("/", protect, authorizeRoles("superadmin", "admin"), getAllUsers);
 
 router.put(
   "/:id",
   protect,
-  authorizeRoles("superadmin", "admin"),
-  updateUserCredentials
+  authorizeRoles("superadmin"),
+  updateUserCredentials,
 );
 
 router.patch(
   "/:id/verify",
   protect,
-  authorizeRoles("superadmin", "admin"),
-  verifyUserAccount
+  authorizeRoles("superadmin"),
+  verifyUserAccount,
 );
 
 router.delete(
   "/:id",
   protect,
   authorizeRoles("superadmin", "admin"),
-  deleteUser
+  deleteUser,
 );
 
 export default router;

@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
 import {
   Avatar,
   Badge,
@@ -16,16 +15,9 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
-import WarehouseRoundedIcon from "@mui/icons-material/WarehouseRounded";
-import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
-import Groups2RoundedIcon from "@mui/icons-material/Groups2Rounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -34,26 +26,23 @@ import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import InventoryRoundedIcon from "@mui/icons-material/InventoryRounded";
 import { useAuth } from "../store/AuthContext.jsx";
+import SideBar from "./SideBar.jsx";
 
-const sidebarItems = [
-  { label: "Dashboard", icon: <DashboardRoundedIcon />, path: "/dashboard" },
-  { label: "Inventory", icon: <Inventory2RoundedIcon />, path: "/inventory" },
-  {
-    label: "Orders",
-    icon: <ShoppingCartRoundedIcon />,
-    badge: 24,
-    path: "/orders",
-  },
-  {
-    label: "Suppliers",
-    icon: <LocalShippingRoundedIcon />,
-    path: "/suppliers",
-  },
-  { label: "Warehouses", icon: <WarehouseRoundedIcon />, path: "/warehouses" },
-  { label: "Categories", icon: <CategoryRoundedIcon />, path: "/categories" },
-  { label: "Reports", icon: <BarChartRoundedIcon />, path: "/reports" },
-  { label: "Team", icon: <Groups2RoundedIcon />, path: "/team" },
-];
+const brand = {
+  primary: "#106C6B",
+  primaryDark: "#0C5A58",
+  primaryLight: "#17A89F",
+  soft: "#F4F6F8",
+  softAlt: "#FFFFFF",
+  border: "rgba(15, 23, 42, 0.08)",
+  text: "#143736",
+  textSoft: "#617776",
+  pageBg: "linear-gradient(180deg, #F8FAFC 0%, #F5F7FA 45%, #F2F5F8 100%)",
+  shadow:
+    "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
+  shadowStrong:
+    "0 0 0 1px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.10)",
+};
 
 const stats = [
   {
@@ -62,8 +51,8 @@ const stats = [
     subtitle: "+8.2%",
     subtitleTone: "success",
     icon: <InventoryRoundedIcon />,
-    iconBg: "#e7f1ff",
-    iconColor: "#1976d2",
+    iconBg: "#F3F5F7",
+    iconColor: "#106C6B",
   },
   {
     title: "Low Stock Items",
@@ -71,8 +60,8 @@ const stats = [
     subtitle: "+12 today",
     subtitleTone: "error",
     icon: <WarningAmberRoundedIcon />,
-    iconBg: "#fff3e0",
-    iconColor: "#ef6c00",
+    iconBg: "#FFF3E8",
+    iconColor: "#D97706",
   },
   {
     title: "Total Stock Value",
@@ -80,8 +69,8 @@ const stats = [
     subtitle: "+3.5%",
     subtitleTone: "success",
     icon: <TrendingUpRoundedIcon />,
-    iconBg: "#e8f5e9",
-    iconColor: "#2e7d32",
+    iconBg: "#F3F5F7",
+    iconColor: "#0C5A58",
   },
   {
     title: "Orders Pending",
@@ -89,8 +78,8 @@ const stats = [
     subtitle: "24 new",
     subtitleTone: "success",
     icon: <ShoppingCartRoundedIcon />,
-    iconBg: "#e3f2fd",
-    iconColor: "#0288d1",
+    iconBg: "#F3F5F7",
+    iconColor: "#12807B",
   },
 ];
 
@@ -138,15 +127,15 @@ const orders = [
 ];
 
 const categories = [
-  { name: "Electronics", units: "4,280 units", progress: 72, color: "#42a5f5" },
-  { name: "Furniture", units: "1,950 units", progress: 55, color: "#64b5f6" },
-  { name: "Clothing", units: "3,100 units", progress: 38, color: "#fb8c00" },
-  { name: "Accessories", units: "2,640 units", progress: 89, color: "#42a5f5" },
+  { name: "Electronics", units: "4,280 units", progress: 72, color: "#17A89F" },
+  { name: "Furniture", units: "1,950 units", progress: 55, color: "#106C6B" },
+  { name: "Clothing", units: "3,100 units", progress: 38, color: "#4FB8B0" },
+  { name: "Accessories", units: "2,640 units", progress: 89, color: "#0C5A58" },
   {
     name: "Food & Beverage",
     units: "870 units",
     progress: 20,
-    color: "#ef5350",
+    color: "#D97706",
   },
 ];
 
@@ -154,26 +143,26 @@ const quickActions = [
   {
     title: "Add New Product",
     icon: <AddRoundedIcon />,
-    iconBg: "#e8f0fe",
-    iconColor: "#1976d2",
+    iconBg: "#F3F5F7",
+    iconColor: "#106C6B",
   },
   {
     title: "Create Purchase Order",
     icon: <ShoppingCartRoundedIcon />,
-    iconBg: "#e3f2fd",
-    iconColor: "#0288d1",
+    iconBg: "#F3F5F7",
+    iconColor: "#12807B",
   },
   {
     title: "Schedule Delivery",
     icon: <LocalShippingRoundedIcon />,
-    iconBg: "#e8f5e9",
-    iconColor: "#2e7d32",
+    iconBg: "#F3F5F7",
+    iconColor: "#0C5A58",
   },
   {
     title: "Generate Report",
     icon: <BarChartRoundedIcon />,
-    iconBg: "#f3e5f5",
-    iconColor: "#8e24aa",
+    iconBg: "#F3F5F7",
+    iconColor: "#106C6B",
   },
 ];
 
@@ -181,30 +170,30 @@ const alerts = [
   {
     title: "Wireless Mouse X200",
     message: "Only 3 units left",
-    bg: "#fdecee",
-    border: "#f7c7cf",
-    iconColor: "#e53935",
+    bg: "#FFF3E8",
+    border: "#F6D7B8",
+    iconColor: "#D97706",
   },
   {
     title: "USB-C Cables (3m)",
     message: "Reorder point reached",
-    bg: "#fff7e8",
-    border: "#f3dfb6",
-    iconColor: "#fb8c00",
+    bg: "#FFF8ED",
+    border: "#F4E0BE",
+    iconColor: "#D97706",
   },
   {
     title: "Laptop Stand Pro",
     message: "Supplier delay expected",
-    bg: "#fff7e8",
-    border: "#f3dfb6",
-    iconColor: "#fb8c00",
+    bg: "#FFF8ED",
+    border: "#F4E0BE",
+    iconColor: "#D97706",
   },
   {
     title: "Gaming Monitor 27”",
     message: "Demand increased this week",
-    bg: "#fdecee",
-    border: "#f7c7cf",
-    iconColor: "#e53935",
+    bg: "#F8FAFC",
+    border: "#E5EAF0",
+    iconColor: "#106C6B",
   },
 ];
 
@@ -219,56 +208,43 @@ const getStatusStyles = (status) => {
   switch (status) {
     case "Delivered":
       return {
-        bg: "#e8f5e9",
-        color: "#2e7d32",
+        bg: "#F4F6F8",
+        color: "#0C5A58",
       };
     case "In Transit":
       return {
-        bg: "#e3f2fd",
-        color: "#0288d1",
+        bg: "#F5F7FA",
+        color: "#12807B",
       };
     case "Processing":
       return {
-        bg: "#fff3e0",
-        color: "#ef6c00",
+        bg: "#FFF3E8",
+        color: "#D97706",
       };
     case "Low Stock":
       return {
-        bg: "#ffebee",
-        color: "#d32f2f",
+        bg: "#FFF1EE",
+        color: "#C2410C",
       };
     default:
       return {
-        bg: "#f3f4f6",
-        color: "#475569",
+        bg: "#F3F5F7",
+        color: "#556B6A",
       };
   }
 };
 
-const getRoleLabel = (role) => {
-  if (role === "superadmin") return "Superadmin";
-  if (role === "admin") return "Admin";
-  return "User";
-};
-
 const softCardSx = {
   borderRadius: 4,
-  border: "1px solid rgba(25, 118, 210, 0.08)",
-  backgroundColor: "rgba(255,255,255,0.92)",
-  boxShadow: "0 20px 50px rgba(17, 38, 146, 0.08)",
+  border: `1px solid ${brand.border}`,
+  backgroundColor: "#FFFFFF",
+  boxShadow: brand.shadow,
 };
 
 const Dashboard = () => {
   const { user, logout, canViewTeam } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const visibleSidebarItems = useMemo(() => {
-    return sidebarItems.filter((item) => {
-      if (item.path === "/team" && !canViewTeam) return false;
-      return true;
-    });
-  }, [canViewTeam]);
 
   const initials = useMemo(() => {
     if (!user?.name) return "U";
@@ -298,8 +274,7 @@ const Dashboard = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background:
-          "linear-gradient(180deg, #eef4ff 0%, #f7faff 45%, #eef3fb 100%)",
+        background: brand.pageBg,
       }}
     >
       <Box
@@ -309,176 +284,14 @@ const Dashboard = () => {
           flexDirection: { xs: "column", md: "row" },
         }}
       >
-        <Box
-          sx={{
-            width: { xs: "100%", md: 250 },
-            borderRight: { md: "1px solid rgba(25,118,210,0.08)" },
-            borderBottom: { xs: "1px solid rgba(25,118,210,0.08)", md: "none" },
-            backgroundColor: "rgba(255,255,255,0.78)",
-            backdropFilter: "blur(8px)",
-            px: 2.5,
-            py: 3,
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <Box
-            sx={{
-              mb: 4,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              px: 0.5,
-            }}
-          >
-            <Box
-              component="img"
-              src={logo}
-              alt="StockSense"
-              sx={{
-                width: 170,
-                height: "auto",
-                objectFit: "contain",
-                display: "block",
-              }}
-            />
-          </Box>
-
-          <Typography
-            variant="caption"
-            sx={{
-              color: "#64748b",
-              fontWeight: 700,
-              letterSpacing: 1,
-              mb: 1.5,
-              px: 1,
-            }}
-          >
-            MAIN MENU
-          </Typography>
-
-          <Stack spacing={0.75}>
-           {visibleSidebarItems.map((item) => {
-              const isActive = location.pathname === item.path;
-
-              return (
-                <Button
-                  key={item.label}
-                  startIcon={item.icon}
-                  fullWidth
-                  onClick={() => navigate(item.path)}
-                  sx={{
-                    justifyContent: "flex-start",
-                    borderRadius: 3,
-                    px: 1.5,
-                    py: 1.2,
-                    color: isActive ? "primary.main" : "#334155",
-                    backgroundColor: isActive ? "#eaf2ff" : "transparent",
-                    fontWeight: isActive ? 700 : 600,
-                    textTransform: "none",
-                    "&:hover": {
-                      backgroundColor: isActive ? "#eaf2ff" : "#f8fbff",
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <span>{item.label}</span>
-                    {item.badge ? (
-                      <Chip
-                        label={item.badge}
-                        size="small"
-                        sx={{
-                          height: 22,
-                          borderRadius: 2,
-                          backgroundColor: "primary.main",
-                          color: "#fff",
-                          fontWeight: 700,
-                          fontSize: "0.72rem",
-                        }}
-                      />
-                    ) : null}
-                  </Box>
-                </Button>
-              );
-            })}
-          </Stack>
-
-          <Box sx={{ mt: "auto", pt: 4 }}>
-            <Button
-              startIcon={<SettingsRoundedIcon />}
-              fullWidth
-              sx={{
-                justifyContent: "flex-start",
-                borderRadius: 3,
-                px: 1.5,
-                py: 1.2,
-                color: "#334155",
-                fontWeight: 600,
-                textTransform: "none",
-                mb: 2,
-              }}
-            >
-              Settings
-            </Button>
-
-            <Paper
-              elevation={0}
-              sx={{ ...softCardSx, p: 2.2, borderRadius: 4 }}
-            >
-              <Stack
-                direction="row"
-                spacing={1.5}
-                alignItems="center"
-                sx={{ mb: 1.5 }}
-              >
-                <Avatar sx={{ bgcolor: "primary.main", width: 42, height: 42 }}>
-                  {initials}
-                </Avatar>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography fontWeight={700} noWrap>
-                    {user?.name || "User"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {user?.email || "user@example.com"}
-                  </Typography>
-                </Box>
-              </Stack>
-
-              <Chip
-                label={getRoleLabel(user?.role)}
-                size="small"
-                sx={{
-                  mb: 1.5,
-                  borderRadius: 2,
-                  backgroundColor: "#eef4ff",
-                  color: "primary.main",
-                  fontWeight: 700,
-                }}
-              />
-
-              <Button
-                fullWidth
-                variant="outlined"
-                startIcon={<LogoutRoundedIcon />}
-                onClick={handleLogout}
-                sx={{
-                  borderRadius: 3,
-                  textTransform: "none",
-                  fontWeight: 700,
-                }}
-              >
-                Logout
-              </Button>
-            </Paper>
-          </Box>
-        </Box>
+        <SideBar
+          user={user}
+          initials={initials}
+          canViewTeam={canViewTeam}
+          location={location}
+          navigate={navigate}
+          handleLogout={handleLogout}
+        />
 
         <Box
           sx={{
@@ -497,14 +310,14 @@ const Dashboard = () => {
             <Box>
               <Typography
                 variant="h4"
-                sx={{ fontWeight: 800, color: "#14213d", mb: 0.5 }}
+                sx={{ fontWeight: 800, color: brand.text, mb: 0.5 }}
               >
                 Dashboard
               </Typography>
-              <Typography color="text.secondary" sx={{ mb: 1 }}>
+              <Typography sx={{ color: brand.textSoft, mb: 1 }}>
                 {currentDate}
               </Typography>
-              <Typography fontWeight={600} color="#334155">
+              <Typography fontWeight={600} sx={{ color: brand.text }}>
                 Welcome back, {user?.name || "User"}
               </Typography>
             </Box>
@@ -523,13 +336,23 @@ const Dashboard = () => {
                   minWidth: { xs: "100%", sm: 280 },
                   "& .MuiOutlinedInput-root": {
                     borderRadius: 3,
-                    backgroundColor: "rgba(255,255,255,0.92)",
+                    backgroundColor: "#FFFFFF",
+                    boxShadow: brand.shadow,
+                    "& fieldset": {
+                      borderColor: brand.border,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: brand.primaryLight,
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: brand.primary,
+                    },
                   },
                 }}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchRoundedIcon color="action" />
+                      <SearchRoundedIcon sx={{ color: brand.primary }} />
                     </InputAdornment>
                   ),
                 }}
@@ -540,11 +363,15 @@ const Dashboard = () => {
                   width: 42,
                   height: 42,
                   borderRadius: 3,
-                  backgroundColor: "rgba(255,255,255,0.92)",
-                  border: "1px solid rgba(25,118,210,0.08)",
+                  backgroundColor: "#FFFFFF",
+                  border: `1px solid ${brand.border}`,
+                  boxShadow: brand.shadow,
+                  "&:hover": {
+                    backgroundColor: "#F7F9FB",
+                  },
                 }}
               >
-                <AddRoundedIcon color="primary" />
+                <AddRoundedIcon sx={{ color: brand.primary }} />
               </IconButton>
 
               <IconButton
@@ -552,16 +379,25 @@ const Dashboard = () => {
                   width: 42,
                   height: 42,
                   borderRadius: 3,
-                  backgroundColor: "#fff7ed",
-                  border: "1px solid rgba(251,146,60,0.18)",
+                  backgroundColor: "#FFF8ED",
+                  border: "1px solid rgba(217, 119, 6, 0.18)",
+                  boxShadow: brand.shadow,
                 }}
               >
                 <Badge badgeContent={4} color="error">
-                  <NotificationsNoneRoundedIcon sx={{ color: "#fb923c" }} />
+                  <NotificationsNoneRoundedIcon sx={{ color: "#D97706" }} />
                 </Badge>
               </IconButton>
 
-              <Avatar sx={{ bgcolor: "primary.main", width: 42, height: 42 }}>
+              <Avatar
+                sx={{
+                  bgcolor: brand.primary,
+                  width: 42,
+                  height: 42,
+                  fontWeight: 700,
+                  boxShadow: brand.shadow,
+                }}
+              >
                 {initials}
               </Avatar>
             </Stack>
@@ -583,7 +419,7 @@ const Dashboard = () => {
               <Paper
                 key={item.title}
                 elevation={0}
-                sx={{ ...softCardSx, p: 2.25 }}
+                sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
               >
                 <Stack
                   direction="row"
@@ -611,9 +447,9 @@ const Dashboard = () => {
                       borderRadius: 3,
                       fontWeight: 700,
                       backgroundColor:
-                        item.subtitleTone === "error" ? "#ffebee" : "#e8f5e9",
+                        item.subtitleTone === "error" ? "#FFF1EE" : "#F4F6F8",
                       color:
-                        item.subtitleTone === "error" ? "#d32f2f" : "#2e7d32",
+                        item.subtitleTone === "error" ? "#C2410C" : "#0C5A58",
                     }}
                   />
                 </Stack>
@@ -621,11 +457,11 @@ const Dashboard = () => {
                 <Typography
                   variant="h4"
                   fontWeight={800}
-                  sx={{ mt: 2, color: "#14213d" }}
+                  sx={{ mt: 2, color: brand.text }}
                 >
                   {item.value}
                 </Typography>
-                <Typography color="text.secondary" fontWeight={500}>
+                <Typography sx={{ color: brand.textSoft, fontWeight: 500 }}>
                   {item.title}
                 </Typography>
               </Paper>
@@ -640,14 +476,21 @@ const Dashboard = () => {
               mb: 2.5,
             }}
           >
-            <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
+            <Paper
+              elevation={0}
+              sx={{
+                ...softCardSx,
+                overflow: "hidden",
+                boxShadow: brand.shadowStrong,
+              }}
+            >
               <Stack
                 direction="row"
                 justifyContent="space-between"
                 alignItems="center"
                 sx={{ px: 2.25, py: 2 }}
               >
-                <Typography fontWeight={800} color="#14213d">
+                <Typography fontWeight={800} sx={{ color: brand.text }}>
                   Recent Orders
                 </Typography>
                 <Button
@@ -656,8 +499,12 @@ const Dashboard = () => {
                     borderRadius: 3,
                     textTransform: "none",
                     fontWeight: 700,
-                    backgroundColor: "#eef4ff",
+                    backgroundColor: "#F4F6F8",
+                    color: brand.primary,
                     px: 1.8,
+                    "&:hover": {
+                      backgroundColor: "#ECEFF3",
+                    },
                   }}
                 >
                   View All
@@ -673,9 +520,9 @@ const Dashboard = () => {
                       gap: 2,
                       px: 2.25,
                       py: 1.5,
-                      bgcolor: "#f7faff",
-                      borderTop: "1px solid rgba(25,118,210,0.06)",
-                      borderBottom: "1px solid rgba(25,118,210,0.06)",
+                      bgcolor: "#FFFFFF",
+                      borderTop: `1px solid ${brand.border}`,
+                      borderBottom: `1px solid ${brand.border}`,
                     }}
                   >
                     {[
@@ -690,7 +537,7 @@ const Dashboard = () => {
                         key={head}
                         variant="caption"
                         sx={{
-                          color: "#64748b",
+                          color: brand.textSoft,
                           fontWeight: 800,
                           letterSpacing: 0.4,
                         }}
@@ -715,14 +562,18 @@ const Dashboard = () => {
                           py: 1.75,
                           borderBottom:
                             index !== orders.length - 1
-                              ? "1px solid rgba(25,118,210,0.06)"
+                              ? `1px solid ${brand.border}`
                               : "none",
                           alignItems: "center",
+                          backgroundColor: "#FFFFFF",
+                          "&:hover": {
+                            backgroundColor: "#FAFBFC",
+                          },
                         }}
                       >
                         <Typography
                           sx={{
-                            color: "primary.main",
+                            color: brand.primary,
                             fontWeight: 700,
                             fontSize: "0.92rem",
                           }}
@@ -730,7 +581,7 @@ const Dashboard = () => {
                           {order.id}
                         </Typography>
 
-                        <Typography fontWeight={600}>
+                        <Typography fontWeight={600} sx={{ color: brand.text }}>
                           {order.product}
                         </Typography>
 
@@ -740,13 +591,15 @@ const Dashboard = () => {
                           sx={{
                             width: "fit-content",
                             borderRadius: 2,
-                            bgcolor: "#f1f5f9",
-                            color: "#475569",
+                            bgcolor: "#F4F6F8",
+                            color: brand.textSoft,
                             fontWeight: 600,
                           }}
                         />
 
-                        <Typography fontWeight={600}>{order.qty}</Typography>
+                        <Typography fontWeight={600} sx={{ color: brand.text }}>
+                          {order.qty}
+                        </Typography>
 
                         <Chip
                           label={order.status}
@@ -760,7 +613,9 @@ const Dashboard = () => {
                           }}
                         />
 
-                        <Typography fontWeight={700}>{order.value}</Typography>
+                        <Typography fontWeight={700} sx={{ color: brand.text }}>
+                          {order.value}
+                        </Typography>
                       </Box>
                     );
                   })}
@@ -768,17 +623,27 @@ const Dashboard = () => {
               </Box>
             </Paper>
 
-            <Paper elevation={0} sx={{ ...softCardSx, p: 2.25 }}>
+            <Paper
+              elevation={0}
+              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+            >
               <Stack
                 direction="row"
                 justifyContent="space-between"
                 alignItems="center"
                 sx={{ mb: 2 }}
               >
-                <Typography fontWeight={800} color="#14213d">
+                <Typography fontWeight={800} sx={{ color: brand.text }}>
                   Stock by Category
                 </Typography>
-                <IconButton size="small">
+                <IconButton
+                  size="small"
+                  sx={{
+                    color: brand.textSoft,
+                    backgroundColor: "#FFFFFF",
+                    boxShadow: brand.shadow,
+                  }}
+                >
                   <MoreVertRoundedIcon fontSize="small" />
                 </IconButton>
               </Stack>
@@ -792,10 +657,17 @@ const Dashboard = () => {
                       alignItems="center"
                       sx={{ mb: 0.8 }}
                     >
-                      <Typography fontWeight={700} fontSize="0.92rem">
+                      <Typography
+                        fontWeight={700}
+                        fontSize="0.92rem"
+                        sx={{ color: brand.text }}
+                      >
                         {item.name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography
+                        variant="body2"
+                        sx={{ color: brand.textSoft }}
+                      >
                         {item.units} · {item.progress}%
                       </Typography>
                     </Stack>
@@ -806,7 +678,7 @@ const Dashboard = () => {
                       sx={{
                         height: 7,
                         borderRadius: 999,
-                        backgroundColor: "#edf2f7",
+                        backgroundColor: "#E9EEF2",
                         "& .MuiLinearProgress-bar": {
                           borderRadius: 999,
                           backgroundColor: item.color,
@@ -829,8 +701,11 @@ const Dashboard = () => {
               gap: 2,
             }}
           >
-            <Paper elevation={0} sx={{ ...softCardSx, p: 2.25 }}>
-              <Typography fontWeight={800} color="#14213d" sx={{ mb: 2 }}>
+            <Paper
+              elevation={0}
+              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+            >
+              <Typography fontWeight={800} sx={{ color: brand.text, mb: 2 }}>
                 Quick Actions
               </Typography>
 
@@ -843,11 +718,15 @@ const Dashboard = () => {
                       justifyContent: "flex-start",
                       p: 1.4,
                       borderRadius: 3,
-                      border: "1px solid rgba(25,118,210,0.08)",
-                      backgroundColor: "#fff",
-                      color: "#14213d",
+                      border: `1px solid ${brand.border}`,
+                      backgroundColor: "#FFFFFF",
+                      color: brand.text,
                       textTransform: "none",
                       fontWeight: 700,
+                      boxShadow: brand.shadow,
+                      "&:hover": {
+                        backgroundColor: "#F8FAFC",
+                      },
                     }}
                   >
                     <Box
@@ -870,18 +749,21 @@ const Dashboard = () => {
               </Stack>
             </Paper>
 
-            <Paper elevation={0} sx={{ ...softCardSx, p: 2.25 }}>
+            <Paper
+              elevation={0}
+              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+            >
               <Stack
                 direction="row"
                 justifyContent="space-between"
                 alignItems="center"
                 sx={{ mb: 2 }}
               >
-                <Typography fontWeight={800} color="#14213d">
+                <Typography fontWeight={800} sx={{ color: brand.text }}>
                   Stock Alerts
                 </Typography>
                 <Badge badgeContent={4} color="error">
-                  <WarningAmberRoundedIcon sx={{ color: "#94a3b8" }} />
+                  <WarningAmberRoundedIcon sx={{ color: brand.textSoft }} />
                 </Badge>
               </Stack>
 
@@ -905,10 +787,17 @@ const Dashboard = () => {
                         sx={{ color: alert.iconColor, mt: 0.15, fontSize: 18 }}
                       />
                       <Box>
-                        <Typography fontWeight={700} fontSize="0.95rem">
+                        <Typography
+                          fontWeight={700}
+                          fontSize="0.95rem"
+                          sx={{ color: brand.text }}
+                        >
                           {alert.title}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography
+                          variant="body2"
+                          sx={{ color: brand.textSoft }}
+                        >
                           {alert.message}
                         </Typography>
                       </Box>
@@ -918,8 +807,11 @@ const Dashboard = () => {
               </Stack>
             </Paper>
 
-            <Paper elevation={0} sx={{ ...softCardSx, p: 2.25 }}>
-              <Typography fontWeight={800} color="#14213d" sx={{ mb: 2 }}>
+            <Paper
+              elevation={0}
+              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+            >
+              <Typography fontWeight={800} sx={{ color: brand.text, mb: 2 }}>
                 Top Products
               </Typography>
 
@@ -939,8 +831,8 @@ const Dashboard = () => {
                             px: 1,
                             borderRadius: 2.5,
                             backgroundColor:
-                              index === 0 ? "#fff3e0" : "#eef2ff",
-                            color: index === 0 ? "#ef6c00" : "#5b6b92",
+                              index === 0 ? "#FFF3E8" : "#F4F6F8",
+                            color: index === 0 ? "#D97706" : brand.primary,
                             display: "grid",
                             placeItems: "center",
                             fontWeight: 800,
@@ -950,8 +842,16 @@ const Dashboard = () => {
                           {item.rank}
                         </Box>
                         <Box>
-                          <Typography fontWeight={700}>{item.name}</Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography
+                            fontWeight={700}
+                            sx={{ color: brand.text }}
+                          >
+                            {item.name}
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: brand.textSoft }}
+                          >
                             {item.sold}
                           </Typography>
                         </Box>
@@ -959,14 +859,14 @@ const Dashboard = () => {
 
                       <Typography
                         fontWeight={800}
-                        sx={{ color: "#2e7d32", fontSize: "0.92rem" }}
+                        sx={{ color: brand.primary, fontSize: "0.92rem" }}
                       >
                         {item.change}
                       </Typography>
                     </Stack>
 
                     {index !== topProducts.length - 1 && (
-                      <Divider sx={{ mt: 1.4 }} />
+                      <Divider sx={{ mt: 1.4, borderColor: brand.border }} />
                     )}
                   </Box>
                 ))}

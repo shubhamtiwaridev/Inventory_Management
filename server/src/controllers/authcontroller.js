@@ -10,10 +10,12 @@ const generateToken = (id, role) => {
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role = "user", staffType } = req.body;
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!name || !email || !password || !staffType) {
+      return res.status(400).json({
+        message: "Name, email, password and staff type are required",
+      });
     }
 
     const allowedRoles = ["superadmin", "admin", "user"];
@@ -35,6 +37,7 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      staffType,
       isVerified: false,
     });
 
@@ -71,7 +74,7 @@ export const loginUser = async (req, res) => {
 
     if (!user.isVerified) {
       return res.status(403).json({
-        message: "Your account is not verified yet. Please contact admin.",
+        message: "Your account is not verified yet. Please contact superadmin.",
       });
     }
 
@@ -85,6 +88,95 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Login Error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { email, oldPassword, newPassword, confirmPassword } = req.body;
+
+    if (!email || !oldPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message:
+          "Email, old password, new password and confirm password are required",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "New password and confirm password do not match",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "New password must be at least 6 characters",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const isOldPasswordCorrect = await bcrypt.compare(
+      oldPassword,
+      user.password,
+    );
+
+    if (!isOldPasswordCorrect) {
+      return res.status(401).json({
+        message: "Old password is incorrect",
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.forgotPasswordRequested = false;
+    user.forgotPasswordRequestedAt = null;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change Password Error:", error.message);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const requestForgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found with this email",
+      });
+    }
+
+    user.forgotPasswordRequested = true;
+    user.forgotPasswordRequestedAt = new Date();
+    await user.save();
+
+    return res.status(200).json({
+      message:
+        "Your request has been sent to superadmin. Please contact superadmin to change your password.",
+    });
+  } catch (error) {
+    console.error("Forgot Password Request Error:", error.message);
     return res.status(500).json({ message: "Server error" });
   }
 };

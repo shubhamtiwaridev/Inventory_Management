@@ -3,7 +3,8 @@ import { Box, CircularProgress } from "@mui/material";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
-import Team from "./pages/Team.jsx";
+import Team from "./pages/staff/Team.jsx";
+import StaffType from "./pages/staff/StaffType.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import PublicRoute from "./routes/PublicRoute.jsx";
 import { useAuth } from "./store/AuthContext.jsx";
@@ -36,9 +37,17 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
+
         <Route
           path="/team"
           element={canViewTeam ? <Team /> : <Navigate to="/dashboard" replace />}
+        />
+
+        <Route
+          path="/team/staff-type"
+          element={
+            canViewTeam ? <StaffType /> : <Navigate to="/dashboard" replace />
+          }
         />
       </Route>
 

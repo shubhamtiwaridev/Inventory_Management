@@ -4,35 +4,44 @@ const authSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Name is required"],
+      required: true,
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "Email is required"],
+      required: true,
       unique: true,
       trim: true,
-      lowercase: true,
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
-      minlength: 6,
+      required: true,
     },
     role: {
       type: String,
       enum: ["superadmin", "admin", "user"],
-      default: "user",
       required: true,
+    },
+    staffType: {
+      type: String,
+      trim: true,
+      default: "",
     },
     isVerified: {
       type: Boolean,
       default: false,
     },
+
+    forgotPasswordRequested: {
+      type: Boolean,
+      default: false,
+    },
+    forgotPasswordRequestedAt: {
+      type: Date,
+      default: null,
+    },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true },
 );
 
 const User = mongoose.model("User", authSchema);

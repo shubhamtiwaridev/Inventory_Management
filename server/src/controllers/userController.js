@@ -24,7 +24,7 @@ export const getAllUsers = async (req, res) => {
 export const updateUserCredentials = async (req, res) => {
   try {
     const { id } = req.params;
-    const { email, password } = req.body;
+    const { email, password, staffType } = req.body;
 
     const user = await User.findById(id);
 
@@ -60,8 +60,14 @@ export const updateUserCredentials = async (req, res) => {
       }
 
       user.password = await bcrypt.hash(password, 10);
+
+      user.forgotPasswordRequested = false;
+      user.forgotPasswordRequestedAt = null;
     }
 
+    if (staffType !== undefined) {
+      user.staffType = staffType;
+    }
     await user.save();
 
     return res.status(200).json({
@@ -73,6 +79,8 @@ export const updateUserCredentials = async (req, res) => {
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,
+        forgotPasswordRequested: user.forgotPasswordRequested,
+        forgotPasswordRequestedAt: user.forgotPasswordRequestedAt,
         createdAt: user.createdAt,
       },
     });
@@ -89,6 +97,13 @@ export const verifyUserAccount = async (req, res) => {
   try {
     const { id } = req.params;
 
+    if (req.user.role !== "superadmin") {
+      return res.status(403).json({
+        success: false,
+        message: "Only superadmin can verify users",
+      });
+    }
+
     const user = await User.findById(id);
 
     if (!user) {
@@ -98,7 +113,17 @@ export const verifyUserAccount = async (req, res) => {
       });
     }
 
+    if (user.isVerified) {
+      return res.status(200).json({
+        success: true,
+        message: "User is already verified",
+      });
+    }
+
     user.isVerified = true;
+    if (staffType !== undefined) {
+      user.staffType = staffType;
+    }
     await user.save();
 
     return res.status(200).json({

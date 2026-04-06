@@ -1,0 +1,434 @@
+import { useState } from "react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../store/AuthContext";
+import logo from "../../assets/decostyle-logo.png";
+
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Link,
+  Alert,
+  IconButton,
+  InputAdornment,
+} from "@mui/material";
+
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+
+const brand = {
+  primary: "#139B98",
+  primaryDark: "#0D6766",
+  pageBg: "#F2FBFA",
+  fieldBg: "#F8FCFC",
+  border: "rgba(19, 155, 152, 0.22)",
+  text: "#102A2A",
+  muted: "#5F6F73",
+  soft: "#E8F7F5",
+};
+
+const Register = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      setError("First name and last name are required");
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError("Email is required");
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      await register({
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        password: formData.password,
+      });
+
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || "Registration failed");
+    }
+  };
+
+  const textFieldStyles = {
+    "& .MuiInputLabel-root": {
+      color: brand.muted,
+    },
+    "& .MuiInputLabel-root.Mui-focused": {
+      color: brand.primaryDark,
+    },
+    "& .MuiOutlinedInput-root": {
+      borderRadius: "16px",
+      bgcolor: brand.fieldBg,
+      "& fieldset": {
+        borderColor: brand.border,
+      },
+      "&:hover fieldset": {
+        borderColor: brand.primary,
+      },
+      "&.Mui-focused fieldset": {
+        borderColor: brand.primary,
+      },
+    },
+  };
+
+  return (
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        px: 2,
+        py: 5,
+      }}
+    >
+      <Box sx={{ width: "100%", maxWidth: 620 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: "30px",
+            p: { xs: 3, sm: 4.5 },
+            bgcolor: "#ffffff",
+            border: `1px solid ${brand.border}`,
+            boxShadow: "0 20px 50px rgba(13, 103, 102, 0.10)",
+          }}
+        >
+          <Box sx={{ textAlign: "center", mb: 4 }}>
+            <Box
+              component="img"
+              src={logo}
+              alt="Decostyle"
+              sx={{
+                width: { xs: 180, sm: 240 },
+                maxWidth: "100%",
+                display: "block",
+                mx: "auto",
+                mb: 2,
+              }}
+            />
+
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                color: brand.text,
+                mb: 1,
+                fontSize: { xs: "1.95rem", sm: "2.2rem" },
+              }}
+            >
+              Create your account
+            </Typography>
+
+            <Typography
+              variant="body1"
+              sx={{
+                color: brand.muted,
+                fontSize: "1rem",
+                mb: 3,
+              }}
+            >
+              Create your Decostyle account to continue
+            </Typography>
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 1,
+              }}
+            >
+              {[
+                { step: 1, label: "Account", active: true },
+                { step: 2, label: "Setup", active: false },
+                { step: 3, label: "Done", active: false },
+              ].map((item, index) => (
+                <Box
+                  key={item.step}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      bgcolor: item.active ? brand.primary : brand.soft,
+                      color: item.active ? "#fff" : brand.primaryDark,
+                      border: item.active ? "none" : `1px solid ${brand.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.step}
+                  </Box>
+
+                  <Typography
+                    sx={{
+                      ml: 1,
+                      mr: 1,
+                      color: item.active ? brand.text : brand.muted,
+                      fontWeight: 600,
+                      fontSize: "0.95rem",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+
+                  {index < 2 && (
+                    <Box
+                      sx={{
+                        height: 2,
+                        bgcolor: brand.soft,
+                        flex: 1,
+                        borderRadius: 999,
+                      }}
+                    />
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          {error && (
+            <Alert
+              severity="error"
+              sx={{
+                mb: 2.5,
+                borderRadius: 2,
+              }}
+            >
+              {error}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                gap: 2,
+                mb: 2,
+              }}
+            >
+              <TextField
+                fullWidth
+                label="First Name"
+                name="firstName"
+                placeholder="John"
+                value={formData.firstName}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonOutlineIcon sx={{ color: brand.primaryDark }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={textFieldStyles}
+              />
+
+              <TextField
+                fullWidth
+                label="Last Name"
+                name="lastName"
+                placeholder="Doe"
+                value={formData.lastName}
+                onChange={handleChange}
+                sx={textFieldStyles}
+              />
+            </Box>
+
+            <TextField
+              fullWidth
+              label="Work Email"
+              name="email"
+              type="email"
+              placeholder="you@company.com"
+              value={formData.email}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <MailOutlineIcon sx={{ color: brand.primaryDark }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                ...textFieldStyles,
+                mb: 2,
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Min. 8 characters"
+              value={formData.password}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlinedIcon sx={{ color: brand.primaryDark }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      {showPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ color: brand.primaryDark }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ color: brand.primaryDark }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                ...textFieldStyles,
+                mb: 2,
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Re-enter password"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LockOutlinedIcon sx={{ color: brand.primaryDark }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      edge="end"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    >
+                      {showConfirmPassword ? (
+                        <VisibilityOffOutlinedIcon sx={{ color: brand.primaryDark }} />
+                      ) : (
+                        <VisibilityOutlinedIcon sx={{ color: brand.primaryDark }} />
+                      )}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                ...textFieldStyles,
+                mb: 3,
+              }}
+            />
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{
+                py: 1.7,
+                borderRadius: "16px",
+                fontSize: "1rem",
+                fontWeight: 700,
+                textTransform: "none",
+                background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+                boxShadow: "0 12px 24px rgba(19, 155, 152, 0.24)",
+                "&:hover": {
+                  background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
+                },
+              }}
+            >
+              Create Account
+            </Button>
+          </Box>
+
+          <Typography
+            sx={{
+              textAlign: "center",
+              color: brand.muted,
+              fontSize: "0.97rem",
+              mt: 3,
+            }}
+          >
+            Already have an account?{" "}
+            <Link
+              component={RouterLink}
+              to="/login"
+              underline="none"
+              sx={{
+                fontWeight: 700,
+                color: brand.primaryDark,
+              }}
+            >
+              Login
+            </Link>
+          </Typography>
+        </Paper>
+      </Box>
+    </Box>
+  );
+};
+
+export default Register;

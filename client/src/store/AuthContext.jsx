@@ -1,54 +1,75 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import {
-  getCurrentUser,
-  loginUser,
-  logoutUser,
-  registerUser,
-} from "../api/auth";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { getMe, loginUser, logoutUser, registerUser } from "../api/auth";
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchMe();
-  }, []);
-
   const fetchMe = async () => {
     try {
-      const res = await getCurrentUser();
+      const res = await getMe();
       setUser(res.data.user);
-    } catch (error) {
+      return res.data.user;
+    } catch (err) {
+      if (err.response?.status !== 401) {
+        console.error("fetchMe error:", err);
+      }
       setUser(null);
+      return null;
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchMe();
+  }, []);
+
   const register = async (formData) => {
     const res = await registerUser(formData);
     setUser(res.data.user);
-    return res;
+    return res.data;
   };
 
   const login = async (formData) => {
     const res = await loginUser(formData);
     setUser(res.data.user);
-    return res;
+    return res.data;
   };
 
   const logout = async () => {
-    await logoutUser();
-    setUser(null);
+    try {
+      await logoutUser();
+    } finally {
+      setUser(null);
+    }
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: !!user,
+      register,
+      login,
+      logout,
+      fetchMe,
+    }),
+    [user, loading]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+
+  return context;
+};

@@ -17,6 +17,14 @@ function App() {
 
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/inventory" element={<Dashboard />} />
+        <Route path="/orders" element={<Dashboard />} />
+        <Route path="/suppliers" element={<Dashboard />} />
+        <Route path="/warehouses" element={<Dashboard />} />
+        <Route path="/categories" element={<Dashboard />} />
+        <Route path="/reports" element={<Dashboard />} />
+        <Route path="/team" element={<Dashboard />} />
+        <Route path="/staff" element={<Dashboard />} />
       </Route>
     </Routes>
   );

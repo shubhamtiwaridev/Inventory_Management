@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
 import logo from "../../assets/decostyle-logo.png";
@@ -13,6 +13,7 @@ import {
   Alert,
   IconButton,
   InputAdornment,
+  MenuItem,
 } from "@mui/material";
 
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -20,6 +21,10 @@ import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const brand = {
   primary: "#139B98",
@@ -40,13 +45,50 @@ const Register = () => {
     firstName: "",
     lastName: "",
     email: "",
+    roles: "",
     password: "",
     confirmPassword: "",
   });
 
+  const [staffTypes, setStaffTypes] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadStaffTypes = async () => {
+      try {
+        setLoadingRoles(true);
+
+        const response = await fetch(`${API_BASE_URL}/staff-types`, {
+          credentials: "include",
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to load staff types");
+        }
+
+        const list = Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.staffTypes)
+            ? data.staffTypes
+            : Array.isArray(data)
+              ? data
+              : [];
+
+        setStaffTypes(list);
+      } catch (err) {
+        setError(err.message || "Failed to load roles");
+      } finally {
+        setLoadingRoles(false);
+      }
+    };
+
+    loadStaffTypes();
+  }, []);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -69,6 +111,11 @@ const Register = () => {
       return;
     }
 
+    if (!formData.roles.trim()) {
+      setError("Role is required");
+      return;
+    }
+
     if (formData.password.length < 8) {
       setError("Password must be at least 8 characters");
       return;
@@ -82,13 +129,16 @@ const Register = () => {
     try {
       await register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email,
+        email: formData.email.trim(),
+        roles: formData.roles.trim(),
         password: formData.password,
       });
 
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      setError(
+        err.response?.data?.message || err.message || "Registration failed",
+      );
     }
   };
 
@@ -173,74 +223,6 @@ const Register = () => {
             >
               Create your Decostyle account to continue
             </Typography>
-
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1,
-              }}
-            >
-              {[
-                { step: 1, label: "Account", active: true },
-                { step: 2, label: "Setup", active: false },
-                { step: 3, label: "Done", active: false },
-              ].map((item, index) => (
-                <Box
-                  key={item.step}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    flex: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      bgcolor: item.active ? brand.primary : brand.soft,
-                      color: item.active ? "#fff" : brand.primaryDark,
-                      border: item.active ? "none" : `1px solid ${brand.border}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.85rem",
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.step}
-                  </Box>
-
-                  <Typography
-                    sx={{
-                      ml: 1,
-                      mr: 1,
-                      color: item.active ? brand.text : brand.muted,
-                      fontWeight: 600,
-                      fontSize: "0.95rem",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {item.label}
-                  </Typography>
-
-                  {index < 2 && (
-                    <Box
-                      sx={{
-                        height: 2,
-                        bgcolor: brand.soft,
-                        flex: 1,
-                        borderRadius: 999,
-                      }}
-                    />
-                  )}
-                </Box>
-              ))}
-            </Box>
           </Box>
 
           {error && (
@@ -314,6 +296,37 @@ const Register = () => {
             />
 
             <TextField
+              select
+              fullWidth
+              label="Roles"
+              name="roles"
+              value={formData.roles}
+              onChange={handleChange}
+              disabled={loadingRoles}
+              helperText={loadingRoles ? "Loading roles..." : "Select a role"}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <AdminPanelSettingsOutlinedIcon
+                      sx={{ color: brand.primaryDark }}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                ...textFieldStyles,
+                mb: 2,
+              }}
+            >
+              <MenuItem value="">Select role</MenuItem>
+              {staffTypes.map((item) => (
+                <MenuItem key={item._id} value={item.name}>
+                  {item.name}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
               fullWidth
               label="Password"
               name="password"
@@ -334,9 +347,13 @@ const Register = () => {
                       onClick={() => setShowPassword((prev) => !prev)}
                     >
                       {showPassword ? (
-                        <VisibilityOffOutlinedIcon sx={{ color: brand.primaryDark }} />
+                        <VisibilityOffOutlinedIcon
+                          sx={{ color: brand.primaryDark }}
+                        />
                       ) : (
-                        <VisibilityOutlinedIcon sx={{ color: brand.primaryDark }} />
+                        <VisibilityOutlinedIcon
+                          sx={{ color: brand.primaryDark }}
+                        />
                       )}
                     </IconButton>
                   </InputAdornment>
@@ -369,9 +386,13 @@ const Register = () => {
                       onClick={() => setShowConfirmPassword((prev) => !prev)}
                     >
                       {showConfirmPassword ? (
-                        <VisibilityOffOutlinedIcon sx={{ color: brand.primaryDark }} />
+                        <VisibilityOffOutlinedIcon
+                          sx={{ color: brand.primaryDark }}
+                        />
                       ) : (
-                        <VisibilityOutlinedIcon sx={{ color: brand.primaryDark }} />
+                        <VisibilityOutlinedIcon
+                          sx={{ color: brand.primaryDark }}
+                        />
                       )}
                     </IconButton>
                   </InputAdornment>

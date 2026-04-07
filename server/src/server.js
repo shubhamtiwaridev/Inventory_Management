@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import authRoutes from "./modules/auth/authRoute.js";
+import staffTypeRoutes from "./modules/staff/stafftype/staffTypeRoute.js";
 
 dotenv.config();
 connectDB();
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/staff-types", staffTypeRoutes);
 
 const PORT = process.env.PORT || 5000;
 

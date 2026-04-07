@@ -23,18 +23,19 @@ const sendTokenResponse = (user, statusCode, res, message) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      roles: user.roles,
     },
   });
 };
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, roles, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !roles || !password) {
       return res.status(400).json({
         success: false,
-        message: "Name, email and password are required",
+        message: "Name, email, roles and password are required",
       });
     }
 
@@ -48,8 +49,9 @@ export const register = async (req, res) => {
     }
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim(),
+      roles: roles.trim(),
       password,
     });
 
@@ -62,6 +64,7 @@ export const register = async (req, res) => {
     });
   }
 };
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -107,6 +110,44 @@ export const getMe = async (req, res) => {
   });
 };
 
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch users",
+    });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Delete failed",
+    });
+  }
+};
 export const logout = async (req, res) => {
   res.cookie("token", "", {
     httpOnly: true,

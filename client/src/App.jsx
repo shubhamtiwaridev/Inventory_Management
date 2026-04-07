@@ -4,6 +4,8 @@ import Login from "./pages/auth/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import PublicRoute from "./routes/PublicRoute.jsx";
+import Staff from "./pages/staffs/staff.jsx";
+import StaffType from "./pages/staffs/StaffType.jsx";
 
 function App() {
   return (
@@ -24,7 +26,8 @@ function App() {
         <Route path="/categories" element={<Dashboard />} />
         <Route path="/reports" element={<Dashboard />} />
         <Route path="/team" element={<Dashboard />} />
-        <Route path="/staff" element={<Dashboard />} />
+        <Route path="/staff" element={<Staff />} />
+        <Route path="/staff-type" element={<StaffType />} />
       </Route>
     </Routes>
   );

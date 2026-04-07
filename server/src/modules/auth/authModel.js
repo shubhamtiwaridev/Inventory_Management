@@ -15,6 +15,11 @@ const authSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    roles: {
+      type: String,
+      required: [true, "Role is required"],
+      trim: true,
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -24,7 +29,7 @@ const authSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 authSchema.pre("save", async function () {

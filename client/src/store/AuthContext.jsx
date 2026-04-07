@@ -14,9 +14,12 @@ export const AuthProvider = ({ children }) => {
       setUser(res.data.user);
       return res.data.user;
     } catch (err) {
-      if (err.response?.status !== 401) {
+      if (!err.response) {
+        console.error("Backend server is not running");
+      } else if (err.response?.status !== 401) {
         console.error("fetchMe error:", err);
       }
+
       setUser(null);
       return null;
     } finally {

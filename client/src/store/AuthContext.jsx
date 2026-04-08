@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getMe, loginUser, logoutUser, registerUser } from "../api/auth";
 
 const AuthContext = createContext(null);
+const AUTH_FLAG = "isAuthenticated";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -11,12 +12,23 @@ export const AuthProvider = ({ children }) => {
   const fetchMe = async () => {
     try {
       const res = await getMe();
-      setUser(res.data.user);
-      return res.data.user;
+      const loggedInUser = res?.data?.user || null;
+
+      setUser(loggedInUser);
+
+      if (loggedInUser) {
+        localStorage.setItem(AUTH_FLAG, "true");
+      } else {
+        localStorage.removeItem(AUTH_FLAG);
+      }
+
+      return loggedInUser;
     } catch (err) {
       if (!err.response) {
         console.error("Backend server is not running");
-      } else if (err.response?.status !== 401) {
+      } else if (err.response?.status === 401) {
+        localStorage.removeItem(AUTH_FLAG);
+      } else {
         console.error("fetchMe error:", err);
       }
 
@@ -28,18 +40,30 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchMe();
+    const hasSession = localStorage.getItem(AUTH_FLAG) === "true";
+
+    if (hasSession) {
+      fetchMe();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const register = async (formData) => {
     const res = await registerUser(formData);
-    setUser(res.data.user);
     return res.data;
   };
 
   const login = async (formData) => {
     const res = await loginUser(formData);
-    setUser(res.data.user);
+    const loggedInUser = res?.data?.user || null;
+
+    setUser(loggedInUser);
+
+    if (loggedInUser) {
+      localStorage.setItem(AUTH_FLAG, "true");
+    }
+
     return res.data;
   };
 
@@ -47,6 +71,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await logoutUser();
     } finally {
+      localStorage.removeItem(AUTH_FLAG);
       setUser(null);
     }
   };
@@ -61,7 +86,7 @@ export const AuthProvider = ({ children }) => {
       logout,
       fetchMe,
     }),
-    [user, loading]
+    [user, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

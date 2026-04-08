@@ -6,6 +6,20 @@ const generateToken = (id) =>
     expiresIn: "7d",
   });
 
+const buildUserResponse = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  roles: user.roles,
+  isVerified: user.isVerified,
+  verifiedBy: user.verifiedBy,
+  verifiedAt: user.verifiedAt,
+  createdFrom: user.createdFrom,
+  passwordChangeRequest: user.passwordChangeRequest,
+  passwordChangeRequestAt: user.passwordChangeRequestAt,
+  passwordChangeRequestMessage: user.passwordChangeRequestMessage,
+});
+
 const sendTokenResponse = (user, statusCode, res, message) => {
   const token = generateToken(user._id);
 
@@ -53,9 +67,16 @@ export const register = async (req, res) => {
       email: email.trim(),
       roles: roles.trim(),
       password,
+      isVerified: false,
+      createdFrom: "public",
     });
 
-    sendTokenResponse(user, 201, res, "Registration successful");
+    res.status(201).json({
+      success: true,
+      message:
+        "Registration completed successfully. Your account is pending verification by superadmin.",
+      user: buildUserResponse(user),
+    });
   } catch (error) {
     console.error("REGISTER ERROR:", error);
     res.status(500).json({
@@ -76,12 +97,14 @@ export const login = async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email }).select("+password");
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+    }).select("+password");
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Password or email are not match",
       });
     }
 
@@ -94,6 +117,13 @@ export const login = async (req, res) => {
       });
     }
 
+    if (user.isVerified === false) {
+      return res.status(403).json({
+        success: false,
+        message: "Your ID are not verified",
+      });
+    }
+
     sendTokenResponse(user, 200, res, "Login successful");
   } catch (error) {
     res.status(500).json({
@@ -103,6 +133,95 @@ export const login = async (req, res) => {
   }
 };
 
+export const changePassword = async (req, res) => {
+  try {
+    const { email, oldPassword, newPassword } = req.body;
+
+    if (!email || !oldPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email, old password and new password are required",
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+    }).select("+password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const isMatch = await user.comparePassword(oldPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Old password not match",
+      });
+    }
+
+    user.password = newPassword;
+    user.passwordChangeRequest = false;
+    user.passwordChangeRequestAt = null;
+    user.passwordChangeRequestMessage = "";
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update password",
+    });
+  }
+};
+
+export const forgotPasswordNotification = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    user.passwordChangeRequest = true;
+    user.passwordChangeRequestAt = new Date();
+    user.passwordChangeRequestMessage = "Password change request pending";
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password change notification sent successfully",
+      user: buildUserResponse(user),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to send notification",
+    });
+  }
+};
 export const getMe = async (req, res) => {
   res.status(200).json({
     success: true,

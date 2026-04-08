@@ -1,5 +1,3 @@
-
-
 import { useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
@@ -59,7 +57,9 @@ const Login = () => {
       await login(formData);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(
+        err.response?.data?.message || "Password or email are not match",
+      );
     }
   };
 
@@ -222,9 +222,13 @@ const Login = () => {
                   fontWeight: 600,
                   color: brand.primaryDark,
                   fontSize: "0.95rem",
+                  background: "none",
+                  border: "none",
+                  p: 0,
+                  cursor: "pointer",
                 }}
               >
-                Forgot password?
+                Change/Forgot password?
               </Link>
             </Box>
 

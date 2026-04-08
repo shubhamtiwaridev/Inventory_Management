@@ -20,6 +20,37 @@ const authSchema = new mongoose.Schema(
       required: [true, "Role is required"],
       trim: true,
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verifiedBy: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    createdFrom: {
+      type: String,
+      enum: ["public", "internal"],
+      default: "public",
+    },
+    passwordChangeRequest: {
+      type: Boolean,
+      default: false,
+    },
+    passwordChangeRequestAt: {
+      type: Date,
+      default: null,
+    },
+    passwordChangeRequestMessage: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     password: {
       type: String,
       required: [true, "Password is required"],

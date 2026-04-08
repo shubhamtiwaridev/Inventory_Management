@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link as RouterLink, useNavigate } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
 import logo from "../../assets/decostyle-logo.png";
 
@@ -38,7 +38,6 @@ const brand = {
 };
 
 const Register = () => {
-  const navigate = useNavigate();
   const { register } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -55,6 +54,17 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    if (!successMessage) return;
+
+    const timer = setTimeout(() => {
+      setSuccessMessage("");
+    }, 20000); // 20 seconds
+
+    return () => clearTimeout(timer);
+  }, [successMessage]);
 
   useEffect(() => {
     const loadStaffTypes = async () => {
@@ -100,6 +110,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     if (!formData.firstName.trim() || !formData.lastName.trim()) {
       setError("First name and last name are required");
@@ -127,14 +138,29 @@ const Register = () => {
     }
 
     try {
-      await register({
+      const response = await register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email.trim(),
         roles: formData.roles.trim(),
         password: formData.password,
       });
 
-      navigate("/dashboard");
+      setSuccessMessage(
+        response.message ||
+          "Registration completed successfully. Your account is pending verification by superadmin. Please login after approval.",
+      );
+
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        roles: "",
+        password: "",
+        confirmPassword: "",
+      });
+
+      setShowPassword(false);
+      setShowConfirmPassword(false);
     } catch (err) {
       setError(
         err.response?.data?.message || err.message || "Registration failed",
@@ -212,18 +238,19 @@ const Register = () => {
             >
               Create your account
             </Typography>
+          </Box>
 
-            <Typography
-              variant="body1"
+          {successMessage && (
+            <Alert
+              severity="success"
               sx={{
-                color: brand.muted,
-                fontSize: "1rem",
-                mb: 3,
+                mb: 2.5,
+                borderRadius: 2,
               }}
             >
-              Create your Decostyle account to continue
-            </Typography>
-          </Box>
+              {successMessage}
+            </Alert>
+          )}
 
           {error && (
             <Alert

@@ -3,9 +3,10 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
-import authRoutes from "./modules/auth/authRoute.js";
-import staffTypeRoutes from "./modules/staff/stafftype/staffTypeRoute.js";
 
+import authRoutes from "./modules/auth/authRoute.js";
+import staffPageRoutes from "./modules/staff/staffpage/staffPageRoute.js";
+import staffTypeRoutes from "./modules/staff/stafftype/staffTypeRoute.js";
 dotenv.config();
 connectDB();
 
@@ -15,7 +16,7 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
-  })
+  }),
 );
 
 app.use(express.json());
@@ -27,6 +28,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/staff-types", staffTypeRoutes);
+app.use("/api/staff-page", staffPageRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -246,16 +246,20 @@ const Dashboard = () => {
   const { user, logout, canViewTeam } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
+  
   const initials = useMemo(() => {
-    if (!user?.name) return "U";
-    return user.name
+    const name = user && user.name ? user.name.trim() : "";
+
+    if (!name) return "U";
+
+    return name
       .split(" ")
-      .map((part) => part[0])
+      .filter(Boolean)
+      .map((part) => part.charAt(0))
       .slice(0, 2)
       .join("")
       .toUpperCase();
-  }, [user?.name]);
+  }, [user]);
 
   const currentDate = useMemo(() => {
     return new Date().toLocaleDateString("en-US", {

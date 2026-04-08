@@ -84,23 +84,23 @@ const brand = {
   primaryDark: "#0C5A58",
   primaryLight: "#17A89F",
   soft: "#E8F7F6",
-  softAlt: "#F7FBFB",
+  softAlt: "#FFFFFF",
   border: "rgba(16, 108, 107, 0.24)",
   rowBorder: "rgba(16, 108, 107, 0.24)",
+  verticalBorder: "#C7D7D7",
   text: "#143736",
   textSoft: "#617776",
-  pageBg: "linear-gradient(180deg, #F8FAFC 0%, #F5F7FA 45%, #F2F5F8 100%)",
+  pageBg: "#FFFFFF",
   shadow:
     "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
-  shadowStrong:
-    "0 0 0 1px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.10)",
+  shadowStrong: "none",
   danger: "#C2410C",
   dangerSoft: "#FFF1EE",
 };
 
 const tabs = [
   { label: "STAFF", icon: <BadgeRoundedIcon />, path: "/staff" },
-  { label: "CHECK CODE", icon: <FactCheckOutlinedIcon />, path: "/check-code" },
+  { label: "STAFF LIST", icon: <FactCheckOutlinedIcon />, path: "/staff-list" },
   {
     label: "STAFF TYPE",
     icon: <VerifiedUserOutlinedIcon />,
@@ -112,23 +112,41 @@ const softCardSx = {
   borderRadius: 4,
   border: `1px solid ${brand.border}`,
   backgroundColor: "#FFFFFF",
-  boxShadow: brand.shadowStrong,
+  boxShadow: "none",
 };
 
 const tabButtonSx = (active) => ({
   borderRadius: 0,
-  px: 2,
-  py: 1.25,
-  minWidth: "fit-content",
-  color: active ? brand.text : brand.textSoft,
+  px: 2.25,
+  py: 1.4,
+  minWidth: 108,
+  color: active ? "#111111" : "#444444",
   fontWeight: active ? 800 : 700,
   textTransform: "none",
-  borderBottom: active
-    ? `3px solid ${brand.primaryDark}`
-    : "3px solid transparent",
+  borderBottom: active ? "3px solid #111111" : "3px solid transparent",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 0.55,
+  "& .tab-icon": {
+    color: active ? "#111111" : "#444444",
+    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  "& .tab-icon svg": {
+    fontSize: 24,
+  },
+  "& .tab-label": {
+    fontSize: "0.95rem",
+    lineHeight: 1.1,
+    whiteSpace: "nowrap",
+  },
   "&:hover": {
     backgroundColor: "transparent",
-    color: brand.primaryDark,
+    color: "#111111",
   },
 });
 
@@ -143,10 +161,16 @@ const actionButtonSx = {
   },
 };
 
-const rowCellSx = {
+const getCellSx = ({ isLast = false, align = "left" } = {}) => ({
   borderBottom: `1px solid ${brand.rowBorder}`,
+  borderRight: isLast ? "none" : `2px solid ${brand.verticalBorder}`,
   py: 2.1,
-};
+  px: 2,
+  textAlign: align,
+  verticalAlign: "middle",
+  boxSizing: "border-box",
+  backgroundColor: "inherit",
+});
 
 const getInitials = (name = "") =>
   name
@@ -166,11 +190,11 @@ const formatDateTime = (value) => {
 
   if (Number.isNaN(date.getTime())) return "-";
 
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
-    date.getDate(),
-  )} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(
-    date.getSeconds(),
-  )}`;
+  const hours = date.getHours();
+  const hours12 = hours % 12 || 12;
+  const amPm = hours >= 12 ? "PM" : "AM";
+
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${hours12}:${pad(date.getMinutes())} ${amPm}`;
 };
 
 const StaffType = () => {
@@ -416,15 +440,22 @@ const StaffType = () => {
             py: { xs: 2, md: 3 },
           }}
         >
-          <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
+          <Box
+            sx={{
+              mb: 2,
+              px: { xs: 1, sm: 2 },
+              pt: 1,
+              background: "transparent",
+              borderBottom: "none",
+              overflowX: "auto",
+            }}
+          >
             <Stack
               direction="row"
-              spacing={{ xs: 0.5, sm: 1 }}
+              spacing={{ xs: 0.5, sm: 1.25 }}
               sx={{
-                px: { xs: 1, sm: 2 },
-                pt: 1,
-                borderBottom: `1px solid ${brand.border}`,
-                overflowX: "auto",
+                minWidth: "max-content",
+                alignItems: "flex-end",
               }}
             >
               {tabs.map((tab) => {
@@ -433,16 +464,20 @@ const StaffType = () => {
                 return (
                   <Button
                     key={tab.label}
-                    startIcon={tab.icon}
                     onClick={() => navigate(tab.path)}
                     sx={tabButtonSx(active)}
                   >
-                    {tab.label}
+                    <Box className="tab-icon">{tab.icon}</Box>
+                    <Box component="span" className="tab-label">
+                      {tab.label}
+                    </Box>
                   </Button>
                 );
               })}
             </Stack>
+          </Box>
 
+          <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
             <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
               <Stack
                 direction={{ xs: "column", lg: "row" }}
@@ -672,14 +707,18 @@ const StaffType = () => {
                 sx={{
                   borderRadius: 3,
                   border: `1px solid ${brand.border}`,
-                  overflow: "hidden",
+                  overflowX: "auto",
+                  overflowY: "hidden",
                   backgroundColor: "#FFFFFF",
                 }}
               >
                 <Table
                   sx={{
+                    width: "100%",
                     minWidth: 900,
                     backgroundColor: "#FFFFFF",
+                    tableLayout: "fixed",
+                    borderCollapse: "collapse",
                   }}
                 >
                   <TableHead>
@@ -690,9 +729,10 @@ const StaffType = () => {
                     >
                       <TableCell
                         sx={{
-                          ...rowCellSx,
+                          ...getCellSx(),
                           fontWeight: 800,
                           color: brand.text,
+                          width: "22%",
                         }}
                       >
                         Staff Type
@@ -700,9 +740,10 @@ const StaffType = () => {
 
                       <TableCell
                         sx={{
-                          ...rowCellSx,
+                          ...getCellSx(),
                           fontWeight: 800,
                           color: brand.text,
+                          width: "20%",
                         }}
                       >
                         Creater
@@ -710,9 +751,10 @@ const StaffType = () => {
 
                       <TableCell
                         sx={{
-                          ...rowCellSx,
+                          ...getCellSx(),
                           fontWeight: 800,
                           color: brand.text,
+                          width: "20%",
                         }}
                       >
                         Created Time
@@ -720,9 +762,11 @@ const StaffType = () => {
 
                       <TableCell
                         sx={{
-                          ...rowCellSx,
+                          ...getCellSx(),
                           fontWeight: 800,
                           color: brand.text,
+                          width: "23%",
+                          whiteSpace: "nowrap",
                         }}
                       >
                         Updated Time
@@ -731,9 +775,10 @@ const StaffType = () => {
                       <TableCell
                         align="center"
                         sx={{
-                          ...rowCellSx,
+                          ...getCellSx({ isLast: true, align: "center" }),
                           fontWeight: 800,
                           color: brand.text,
+                          width: "12%",
                         }}
                       >
                         Action
@@ -744,13 +789,21 @@ const StaffType = () => {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={rowCellSx}>
+                        <TableCell
+                          colSpan={5}
+                          align="center"
+                          sx={getCellSx({ isLast: true, align: "center" })}
+                        >
                           Loading...
                         </TableCell>
                       </TableRow>
                     ) : visibleRows.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} align="center" sx={rowCellSx}>
+                        <TableCell
+                          colSpan={5}
+                          align="center"
+                          sx={getCellSx({ isLast: true, align: "center" })}
+                        >
                           No staff type found
                         </TableCell>
                       </TableRow>
@@ -766,7 +819,7 @@ const StaffType = () => {
                             },
                           }}
                         >
-                          <TableCell sx={rowCellSx}>
+                          <TableCell sx={getCellSx()}>
                             <Chip
                               label={row.name}
                               size="small"
@@ -781,7 +834,7 @@ const StaffType = () => {
 
                           <TableCell
                             sx={{
-                              ...rowCellSx,
+                              ...getCellSx(),
                               color: brand.text,
                               fontWeight: 600,
                             }}
@@ -791,8 +844,9 @@ const StaffType = () => {
 
                           <TableCell
                             sx={{
-                              ...rowCellSx,
+                              ...getCellSx(),
                               color: brand.textSoft,
+                              whiteSpace: "nowrap",
                             }}
                           >
                             {formatDateTime(row.createdAt)}
@@ -800,14 +854,18 @@ const StaffType = () => {
 
                           <TableCell
                             sx={{
-                              ...rowCellSx,
+                              ...getCellSx(),
                               color: brand.textSoft,
+                              whiteSpace: "nowrap",
                             }}
                           >
                             {formatDateTime(row.updatedAt)}
                           </TableCell>
 
-                          <TableCell align="center" sx={rowCellSx}>
+                          <TableCell
+                            align="center"
+                            sx={getCellSx({ isLast: true, align: "center" })}
+                          >
                             <Stack
                               direction="row"
                               justifyContent="center"

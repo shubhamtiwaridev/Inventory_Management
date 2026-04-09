@@ -36,7 +36,6 @@ const sidebarItems = [
   {
     label: "Orders",
     icon: <ShoppingCartRoundedIcon />,
-    badge: 24,
     path: "/orders",
   },
   {
@@ -44,10 +43,9 @@ const sidebarItems = [
     icon: <LocalShippingRoundedIcon />,
     path: "/suppliers",
   },
-  { label: "Warehouses", icon: <WarehouseRoundedIcon />, path: "/warehouses" },
   { label: "Categories", icon: <CategoryRoundedIcon />, path: "/categories" },
   { label: "Reports", icon: <BarChartRoundedIcon />, path: "/reports" },
-  { label: "Team", icon: <Groups2RoundedIcon />, path: "/team" },
+  { label: "Warehouses", icon: <WarehouseRoundedIcon />, path: "/warehouses" },
   { label: "Staff", icon: <PersonRoundedIcon />, path: "/staff" },
 ];
 

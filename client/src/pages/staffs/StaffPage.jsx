@@ -132,7 +132,7 @@ const actionButtonSx = {
   },
 };
 
-const getCellSx = ({ isLast = false, align = "left" } = {}) => ({
+const getCellSx = ({ isLast = false, align = "center" } = {}) => ({
   borderBottom: `1px solid ${brand.rowBorder}`,
   borderRight: isLast ? "none" : `2px solid ${brand.verticalBorder}`,
   py: 2.1,

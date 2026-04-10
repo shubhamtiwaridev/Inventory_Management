@@ -8,6 +8,11 @@ node_modules/
 client/.env
 server/.env
 
+# keep example env files in git
+!.env.example
+!client/.env.example
+!server/.env.example
+
 # build output
 dist/
 build/

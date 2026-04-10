@@ -1,18 +1,4 @@
 services:
-  mongo:
-    image: mongo:8
-    container_name: inventory-mongo
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
   server:
     build:
       context: ./server
@@ -27,13 +13,12 @@ services:
       CLIENT_URL: http://localhost:5173
       MONGO_URI: mongodb+srv://web1deco:w1ircpl2025@cluster0.qz6z3y7.mongodb.net/
       JWT_SECRET: your_super_secret_key
-    depends_on:
-      mongo:
-        condition: service_healthy
     volumes:
       - ./server:/app
       - /app/node_modules
     command: npm run dev
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   client:
     build:
@@ -52,6 +37,3 @@ services:
       - ./client:/app
       - /app/node_modules
     command: npm run dev -- --host 0.0.0.0
-
-volumes:
-  mongo_data:

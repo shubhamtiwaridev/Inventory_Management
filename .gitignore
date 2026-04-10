@@ -9,9 +9,9 @@ client/.env
 server/.env
 
 # keep example env files in git
-!.env.example
-!client/.env.example
-!server/.env.example
+.env.example
+client/.env.example
+server/.env.example
 
 # build output
 dist/

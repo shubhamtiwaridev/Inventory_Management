@@ -46,6 +46,7 @@ const sidebarItems = [
   { label: "Categories", icon: <CategoryRoundedIcon />, path: "/categories" },
   { label: "Reports", icon: <BarChartRoundedIcon />, path: "/reports" },
   { label: "Warehouses", icon: <WarehouseRoundedIcon />, path: "/warehouses" },
+  { label: "GoodsList", icon: <Inventory2RoundedIcon />, path: "/goodslist" },
   { label: "Staff", icon: <PersonRoundedIcon />, path: "/staff" },
 ];
 
@@ -76,19 +77,19 @@ const SideBar = ({
   });
 
   return (
-   <Box
-  sx={{
-    width: { xs: "100%", md: 228 },
-    borderRight: { md: `1px solid ${brand.border}` },
-    borderBottom: { xs: `1px solid ${brand.border}`, md: "none" },
-    backgroundColor: "rgba(255,255,255,0.82)",
-    backdropFilter: "blur(12px)",
-    px: 2,
-    py: 2.5,
-    display: "flex",
-    flexDirection: "column",
-  }}
->
+    <Box
+      sx={{
+        width: { xs: "100%", md: 228 },
+        borderRight: { md: `1px solid ${brand.border}` },
+        borderBottom: { xs: `1px solid ${brand.border}`, md: "none" },
+        backgroundColor: "rgba(255,255,255,0.82)",
+        backdropFilter: "blur(12px)",
+        px: 2,
+        py: 2.5,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <Box
         sx={{
           mb: 4,
@@ -177,103 +178,103 @@ const SideBar = ({
         })}
       </Stack>
 
-     <Box sx={{ mt: "auto", pt: 3 }}>
-  <Button
-    startIcon={<SettingsRoundedIcon />}
-    fullWidth
-    sx={{
-      justifyContent: "flex-start",
-      borderRadius: 3,
-      px: 1.25,
-      py: 1,
-      color: brand.text,
-      fontWeight: 600,
-      textTransform: "none",
-      mb: 1.5,
-      fontSize: "0.95rem",
-      "&:hover": {
-        backgroundColor: "#F4FAF9",
-      },
-    }}
-  >
-    Settings
-  </Button>
-
-  <Paper elevation={0} sx={{ ...softCardSx, p: 1.8, borderRadius: 4 }}>
-    <Stack
-      direction="row"
-      spacing={1.25}
-      alignItems="center"
-      sx={{ mb: 1.25 }}
-    >
-      <Avatar
-        sx={{
-          bgcolor: brand.primary,
-          width: 38,
-          height: 38,
-          fontWeight: 700,
-          fontSize: "0.95rem",
-        }}
-      >
-        {initials}
-      </Avatar>
-
-      <Box sx={{ minWidth: 0 }}>
-        <Typography
-          fontWeight={700}
-          sx={{ color: brand.text, fontSize: "0.98rem", lineHeight: 1.2 }}
-          noWrap
+      <Box sx={{ mt: "auto", pt: 3 }}>
+        <Button
+          startIcon={<SettingsRoundedIcon />}
+          fullWidth
+          sx={{
+            justifyContent: "flex-start",
+            borderRadius: 3,
+            px: 1.25,
+            py: 1,
+            color: brand.text,
+            fontWeight: 600,
+            textTransform: "none",
+            mb: 1.5,
+            fontSize: "0.95rem",
+            "&:hover": {
+              backgroundColor: "#F4FAF9",
+            },
+          }}
         >
-          {user?.name || "User"}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: brand.textSoft, fontSize: "0.88rem" }}
-          noWrap
-        >
-          {user?.email || "user@example.com"}
-        </Typography>
+          Settings
+        </Button>
+
+        <Paper elevation={0} sx={{ ...softCardSx, p: 1.8, borderRadius: 4 }}>
+          <Stack
+            direction="row"
+            spacing={1.25}
+            alignItems="center"
+            sx={{ mb: 1.25 }}
+          >
+            <Avatar
+              sx={{
+                bgcolor: brand.primary,
+                width: 38,
+                height: 38,
+                fontWeight: 700,
+                fontSize: "0.95rem",
+              }}
+            >
+              {initials}
+            </Avatar>
+
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                fontWeight={700}
+                sx={{ color: brand.text, fontSize: "0.98rem", lineHeight: 1.2 }}
+                noWrap
+              >
+                {user?.name || "User"}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ color: brand.textSoft, fontSize: "0.88rem" }}
+                noWrap
+              >
+                {user?.email || "user@example.com"}
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Chip
+            label={getRoleLabel(user?.role)}
+            size="small"
+            sx={{
+              mb: 1.25,
+              borderRadius: 2,
+              backgroundColor: brand.soft,
+              color: brand.primary,
+              fontWeight: 700,
+              height: 24,
+              fontSize: "0.75rem",
+            }}
+          />
+
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<LogoutRoundedIcon />}
+            onClick={handleLogout}
+            sx={{
+              borderRadius: 2.5,
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: "0.92rem",
+              py: 0.85,
+              minHeight: 42,
+              color: brand.primary,
+              borderColor: brand.border,
+              "&:hover": {
+                borderColor: brand.primaryLight,
+                backgroundColor: brand.soft,
+              },
+            }}
+          >
+            Logout
+          </Button>
+        </Paper>
       </Box>
-    </Stack>
-
-    <Chip
-      label={getRoleLabel(user?.role)}
-      size="small"
-      sx={{
-        mb: 1.25,
-        borderRadius: 2,
-        backgroundColor: brand.soft,
-        color: brand.primary,
-        fontWeight: 700,
-        height: 24,
-        fontSize: "0.75rem",
-      }}
-    />
-
-    <Button
-      fullWidth
-      variant="outlined"
-      startIcon={<LogoutRoundedIcon />}
-      onClick={handleLogout}
-      sx={{
-        borderRadius: 2.5,
-        textTransform: "none",
-        fontWeight: 700,
-        fontSize: "0.92rem",
-        py: 0.85,
-        minHeight: 42,
-        color: brand.primary,
-        borderColor: brand.border,
-        "&:hover": {
-          borderColor: brand.primaryLight,
-          backgroundColor: brand.soft,
-        },
-      }}
-    >
-      Logout
-    </Button>
-  </Paper>
-</Box>
     </Box>
   );
 };

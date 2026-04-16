@@ -11,6 +11,25 @@ const brand = {
   textSoft: "#617776",
 };
 
+const matchesPath = (pathname, targetPath) => {
+  if (!targetPath) return false;
+  return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
+};
+
+const getSidebarItemState = (item, pathname) => {
+  const itemPath = item.path || "";
+  const children = Array.isArray(item.children) ? item.children : [];
+
+  const isDirectMatch = matchesPath(pathname, itemPath);
+  const isChildMatch = children.some((child) =>
+    matchesPath(pathname, child.path),
+  );
+
+  return {
+    isActive: isDirectMatch || isChildMatch,
+  };
+};
+
 const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
   const visibleSidebarItems = sidebarItems.filter((item) => {
     if (item.path === "/team" && !canViewTeam) return false;
@@ -68,13 +87,14 @@ const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
 
       <Stack spacing={0.75}>
         {visibleSidebarItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const { isActive } = getSidebarItemState(item, location.pathname);
 
           return (
             <Button
               key={item.label}
               startIcon={item.icon}
               fullWidth
+              disableRipple
               onClick={() => navigate(item.path)}
               sx={{
                 justifyContent: "flex-start",
@@ -85,8 +105,27 @@ const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
                 backgroundColor: isActive ? brand.soft : "transparent",
                 fontWeight: isActive ? 700 : 600,
                 textTransform: "none",
+                boxShadow: "none",
                 "&:hover": {
                   backgroundColor: isActive ? brand.soft : "#F4FAF9",
+                  color: isActive ? brand.primary : brand.text,
+                  boxShadow: "none",
+                },
+                "&:focus": {
+                  outline: "none",
+                  backgroundColor: isActive ? brand.soft : "transparent",
+                },
+                "&.Mui-focusVisible": {
+                  outline: "none",
+                  backgroundColor: isActive ? brand.soft : "transparent",
+                  boxShadow: "none",
+                },
+                "&:active": {
+                  backgroundColor: isActive ? brand.soft : "#F4FAF9",
+                  boxShadow: "none",
+                },
+                "& .MuiButton-startIcon": {
+                  color: isActive ? brand.primary : brand.text,
                 },
               }}
             >
@@ -99,6 +138,7 @@ const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
                 }}
               >
                 <span>{item.label}</span>
+
                 {item.badge ? (
                   <Chip
                     label={item.badge}

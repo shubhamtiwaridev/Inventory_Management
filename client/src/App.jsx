@@ -15,9 +15,7 @@ import StaffType from "./pages/staffs/StaffType.jsx";
 import MachineMaintenancePage from "./pages/modules/machine-maintenance/MachineMaintenancePage.jsx";
 import SparesPage from "./pages/modules/spares/SparesPage.jsx";
 import InventoryPage from "./pages/modules/inventory/InventoryPage.jsx";
-import InboundPage from "./pages/modules/InboundPage";
 
-// machine maintenance pages
 import AssetListPage from "./pages/modules/machine-maintenance/assets/AssetListPage.jsx";
 import AssetRegisterPage from "./pages/modules/machine-maintenance/assets/AssetRegisterPage.jsx";
 import SpareListPage from "./pages/modules/machine-maintenance/assets/SpareListPage.jsx";
@@ -62,10 +60,8 @@ function App() {
 
           <Route path="assets/list" element={<AssetListPage />} />
           <Route path="assets/register" element={<AssetRegisterPage />} />
-
           <Route path="spare-master/list" element={<SpareListPage />} />
           <Route path="spare-master/register" element={<SpareRegisterPage />} />
-
           <Route path="tasks/list" element={<TaskListPage />} />
           <Route path="tasks/schedule" element={<TaskSchedulePage />} />
 
@@ -86,7 +82,6 @@ function App() {
         </Route>
 
         <Route path="/spares" element={<SparesPage />} />
-        <Route path="/inventory/inbound/*" element={<InboundPage />} />
         <Route path="/inventory/*" element={<InventoryPage />} />
       </Route>
     </Routes>

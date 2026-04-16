@@ -1,22 +1,11 @@
 import { Box, Button, Paper, Stack } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ModuleLayout from "../../../components/layouts/ModuleLayout";
 import { machineMaintenanceSidebarItems } from "../../../components/sidebars/machineMaintenanceSidebarItems";
+import { MachineMaintenanceDataProvider } from "./components/MachineMaintenanceDataContext.jsx";
 
 const brand = {
-  primary: "#106C6B",
-  primaryDark: "#0C5A58",
-  primaryLight: "#17A89F",
-  soft: "#E8F7F6",
-  softAlt: "#FFFFFF",
   border: "rgba(16, 108, 107, 0.24)",
-  rowBorder: "rgba(16, 108, 107, 0.24)",
-  verticalBorder: "#C7D7D7",
-  text: "#143736",
-  textSoft: "#617776",
-  pageBg: "#FFFFFF",
-  shadow:
-    "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
 };
 
 const matchesPath = (pathname, targetPath) =>
@@ -74,64 +63,67 @@ const MachineMaintenancePage = ({ children }) => {
 
   const currentParent = findCurrentParent(location.pathname);
   const headerActions = currentParent.children || [];
+  const content = children ?? <Outlet />;
 
   return (
-    <ModuleLayout sidebarItems={machineMaintenanceSidebarItems}>
-      <Stack spacing={0}>
-        {headerActions.length > 0 && (
-          <Box
-            sx={{
-              mb: 2,
-              px: { xs: 1, sm: 2 },
-              pt: 1,
-              backgroundColor: "#FFFFFF",
-              borderBottom: "none",
-              overflowX: "auto",
-            }}
-          >
-            <Stack
-              direction="row"
-              spacing={{ xs: 0.5, sm: 1.25 }}
+    <MachineMaintenanceDataProvider>
+      <ModuleLayout sidebarItems={machineMaintenanceSidebarItems}>
+        <Stack spacing={0}>
+          {headerActions.length > 0 && (
+            <Box
               sx={{
-                minWidth: "max-content",
-                alignItems: "flex-end",
+                mb: 2,
+                px: { xs: 1, sm: 2 },
+                pt: 1,
+                backgroundColor: "#FFFFFF",
+                borderBottom: "none",
+                overflowX: "auto",
               }}
             >
-              {headerActions.map((action) => {
-                const active = matchesPath(location.pathname, action.path);
+              <Stack
+                direction="row"
+                spacing={{ xs: 0.5, sm: 1.25 }}
+                sx={{
+                  minWidth: "max-content",
+                  alignItems: "flex-end",
+                }}
+              >
+                {headerActions.map((action) => {
+                  const active = matchesPath(location.pathname, action.path);
 
-                return (
-                  <Button
-                    key={action.label}
-                    onClick={() => navigate(action.path)}
-                    sx={tabButtonSx(active)}
-                  >
-                    <Box className="tab-icon">{action.icon}</Box>
-                    <Box component="span" className="tab-label">
-                      {action.label}
-                    </Box>
-                  </Button>
-                );
-              })}
-            </Stack>
-          </Box>
-        )}
+                  return (
+                    <Button
+                      key={action.label}
+                      onClick={() => navigate(action.path)}
+                      sx={tabButtonSx(active)}
+                    >
+                      <Box className="tab-icon">{action.icon}</Box>
+                      <Box component="span" className="tab-label">
+                        {action.label}
+                      </Box>
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Box>
+          )}
 
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: 4,
-            border: `1px solid ${brand.border}`,
-            backgroundColor: "#FFFFFF",
-            boxShadow: "none",
-            overflow: "hidden",
-            minHeight: 320,
-          }}
-        >
-          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>{children}</Box>
-        </Paper>
-      </Stack>
-    </ModuleLayout>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 4,
+              border: `1px solid ${brand.border}`,
+              backgroundColor: "#FFFFFF",
+              boxShadow: "none",
+              overflow: "hidden",
+              minHeight: 320,
+            }}
+          >
+            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>{content}</Box>
+          </Paper>
+        </Stack>
+      </ModuleLayout>
+    </MachineMaintenanceDataProvider>
   );
 };
 

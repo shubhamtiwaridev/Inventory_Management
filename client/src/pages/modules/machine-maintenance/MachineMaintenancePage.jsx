@@ -2,7 +2,6 @@ import { Box, Button, Paper, Stack } from "@mui/material";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ModuleLayout from "../../../components/layouts/ModuleLayout";
 import { machineMaintenanceSidebarItems } from "../../../components/sidebars/machineMaintenanceSidebarItems";
-import { MachineMaintenanceDataProvider } from "./components/MachineMaintenanceDataContext.jsx";
 
 const brand = {
   border: "rgba(16, 108, 107, 0.24)",
@@ -66,64 +65,62 @@ const MachineMaintenancePage = ({ children }) => {
   const content = children ?? <Outlet />;
 
   return (
-    <MachineMaintenanceDataProvider>
-      <ModuleLayout sidebarItems={machineMaintenanceSidebarItems}>
-        <Stack spacing={0}>
-          {headerActions.length > 0 && (
-            <Box
-              sx={{
-                mb: 2,
-                px: { xs: 1, sm: 2 },
-                pt: 1,
-                backgroundColor: "#FFFFFF",
-                borderBottom: "none",
-                overflowX: "auto",
-              }}
-            >
-              <Stack
-                direction="row"
-                spacing={{ xs: 0.5, sm: 1.25 }}
-                sx={{
-                  minWidth: "max-content",
-                  alignItems: "flex-end",
-                }}
-              >
-                {headerActions.map((action) => {
-                  const active = matchesPath(location.pathname, action.path);
-
-                  return (
-                    <Button
-                      key={action.label}
-                      onClick={() => navigate(action.path)}
-                      sx={tabButtonSx(active)}
-                    >
-                      <Box className="tab-icon">{action.icon}</Box>
-                      <Box component="span" className="tab-label">
-                        {action.label}
-                      </Box>
-                    </Button>
-                  );
-                })}
-              </Stack>
-            </Box>
-          )}
-
-          <Paper
-            elevation={0}
+    <ModuleLayout sidebarItems={machineMaintenanceSidebarItems}>
+      <Stack spacing={0}>
+        {headerActions.length > 0 && (
+          <Box
             sx={{
-              borderRadius: 4,
-              border: `1px solid ${brand.border}`,
+              mb: 2,
+              px: { xs: 1, sm: 2 },
+              pt: 1,
               backgroundColor: "#FFFFFF",
-              boxShadow: "none",
-              overflow: "hidden",
-              minHeight: 320,
+              borderBottom: "none",
+              overflowX: "auto",
             }}
           >
-            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>{content}</Box>
-          </Paper>
-        </Stack>
-      </ModuleLayout>
-    </MachineMaintenanceDataProvider>
+            <Stack
+              direction="row"
+              spacing={{ xs: 0.5, sm: 1.25 }}
+              sx={{
+                minWidth: "max-content",
+                alignItems: "flex-end",
+              }}
+            >
+              {headerActions.map((action) => {
+                const active = matchesPath(location.pathname, action.path);
+
+                return (
+                  <Button
+                    key={action.label}
+                    onClick={() => navigate(action.path)}
+                    sx={tabButtonSx(active)}
+                  >
+                    <Box className="tab-icon">{action.icon}</Box>
+                    <Box component="span" className="tab-label">
+                      {action.label}
+                    </Box>
+                  </Button>
+                );
+              })}
+            </Stack>
+          </Box>
+        )}
+
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 4,
+            border: `1px solid ${brand.border}`,
+            backgroundColor: "#FFFFFF",
+            boxShadow: "none",
+            overflow: "hidden",
+            minHeight: 320,
+          }}
+        >
+          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>{content}</Box>
+        </Paper>
+      </Stack>
+    </ModuleLayout>
   );
 };
 

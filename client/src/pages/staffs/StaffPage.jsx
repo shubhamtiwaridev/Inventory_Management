@@ -42,7 +42,6 @@ import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import HighlightOffRoundedIcon from "@mui/icons-material/HighlightOffRounded";
 
 import { useAuth } from "../../store/AuthContext.jsx";
-import SideBar from "../SideBar.jsx";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -165,15 +164,6 @@ const textFieldStyles = {
   },
 };
 
-const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "U";
-
 const pad = (value) => String(value).padStart(2, "0");
 
 const formatDateTime = (value) => {
@@ -191,7 +181,7 @@ const formatDateTime = (value) => {
 };
 
 const StaffPage = () => {
-  const { user, logout, canViewTeam } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -230,7 +220,6 @@ const StaffPage = () => {
     requestPending: false,
   });
 
-  const initials = useMemo(() => getInitials(user?.name), [user?.name]);
   const isSuperadmin = useMemo(
     () => String(user?.roles || "").toLowerCase() === "superadmin",
     [user?.roles],
@@ -550,11 +539,6 @@ const StaffPage = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   const handleRefresh = () => {
     setSearch("");
     fetchStaff();
@@ -646,87 +630,375 @@ const StaffPage = () => {
     >
       <Box
         sx={{
-          display: "flex",
-          minHeight: "100vh",
-          flexDirection: { xs: "column", md: "row" },
+          minWidth: 0,
+          px: { xs: 2, md: 3 },
+          py: { xs: 2, md: 3 },
         }}
       >
-        <SideBar
-          user={user}
-          initials={initials}
-          canViewTeam={canViewTeam}
-          location={location}
-          navigate={navigate}
-          handleLogout={handleLogout}
-        />
-
         <Box
           sx={{
-            flex: 1,
-            minWidth: 0,
-            px: { xs: 2, md: 3 },
-            py: { xs: 2, md: 3 },
+            mb: 2,
+            px: { xs: 1, sm: 2 },
+            pt: 1,
+            backgroundColor: "#FFFFFF",
+            borderBottom: "none",
+            overflowX: "auto",
           }}
         >
-          <Box
+          <Stack
+            direction="row"
+            spacing={{ xs: 0.5, sm: 1.25 }}
             sx={{
-              mb: 2,
-              px: { xs: 1, sm: 2 },
-              pt: 1,
-              backgroundColor: "#FFFFFF",
-              borderBottom: "none",
-              overflowX: "auto",
+              minWidth: "max-content",
+              alignItems: "flex-end",
             }}
           >
+            {tabs.map((tab) => {
+              const active = location.pathname === tab.path;
+
+              return (
+                <Button
+                  key={tab.label}
+                  onClick={() => navigate(tab.path)}
+                  sx={tabButtonSx(active)}
+                >
+                  <Box className="tab-icon">{tab.icon}</Box>
+                  <Box component="span" className="tab-label">
+                    {tab.label}
+                  </Box>
+                </Button>
+              );
+            })}
+          </Stack>
+        </Box>
+
+        <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
             <Stack
-              direction="row"
-              spacing={{ xs: 0.5, sm: 1.25 }}
-              sx={{
-                minWidth: "max-content",
-                alignItems: "flex-end",
+              direction={{ xs: "column", lg: "row" }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ mb: 2 }}
+            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.25}
+                flexWrap="wrap"
+                useFlexGap
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<AddRoundedIcon />}
+                  onClick={handleOpenRegister}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+                    boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
+                    "&:hover": {
+                      background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
+                    },
+                  }}
+                >
+                  New
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshRoundedIcon />}
+                  onClick={handleRefresh}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    color: brand.text,
+                    borderColor: brand.border,
+                    "&:hover": {
+                      borderColor: brand.primaryLight,
+                      backgroundColor: brand.soft,
+                    },
+                  }}
+                >
+                  Refresh
+                </Button>
+              </Stack>
+
+              <TextField
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                }}
+                placeholder="Search name, role, status..."
+                size="small"
+                sx={{
+                  minWidth: { xs: "100%", sm: 280 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 999,
+                    backgroundColor: "#FFFFFF",
+                    boxShadow: brand.shadow,
+                    "& fieldset": {
+                      borderColor: brand.border,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: brand.primaryLight,
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: brand.primary,
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchRoundedIcon sx={{ color: brand.textSoft }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
+
+            <Dialog
+              open={openRegisterDialog}
+              onClose={handleCloseRegister}
+              fullWidth
+              maxWidth="sm"
+              disableRestoreFocus
+              PaperProps={{
+                sx: {
+                  borderRadius: 4,
+                  border: `1px solid ${brand.border}`,
+                  boxShadow: brand.shadowStrong,
+                  overflow: "hidden",
+                },
               }}
             >
-              {tabs.map((tab) => {
-                const active = location.pathname === tab.path;
-
-                return (
-                  <Button
-                    key={tab.label}
-                    onClick={() => navigate(tab.path)}
-                    sx={tabButtonSx(active)}
-                  >
-                    <Box className="tab-icon">{tab.icon}</Box>
-                    <Box component="span" className="tab-label">
-                      {tab.label}
-                    </Box>
-                  </Button>
-                );
-              })}
-            </Stack>
-          </Box>
-
-          <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
-            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Stack
-                direction={{ xs: "column", lg: "row" }}
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mb: 2 }}
+              <DialogTitle
+                sx={{
+                  fontWeight: 800,
+                  color: brand.text,
+                  pb: 1,
+                }}
               >
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.25}
-                  flexWrap="wrap"
-                  useFlexGap
+                Add New Staff
+              </DialogTitle>
+
+              <Box component="form" onSubmit={handleRegisterSubmit}>
+                <DialogContent sx={{ pt: 1 }}>
+                  <Stack spacing={2}>
+                    {registerError ? (
+                      <Alert severity="error" sx={{ borderRadius: 2 }}>
+                        {registerError}
+                      </Alert>
+                    ) : null}
+
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                        gap: 2,
+                      }}
+                    >
+                      <TextField
+                        fullWidth
+                        autoFocus
+                        label="First Name"
+                        name="firstName"
+                        placeholder="John"
+                        value={formData.firstName}
+                        onChange={handleRegisterChange}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonOutlineIcon
+                                sx={{ color: brand.primaryDark }}
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={textFieldStyles}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Last Name"
+                        name="lastName"
+                        placeholder="Doe"
+                        value={formData.lastName}
+                        onChange={handleRegisterChange}
+                        sx={textFieldStyles}
+                      />
+                    </Box>
+
+                    <TextField
+                      fullWidth
+                      label="Work Email"
+                      name="email"
+                      type="email"
+                      placeholder="you@company.com"
+                      value={formData.email}
+                      onChange={handleRegisterChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <MailOutlineIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    />
+
+                    <TextField
+                      select
+                      fullWidth
+                      label="Roles"
+                      name="roles"
+                      value={formData.roles}
+                      onChange={handleRegisterChange}
+                      disabled={loadingRoles}
+                      helperText={
+                        loadingRoles ? "Loading roles..." : "Select a role"
+                      }
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AdminPanelSettingsOutlinedIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    >
+                      <MenuItem value="">Select role</MenuItem>
+                      {staffTypes.map((item) => (
+                        <MenuItem key={item._id} value={item.name}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <TextField
+                      fullWidth
+                      label="Password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Min. 8 characters"
+                      value={formData.password}
+                      onChange={handleRegisterChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlinedIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              edge="end"
+                              onClick={() => setShowPassword((prev) => !prev)}
+                            >
+                              {showPassword ? (
+                                <VisibilityOffOutlinedIcon
+                                  sx={{ color: brand.primaryDark }}
+                                />
+                              ) : (
+                                <VisibilityOutlinedIcon
+                                  sx={{ color: brand.primaryDark }}
+                                />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    />
+
+                    <TextField
+                      fullWidth
+                      label="Confirm Password"
+                      name="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Re-enter password"
+                      value={formData.confirmPassword}
+                      onChange={handleRegisterChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlinedIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              edge="end"
+                              onClick={() =>
+                                setShowConfirmPassword((prev) => !prev)
+                              }
+                            >
+                              {showConfirmPassword ? (
+                                <VisibilityOffOutlinedIcon
+                                  sx={{ color: brand.primaryDark }}
+                                />
+                              ) : (
+                                <VisibilityOutlinedIcon
+                                  sx={{ color: brand.primaryDark }}
+                                />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    />
+                  </Stack>
+                </DialogContent>
+
+                <DialogActions
+                  sx={{
+                    px: 3,
+                    pb: 3,
+                    pt: 1,
+                    gap: 1,
+                  }}
                 >
                   <Button
-                    variant="contained"
-                    startIcon={<AddRoundedIcon />}
-                    onClick={handleOpenRegister}
+                    type="button"
+                    variant="outlined"
+                    onClick={handleCloseRegister}
                     sx={{
+                      minWidth: 110,
                       borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
+                      px: 3,
+                      py: 1.2,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      color: brand.text,
+                      borderColor: brand.border,
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={savingRegister}
+                    sx={{
+                      minWidth: 140,
+                      borderRadius: 3,
+                      px: 3,
+                      py: 1.2,
                       textTransform: "none",
                       fontWeight: 700,
                       background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
@@ -736,824 +1008,516 @@ const StaffPage = () => {
                       },
                     }}
                   >
-                    New
+                    {savingRegister ? "Creating..." : "Create Account"}
                   </Button>
+                </DialogActions>
+              </Box>
+            </Dialog>
 
+            <Dialog
+              open={openEditDialog}
+              onClose={handleCloseEdit}
+              fullWidth
+              maxWidth="sm"
+              disableRestoreFocus
+              PaperProps={{
+                sx: {
+                  borderRadius: 4,
+                  border: `1px solid ${brand.border}`,
+                  boxShadow: brand.shadowStrong,
+                  overflow: "hidden",
+                },
+              }}
+            >
+              <DialogTitle
+                sx={{
+                  fontWeight: 800,
+                  color: brand.text,
+                  pb: 1,
+                }}
+              >
+                Update Staff
+              </DialogTitle>
+
+              <Box component="form" onSubmit={handleEditSubmit}>
+                <DialogContent sx={{ pt: 1 }}>
+                  <Stack spacing={2}>
+                    {editError ? (
+                      <Alert severity="error" sx={{ borderRadius: 2 }}>
+                        {editError}
+                      </Alert>
+                    ) : null}
+
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                        gap: 2,
+                      }}
+                    >
+                      <TextField
+                        fullWidth
+                        autoFocus
+                        label="First Name"
+                        name="firstName"
+                        value={editFormData.firstName}
+                        onChange={handleEditChange}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonOutlineIcon
+                                sx={{ color: brand.primaryDark }}
+                              />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={textFieldStyles}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Last Name"
+                        name="lastName"
+                        value={editFormData.lastName}
+                        onChange={handleEditChange}
+                        sx={textFieldStyles}
+                      />
+                    </Box>
+
+                    <TextField
+                      fullWidth
+                      label="Work Email"
+                      name="email"
+                      type="email"
+                      value={editFormData.email}
+                      onChange={handleEditChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <MailOutlineIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    />
+
+                    <TextField
+                      select
+                      fullWidth
+                      label="Roles"
+                      name="roles"
+                      value={editFormData.roles}
+                      onChange={handleEditChange}
+                      disabled={loadingRoles}
+                      helperText={
+                        loadingRoles ? "Loading roles..." : "Select a role"
+                      }
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AdminPanelSettingsOutlinedIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    >
+                      <MenuItem value="">Select role</MenuItem>
+                      {staffTypes.map((item) => (
+                        <MenuItem key={item._id} value={item.name}>
+                          {item.name}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+
+                    <TextField
+                      fullWidth
+                      label={
+                        editFormData.requestPending
+                          ? "New Password (Required)"
+                          : "New Password (Optional)"
+                      }
+                      name="password"
+                      type={showEditPassword ? "text" : "password"}
+                      value={editFormData.password}
+                      onChange={handleEditChange}
+                      placeholder="Enter new password"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlinedIcon
+                              sx={{ color: brand.primaryDark }}
+                            />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              edge="end"
+                              onClick={() =>
+                                setShowEditPassword((prev) => !prev)
+                              }
+                            >
+                              {showEditPassword ? (
+                                <VisibilityOffOutlinedIcon
+                                  sx={{ color: brand.primaryDark }}
+                                />
+                              ) : (
+                                <VisibilityOutlinedIcon
+                                  sx={{ color: brand.primaryDark }}
+                                />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={textFieldStyles}
+                    />
+                  </Stack>
+                </DialogContent>
+
+                <DialogActions
+                  sx={{
+                    px: 3,
+                    pb: 3,
+                    pt: 1,
+                    gap: 1,
+                  }}
+                >
                   <Button
+                    type="button"
                     variant="outlined"
-                    startIcon={<RefreshRoundedIcon />}
-                    onClick={handleRefresh}
+                    onClick={handleCloseEdit}
                     sx={{
+                      minWidth: 110,
                       borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
+                      px: 3,
+                      py: 1.2,
                       textTransform: "none",
                       fontWeight: 700,
                       color: brand.text,
                       borderColor: brand.border,
-                      "&:hover": {
-                        borderColor: brand.primaryLight,
-                        backgroundColor: brand.soft,
-                      },
                     }}
                   >
-                    Refresh
+                    Cancel
                   </Button>
-                </Stack>
 
-                <TextField
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                  }}
-                  placeholder="Search name, role, status..."
-                  size="small"
-                  sx={{
-                    minWidth: { xs: "100%", sm: 280 },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 999,
-                      backgroundColor: "#FFFFFF",
-                      boxShadow: brand.shadow,
-                      "& fieldset": {
-                        borderColor: brand.border,
-                      },
-                      "&:hover fieldset": {
-                        borderColor: brand.primaryLight,
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: brand.primary,
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <SearchRoundedIcon sx={{ color: brand.textSoft }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Stack>
-
-              <Dialog
-                open={openRegisterDialog}
-                onClose={handleCloseRegister}
-                fullWidth
-                maxWidth="sm"
-                disableRestoreFocus
-                PaperProps={{
-                  sx: {
-                    borderRadius: 4,
-                    border: `1px solid ${brand.border}`,
-                    boxShadow: brand.shadowStrong,
-                    overflow: "hidden",
-                  },
-                }}
-              >
-                <DialogTitle
-                  sx={{
-                    fontWeight: 800,
-                    color: brand.text,
-                    pb: 1,
-                  }}
-                >
-                  Add New Staff
-                </DialogTitle>
-
-                <Box component="form" onSubmit={handleRegisterSubmit}>
-                  <DialogContent sx={{ pt: 1 }}>
-                    <Stack spacing={2}>
-                      {registerError ? (
-                        <Alert severity="error" sx={{ borderRadius: 2 }}>
-                          {registerError}
-                        </Alert>
-                      ) : null}
-
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                          gap: 2,
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          autoFocus
-                          label="First Name"
-                          name="firstName"
-                          placeholder="John"
-                          value={formData.firstName}
-                          onChange={handleRegisterChange}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <PersonOutlineIcon
-                                  sx={{ color: brand.primaryDark }}
-                                />
-                              </InputAdornment>
-                            ),
-                          }}
-                          sx={textFieldStyles}
-                        />
-
-                        <TextField
-                          fullWidth
-                          label="Last Name"
-                          name="lastName"
-                          placeholder="Doe"
-                          value={formData.lastName}
-                          onChange={handleRegisterChange}
-                          sx={textFieldStyles}
-                        />
-                      </Box>
-
-                      <TextField
-                        fullWidth
-                        label="Work Email"
-                        name="email"
-                        type="email"
-                        placeholder="you@company.com"
-                        value={formData.email}
-                        onChange={handleRegisterChange}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <MailOutlineIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      />
-
-                      <TextField
-                        select
-                        fullWidth
-                        label="Roles"
-                        name="roles"
-                        value={formData.roles}
-                        onChange={handleRegisterChange}
-                        disabled={loadingRoles}
-                        helperText={
-                          loadingRoles ? "Loading roles..." : "Select a role"
-                        }
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <AdminPanelSettingsOutlinedIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      >
-                        <MenuItem value="">Select role</MenuItem>
-                        {staffTypes.map((item) => (
-                          <MenuItem key={item._id} value={item.name}>
-                            {item.name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-
-                      <TextField
-                        fullWidth
-                        label="Password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Min. 8 characters"
-                        value={formData.password}
-                        onChange={handleRegisterChange}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlinedIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                edge="end"
-                                onClick={() => setShowPassword((prev) => !prev)}
-                              >
-                                {showPassword ? (
-                                  <VisibilityOffOutlinedIcon
-                                    sx={{ color: brand.primaryDark }}
-                                  />
-                                ) : (
-                                  <VisibilityOutlinedIcon
-                                    sx={{ color: brand.primaryDark }}
-                                  />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      />
-
-                      <TextField
-                        fullWidth
-                        label="Confirm Password"
-                        name="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        placeholder="Re-enter password"
-                        value={formData.confirmPassword}
-                        onChange={handleRegisterChange}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlinedIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                edge="end"
-                                onClick={() =>
-                                  setShowConfirmPassword((prev) => !prev)
-                                }
-                              >
-                                {showConfirmPassword ? (
-                                  <VisibilityOffOutlinedIcon
-                                    sx={{ color: brand.primaryDark }}
-                                  />
-                                ) : (
-                                  <VisibilityOutlinedIcon
-                                    sx={{ color: brand.primaryDark }}
-                                  />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      />
-                    </Stack>
-                  </DialogContent>
-
-                  <DialogActions
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={savingEdit}
                     sx={{
+                      minWidth: 140,
+                      borderRadius: 3,
                       px: 3,
-                      pb: 3,
-                      pt: 1,
-                      gap: 1,
+                      py: 1.2,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+                      boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
+                      "&:hover": {
+                        background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
+                      },
                     }}
                   >
-                    <Button
-                      type="button"
-                      variant="outlined"
-                      onClick={handleCloseRegister}
-                      sx={{
-                        minWidth: 110,
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1.2,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        color: brand.text,
-                        borderColor: brand.border,
-                      }}
-                    >
-                      Cancel
-                    </Button>
+                    {savingEdit ? "Updating..." : "Update"}
+                  </Button>
+                </DialogActions>
+              </Box>
+            </Dialog>
 
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={savingRegister}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1.2,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
-                        boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
-                        "&:hover": {
-                          background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
-                        },
-                      }}
-                    >
-                      {savingRegister ? "Creating..." : "Create Account"}
-                    </Button>
-                  </DialogActions>
-                </Box>
-              </Dialog>
+            {error && (
+              <Typography sx={{ color: brand.danger, mb: 2, fontWeight: 600 }}>
+                {error}
+              </Typography>
+            )}
 
-              <Dialog
-                open={openEditDialog}
-                onClose={handleCloseEdit}
-                fullWidth
-                maxWidth="sm"
-                disableRestoreFocus
-                PaperProps={{
-                  sx: {
-                    borderRadius: 4,
-                    border: `1px solid ${brand.border}`,
-                    boxShadow: brand.shadowStrong,
-                    overflow: "hidden",
-                  },
-                }}
-              >
-                <DialogTitle
-                  sx={{
-                    fontWeight: 800,
-                    color: brand.text,
-                    pb: 1,
-                  }}
-                >
-                  Update Staff
-                </DialogTitle>
-
-                <Box component="form" onSubmit={handleEditSubmit}>
-                  <DialogContent sx={{ pt: 1 }}>
-                    <Stack spacing={2}>
-                      {editError ? (
-                        <Alert severity="error" sx={{ borderRadius: 2 }}>
-                          {editError}
-                        </Alert>
-                      ) : null}
-
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                          gap: 2,
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          autoFocus
-                          label="First Name"
-                          name="firstName"
-                          value={editFormData.firstName}
-                          onChange={handleEditChange}
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <PersonOutlineIcon
-                                  sx={{ color: brand.primaryDark }}
-                                />
-                              </InputAdornment>
-                            ),
-                          }}
-                          sx={textFieldStyles}
-                        />
-
-                        <TextField
-                          fullWidth
-                          label="Last Name"
-                          name="lastName"
-                          value={editFormData.lastName}
-                          onChange={handleEditChange}
-                          sx={textFieldStyles}
-                        />
-                      </Box>
-
-                      <TextField
-                        fullWidth
-                        label="Work Email"
-                        name="email"
-                        type="email"
-                        value={editFormData.email}
-                        onChange={handleEditChange}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <MailOutlineIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      />
-
-                      <TextField
-                        select
-                        fullWidth
-                        label="Roles"
-                        name="roles"
-                        value={editFormData.roles}
-                        onChange={handleEditChange}
-                        disabled={loadingRoles}
-                        helperText={
-                          loadingRoles ? "Loading roles..." : "Select a role"
-                        }
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <AdminPanelSettingsOutlinedIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      >
-                        <MenuItem value="">Select role</MenuItem>
-                        {staffTypes.map((item) => (
-                          <MenuItem key={item._id} value={item.name}>
-                            {item.name}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-
-                      <TextField
-                        fullWidth
-                        label={
-                          editFormData.requestPending
-                            ? "New Password (Required)"
-                            : "New Password (Optional)"
-                        }
-                        name="password"
-                        type={showEditPassword ? "text" : "password"}
-                        value={editFormData.password}
-                        onChange={handleEditChange}
-                        placeholder="Enter new password"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlinedIcon
-                                sx={{ color: brand.primaryDark }}
-                              />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                edge="end"
-                                onClick={() =>
-                                  setShowEditPassword((prev) => !prev)
-                                }
-                              >
-                                {showEditPassword ? (
-                                  <VisibilityOffOutlinedIcon
-                                    sx={{ color: brand.primaryDark }}
-                                  />
-                                ) : (
-                                  <VisibilityOutlinedIcon
-                                    sx={{ color: brand.primaryDark }}
-                                  />
-                                )}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={textFieldStyles}
-                      />
-                    </Stack>
-                  </DialogContent>
-
-                  <DialogActions
-                    sx={{
-                      px: 3,
-                      pb: 3,
-                      pt: 1,
-                      gap: 1,
-                    }}
-                  >
-                    <Button
-                      type="button"
-                      variant="outlined"
-                      onClick={handleCloseEdit}
-                      sx={{
-                        minWidth: 110,
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1.2,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        color: brand.text,
-                        borderColor: brand.border,
-                      }}
-                    >
-                      Cancel
-                    </Button>
-
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={savingEdit}
-                      sx={{
-                        minWidth: 140,
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1.2,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
-                        boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
-                        "&:hover": {
-                          background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
-                        },
-                      }}
-                    >
-                      {savingEdit ? "Updating..." : "Update"}
-                    </Button>
-                  </DialogActions>
-                </Box>
-              </Dialog>
-
-              {error && (
-                <Typography
-                  sx={{ color: brand.danger, mb: 2, fontWeight: 600 }}
-                >
-                  {error}
-                </Typography>
-              )}
-
-              <TableContainer
+            <TableContainer
+              sx={{
+                borderRadius: 3,
+                border: `1px solid ${brand.border}`,
+                overflowX: "auto",
+                overflowY: "hidden",
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <Table
                 sx={{
-                  borderRadius: 3,
-                  border: `1px solid ${brand.border}`,
-                  overflowX: "auto",
-                  overflowY: "hidden",
+                  width: "100%",
+                  minWidth: 980,
                   backgroundColor: "#FFFFFF",
+                  tableLayout: "fixed",
+                  borderCollapse: "collapse",
                 }}
               >
-                <Table
-                  sx={{
-                    width: "100%",
-                    minWidth: 980,
-                    backgroundColor: "#FFFFFF",
-                    tableLayout: "fixed",
-                    borderCollapse: "collapse",
-                  }}
-                >
-                  <TableHead>
-                    <TableRow
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: brand.softAlt,
+                    }}
+                  >
+                    <TableCell
                       sx={{
-                        backgroundColor: brand.softAlt,
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "20%",
                       }}
                     >
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "20%",
-                        }}
-                      >
-                        Name
-                      </TableCell>
+                      Name
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "16%",
-                        }}
-                      >
-                        Role
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "16%",
+                      }}
+                    >
+                      Role
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "18%",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Password Status
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "18%",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Password Status
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "18%",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Request Time
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "18%",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Request Time
+                    </TableCell>
 
+                    <TableCell
+                      align="center"
+                      sx={{
+                        ...getCellSx({ align: "center" }),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "12%",
+                      }}
+                    >
+                      Status
+                    </TableCell>
+
+                    <TableCell
+                      align="center"
+                      sx={{
+                        ...getCellSx({ isLast: true, align: "center" }),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "16%",
+                      }}
+                    >
+                      Action
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
                       <TableCell
+                        colSpan={6}
                         align="center"
-                        sx={{
-                          ...getCellSx({ align: "center" }),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "12%",
-                        }}
+                        sx={getCellSx({ isLast: true, align: "center" })}
                       >
-                        Status
-                      </TableCell>
-
-                      <TableCell
-                        align="center"
-                        sx={{
-                          ...getCellSx({ isLast: true, align: "center" }),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "16%",
-                        }}
-                      >
-                        Action
+                        Loading staff...
                       </TableCell>
                     </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
+                  ) : filteredRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        align="center"
+                        sx={getCellSx({ isLast: true, align: "center" })}
+                      >
+                        No staff found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRows.map((row) => (
+                      <TableRow
+                        key={row._id}
+                        hover
+                        sx={{
+                          backgroundColor: "#FFFFFF",
+                          "&:hover": {
+                            backgroundColor: "#FAFBFC",
+                          },
+                        }}
+                      >
                         <TableCell
-                          colSpan={6}
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
-                        >
-                          Loading staff...
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredRows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
-                        >
-                          No staff found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredRows.map((row) => (
-                        <TableRow
-                          key={row._id}
-                          hover
                           sx={{
-                            backgroundColor: "#FFFFFF",
-                            "&:hover": {
-                              backgroundColor: "#FAFBFC",
-                            },
+                            ...getCellSx(),
+                            color: brand.text,
+                            fontWeight: 600,
                           }}
                         >
-                          <TableCell
+                          {row.name || "-"}
+                        </TableCell>
+
+                        <TableCell sx={getCellSx()}>
+                          <Chip
+                            label={row.roles || "-"}
+                            size="small"
                             sx={{
-                              ...getCellSx(),
-                              color: brand.text,
-                              fontWeight: 600,
+                              borderRadius: 2,
+                              backgroundColor: brand.soft,
+                              color: brand.primaryDark,
+                              fontWeight: 700,
                             }}
-                          >
-                            {row.name || "-"}
-                          </TableCell>
+                          />
+                        </TableCell>
 
-                          <TableCell sx={getCellSx()}>
-                            <Chip
-                              label={row.roles || "-"}
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                backgroundColor: brand.soft,
-                                color: brand.primaryDark,
-                                fontWeight: 700,
-                              }}
-                            />
-                          </TableCell>
+                        <TableCell sx={getCellSx()}>
+                          <Chip
+                            label={
+                              row.passwordChangeRequest
+                                ? "Request Pending"
+                                : row.passwordChangeRequestMessage ||
+                                  "No Request"
+                            }
+                            size="small"
+                            sx={{
+                              borderRadius: 2,
+                              fontWeight: 700,
+                              backgroundColor: row.passwordChangeRequest
+                                ? "#FFF8ED"
+                                : brand.soft,
+                              color: row.passwordChangeRequest
+                                ? "#D97706"
+                                : brand.primaryDark,
+                            }}
+                          />
+                        </TableCell>
 
-                          <TableCell sx={getCellSx()}>
-                            <Chip
-                              label={
-                                row.passwordChangeRequest
-                                  ? "Request Pending"
-                                  : row.passwordChangeRequestMessage ||
-                                    "No Request"
-                              }
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                fontWeight: 700,
-                                backgroundColor: row.passwordChangeRequest
+                        <TableCell
+                          sx={{
+                            ...getCellSx(),
+                            color: brand.textSoft,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.passwordChangeRequest
+                            ? formatDateTime(row.passwordChangeRequestAt)
+                            : "-"}
+                        </TableCell>
+
+                        <TableCell
+                          align="center"
+                          sx={getCellSx({ align: "center" })}
+                        >
+                          <Chip
+                            label={
+                              row.isVerified === false ? "Pending" : "Active"
+                            }
+                            size="small"
+                            sx={{
+                              borderRadius: 2,
+                              fontWeight: 700,
+                              backgroundColor:
+                                row.isVerified === false
                                   ? "#FFF8ED"
                                   : brand.soft,
-                                color: row.passwordChangeRequest
+                              color:
+                                row.isVerified === false
                                   ? "#D97706"
                                   : brand.primaryDark,
-                              }}
-                            />
-                          </TableCell>
-
-                          <TableCell
-                            sx={{
-                              ...getCellSx(),
-                              color: brand.textSoft,
-                              whiteSpace: "nowrap",
                             }}
-                          >
-                            {row.passwordChangeRequest
-                              ? formatDateTime(row.passwordChangeRequestAt)
-                              : "-"}
-                          </TableCell>
+                          />
+                        </TableCell>
 
-                          <TableCell
-                            align="center"
-                            sx={getCellSx({ align: "center" })}
+                        <TableCell
+                          align="center"
+                          sx={getCellSx({ isLast: true, align: "center" })}
+                        >
+                          <Stack
+                            direction="row"
+                            justifyContent="center"
+                            spacing={1}
                           >
-                            <Chip
-                              label={
-                                row.isVerified === false ? "Pending" : "Active"
-                              }
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                fontWeight: 700,
-                                backgroundColor:
-                                  row.isVerified === false
-                                    ? "#FFF8ED"
-                                    : brand.soft,
-                                color:
-                                  row.isVerified === false
-                                    ? "#D97706"
-                                    : brand.primaryDark,
-                              }}
-                            />
-                          </TableCell>
-
-                          <TableCell
-                            align="center"
-                            sx={getCellSx({ isLast: true, align: "center" })}
-                          >
-                            <Stack
-                              direction="row"
-                              justifyContent="center"
-                              spacing={1}
-                            >
-                              {row.passwordChangeRequest ? (
-                                <IconButton
-                                  sx={actionButtonSx}
-                                  onClick={() =>
-                                    handleCancelPasswordRequest(row._id)
-                                  }
-                                >
-                                  <HighlightOffRoundedIcon
-                                    sx={{
-                                      fontSize: 18,
-                                      color: brand.danger,
-                                    }}
-                                  />
-                                </IconButton>
-                              ) : null}
+                            {row.passwordChangeRequest ? (
                               <IconButton
                                 sx={actionButtonSx}
-                                onClick={() => handleOpenEdit(row)}
+                                onClick={() =>
+                                  handleCancelPasswordRequest(row._id)
+                                }
                               >
-                                <EditRoundedIcon
+                                <HighlightOffRoundedIcon
+                                  sx={{
+                                    fontSize: 18,
+                                    color: brand.danger,
+                                  }}
+                                />
+                              </IconButton>
+                            ) : null}
+                            <IconButton
+                              sx={actionButtonSx}
+                              onClick={() => handleOpenEdit(row)}
+                            >
+                              <EditRoundedIcon
+                                sx={{
+                                  fontSize: 18,
+                                  color: brand.primaryDark,
+                                }}
+                              />
+                            </IconButton>
+
+                            <IconButton
+                              onClick={() => handleDelete(row._id)}
+                              sx={{
+                                ...actionButtonSx,
+                                "&:hover": {
+                                  backgroundColor: brand.dangerSoft,
+                                },
+                              }}
+                            >
+                              <DeleteOutlineRoundedIcon
+                                sx={{ fontSize: 18, color: brand.danger }}
+                              />
+                            </IconButton>
+
+                            {row.isVerified === false && isSuperadmin ? (
+                              <IconButton
+                                sx={actionButtonSx}
+                                onClick={() => handleVerify(row._id)}
+                              >
+                                <TaskAltRoundedIcon
                                   sx={{
                                     fontSize: 18,
                                     color: brand.primaryDark,
                                   }}
                                 />
                               </IconButton>
-
-                              <IconButton
-                                onClick={() => handleDelete(row._id)}
-                                sx={{
-                                  ...actionButtonSx,
-                                  "&:hover": {
-                                    backgroundColor: brand.dangerSoft,
-                                  },
-                                }}
-                              >
-                                <DeleteOutlineRoundedIcon
-                                  sx={{ fontSize: 18, color: brand.danger }}
-                                />
-                              </IconButton>
-
-                              {row.isVerified === false && isSuperadmin ? (
-                                <IconButton
-                                  sx={actionButtonSx}
-                                  onClick={() => handleVerify(row._id)}
-                                >
-                                  <TaskAltRoundedIcon
-                                    sx={{
-                                      fontSize: 18,
-                                      color: brand.primaryDark,
-                                    }}
-                                  />
-                                </IconButton>
-                              ) : null}
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          </Paper>
-        </Box>
+                            ) : null}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        </Paper>
       </Box>
     </Box>
   );

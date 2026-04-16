@@ -31,7 +31,6 @@ import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useAuth } from "../../store/AuthContext.jsx";
-import SideBar from "../SideBar.jsx";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -172,15 +171,6 @@ const getCellSx = ({ isLast = false, align = "center" } = {}) => ({
   backgroundColor: "inherit",
 });
 
-const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "U";
-
 const pad = (value) => String(value).padStart(2, "0");
 
 const formatDateTime = (value) => {
@@ -198,7 +188,7 @@ const formatDateTime = (value) => {
 };
 
 const StaffType = () => {
-  const { user, logout, canViewTeam } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -216,7 +206,6 @@ const StaffType = () => {
   });
 
   const rowsPerPage = 10;
-  const initials = useMemo(() => getInitials(user?.name), [user?.name]);
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -287,11 +276,6 @@ const StaffType = () => {
     const start = (page - 1) * rowsPerPage;
     return filteredRows.slice(start, start + rowsPerPage);
   }, [filteredRows, page]);
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
 
   const handleRefresh = async () => {
     setSearch("");
@@ -418,87 +402,248 @@ const StaffType = () => {
     >
       <Box
         sx={{
-          display: "flex",
-          minHeight: "100vh",
-          flexDirection: { xs: "column", md: "row" },
+          minWidth: 0,
+          px: { xs: 2, md: 3 },
+          py: { xs: 2, md: 3 },
         }}
       >
-        <SideBar
-          user={user}
-          initials={initials}
-          canViewTeam={canViewTeam}
-          location={location}
-          navigate={navigate}
-          handleLogout={handleLogout}
-        />
-
         <Box
           sx={{
-            flex: 1,
-            minWidth: 0,
-            px: { xs: 2, md: 3 },
-            py: { xs: 2, md: 3 },
+            mb: 2,
+            px: { xs: 1, sm: 2 },
+            pt: 1,
+            background: "transparent",
+            borderBottom: "none",
+            overflowX: "auto",
           }}
         >
-          <Box
+          <Stack
+            direction="row"
+            spacing={{ xs: 0.5, sm: 1.25 }}
             sx={{
-              mb: 2,
-              px: { xs: 1, sm: 2 },
-              pt: 1,
-              background: "transparent",
-              borderBottom: "none",
-              overflowX: "auto",
+              minWidth: "max-content",
+              alignItems: "flex-end",
             }}
           >
+            {tabs.map((tab) => {
+              const active = location.pathname === tab.path;
+
+              return (
+                <Button
+                  key={tab.label}
+                  onClick={() => navigate(tab.path)}
+                  sx={tabButtonSx(active)}
+                >
+                  <Box className="tab-icon">{tab.icon}</Box>
+                  <Box component="span" className="tab-label">
+                    {tab.label}
+                  </Box>
+                </Button>
+              );
+            })}
+          </Stack>
+        </Box>
+
+        <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
             <Stack
-              direction="row"
-              spacing={{ xs: 0.5, sm: 1.25 }}
-              sx={{
-                minWidth: "max-content",
-                alignItems: "flex-end",
+              direction={{ xs: "column", lg: "row" }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ mb: 2 }}
+            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.25}
+                flexWrap="wrap"
+                useFlexGap
+              >
+                <Button
+                  variant="contained"
+                  startIcon={<AddRoundedIcon />}
+                  onClick={handleOpenCreate}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+                    boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
+                    "&:hover": {
+                      background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
+                    },
+                  }}
+                >
+                  New
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshRoundedIcon />}
+                  onClick={handleRefresh}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    color: brand.text,
+                    borderColor: brand.border,
+                    "&:hover": {
+                      borderColor: brand.primaryLight,
+                      backgroundColor: brand.soft,
+                    },
+                  }}
+                >
+                  Refresh
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadRoundedIcon />}
+                  onClick={handleDownload}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    color: brand.text,
+                    borderColor: brand.border,
+                    "&:hover": {
+                      borderColor: brand.primaryLight,
+                      backgroundColor: brand.soft,
+                    },
+                  }}
+                >
+                  Download
+                </Button>
+              </Stack>
+
+              <TextField
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search Word"
+                size="small"
+                sx={{
+                  minWidth: { xs: "100%", sm: 280 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 999,
+                    backgroundColor: "#FFFFFF",
+                    boxShadow: brand.shadow,
+                    "& fieldset": {
+                      borderColor: brand.border,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: brand.primaryLight,
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: brand.primary,
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchRoundedIcon sx={{ color: brand.textSoft }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
+
+            <Dialog
+              open={showForm}
+              onClose={handleCancel}
+              fullWidth
+              maxWidth="sm"
+              PaperProps={{
+                sx: {
+                  borderRadius: 4,
+                  border: `1px solid ${brand.border}`,
+                  boxShadow: brand.shadowStrong,
+                  overflow: "hidden",
+                },
               }}
             >
-              {tabs.map((tab) => {
-                const active = location.pathname === tab.path;
-
-                return (
-                  <Button
-                    key={tab.label}
-                    onClick={() => navigate(tab.path)}
-                    sx={tabButtonSx(active)}
-                  >
-                    <Box className="tab-icon">{tab.icon}</Box>
-                    <Box component="span" className="tab-label">
-                      {tab.label}
-                    </Box>
-                  </Button>
-                );
-              })}
-            </Stack>
-          </Box>
-
-          <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
-            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Stack
-                direction={{ xs: "column", lg: "row" }}
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mb: 2 }}
+              <DialogTitle
+                sx={{
+                  fontWeight: 800,
+                  color: brand.text,
+                  pb: 1,
+                }}
               >
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.25}
-                  flexWrap="wrap"
-                  useFlexGap
+                {editingId ? "Update Staff Type" : "Add New Staff Type"}
+              </DialogTitle>
+
+              <Box component="form" onSubmit={handleSubmit}>
+                <DialogContent sx={{ pt: 1 }}>
+                  <Stack spacing={2}>
+                    <TextField
+                      label="Staff Type"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
+                      fullWidth
+                    />
+
+                    <TextField
+                      label="Creater Person"
+                      value={formData.createdBy}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          createdBy: e.target.value,
+                        }))
+                      }
+                      fullWidth
+                    />
+                  </Stack>
+                </DialogContent>
+
+                <DialogActions
+                  sx={{
+                    px: 3,
+                    pb: 3,
+                    pt: 1,
+                    gap: 1,
+                  }}
                 >
                   <Button
-                    variant="contained"
-                    startIcon={<AddRoundedIcon />}
-                    onClick={handleOpenCreate}
+                    type="button"
+                    variant="outlined"
+                    onClick={handleCancel}
                     sx={{
+                      minWidth: 110,
                       borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
+                      px: 3,
+                      py: 1.2,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      color: brand.text,
+                      borderColor: brand.border,
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    disabled={saving}
+                    sx={{
+                      minWidth: 110,
+                      borderRadius: 3,
+                      px: 3,
+                      py: 1.2,
                       textTransform: "none",
                       fontWeight: 700,
                       background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
@@ -508,405 +653,226 @@ const StaffType = () => {
                       },
                     }}
                   >
-                    New
+                    {saving ? "Saving..." : editingId ? "Update" : "Add"}
                   </Button>
-
-                  <Button
-                    variant="outlined"
-                    startIcon={<RefreshRoundedIcon />}
-                    onClick={handleRefresh}
-                    sx={{
-                      borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      color: brand.text,
-                      borderColor: brand.border,
-                      "&:hover": {
-                        borderColor: brand.primaryLight,
-                        backgroundColor: brand.soft,
-                      },
-                    }}
-                  >
-                    Refresh
-                  </Button>
-
-                  <Button
-                    variant="outlined"
-                    startIcon={<DownloadRoundedIcon />}
-                    onClick={handleDownload}
-                    sx={{
-                      borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      color: brand.text,
-                      borderColor: brand.border,
-                      "&:hover": {
-                        borderColor: brand.primaryLight,
-                        backgroundColor: brand.soft,
-                      },
-                    }}
-                  >
-                    Download
-                  </Button>
-                </Stack>
-
-                <TextField
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Search Word"
-                  size="small"
-                  sx={{
-                    minWidth: { xs: "100%", sm: 280 },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 999,
-                      backgroundColor: "#FFFFFF",
-                      boxShadow: brand.shadow,
-                      "& fieldset": {
-                        borderColor: brand.border,
-                      },
-                      "&:hover fieldset": {
-                        borderColor: brand.primaryLight,
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: brand.primary,
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <SearchRoundedIcon sx={{ color: brand.textSoft }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Stack>
-
-              <Dialog
-                open={showForm}
-                onClose={handleCancel}
-                fullWidth
-                maxWidth="sm"
-                PaperProps={{
-                  sx: {
-                    borderRadius: 4,
-                    border: `1px solid ${brand.border}`,
-                    boxShadow: brand.shadowStrong,
-                    overflow: "hidden",
-                  },
-                }}
-              >
-                <DialogTitle
-                  sx={{
-                    fontWeight: 800,
-                    color: brand.text,
-                    pb: 1,
-                  }}
-                >
-                  {editingId ? "Update Staff Type" : "Add New Staff Type"}
-                </DialogTitle>
-
-                <Box component="form" onSubmit={handleSubmit}>
-                  <DialogContent sx={{ pt: 1 }}>
-                    <Stack spacing={2}>
-                      <TextField
-                        label="Staff Type"
-                        value={formData.name}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            name: e.target.value,
-                          }))
-                        }
-                        fullWidth
-                      />
-
-                      <TextField
-                        label="Creater Person"
-                        value={formData.createdBy}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            createdBy: e.target.value,
-                          }))
-                        }
-                        fullWidth
-                      />
-                    </Stack>
-                  </DialogContent>
-
-                  <DialogActions
-                    sx={{
-                      px: 3,
-                      pb: 3,
-                      pt: 1,
-                      gap: 1,
-                    }}
-                  >
-                    <Button
-                      type="button"
-                      variant="outlined"
-                      onClick={handleCancel}
-                      sx={{
-                        minWidth: 110,
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1.2,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        color: brand.text,
-                        borderColor: brand.border,
-                      }}
-                    >
-                      Cancel
-                    </Button>
-
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={saving}
-                      sx={{
-                        minWidth: 110,
-                        borderRadius: 3,
-                        px: 3,
-                        py: 1.2,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
-                        boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
-                        "&:hover": {
-                          background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
-                        },
-                      }}
-                    >
-                      {saving ? "Saving..." : editingId ? "Update" : "Add"}
-                    </Button>
-                  </DialogActions>
-                </Box>
-              </Dialog>
-              {errorMessage ? (
-                <Typography
-                  sx={{
-                    mb: 2,
-                    color: brand.danger,
-                    fontWeight: 700,
-                  }}
-                >
-                  {errorMessage}
-                </Typography>
-              ) : null}
-
-              <TableContainer
+                </DialogActions>
+              </Box>
+            </Dialog>
+            {errorMessage ? (
+              <Typography
                 sx={{
-                  borderRadius: 3,
-                  border: `1px solid ${brand.border}`,
-                  overflowX: "auto",
-                  overflowY: "hidden",
-                  backgroundColor: "#FFFFFF",
+                  mb: 2,
+                  color: brand.danger,
+                  fontWeight: 700,
                 }}
               >
-                <Table
-                  sx={{
-                    width: "100%",
-                    minWidth: 900,
-                    backgroundColor: "#FFFFFF",
-                    tableLayout: "fixed",
-                    borderCollapse: "collapse",
-                  }}
-                >
-                  <TableHead>
-                    <TableRow
+                {errorMessage}
+              </Typography>
+            ) : null}
+
+            <TableContainer
+              sx={{
+                borderRadius: 3,
+                border: `1px solid ${brand.border}`,
+                overflowX: "auto",
+                overflowY: "hidden",
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <Table
+                sx={{
+                  width: "100%",
+                  minWidth: 900,
+                  backgroundColor: "#FFFFFF",
+                  tableLayout: "fixed",
+                  borderCollapse: "collapse",
+                }}
+              >
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: brand.softAlt,
+                    }}
+                  >
+                    <TableCell
                       sx={{
-                        backgroundColor: brand.softAlt,
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "22%",
                       }}
                     >
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "22%",
-                        }}
-                      >
-                        Staff Type
-                      </TableCell>
+                      Staff Type
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "20%",
-                        }}
-                      >
-                        Creater
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "20%",
+                      }}
+                    >
+                      Creater
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "20%",
-                        }}
-                      >
-                        Created Time
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "20%",
+                      }}
+                    >
+                      Created Time
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "23%",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Updated Time
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "23%",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Updated Time
+                    </TableCell>
 
+                    <TableCell
+                      align="center"
+                      sx={{
+                        ...getCellSx({ isLast: true, align: "center" }),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "12%",
+                      }}
+                    >
+                      Action
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
                       <TableCell
+                        colSpan={5}
                         align="center"
-                        sx={{
-                          ...getCellSx({ isLast: true, align: "center" }),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "12%",
-                        }}
+                        sx={getCellSx({ isLast: true, align: "center" })}
                       >
-                        Action
+                        Loading...
                       </TableCell>
                     </TableRow>
-                  </TableHead>
+                  ) : visibleRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        align="center"
+                        sx={getCellSx({ isLast: true, align: "center" })}
+                      >
+                        No staff type found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    visibleRows.map((row) => (
+                      <TableRow
+                        key={row._id}
+                        hover
+                        sx={{
+                          backgroundColor: "#FFFFFF",
+                          "&:hover": {
+                            backgroundColor: "#FAFBFC",
+                          },
+                        }}
+                      >
+                        <TableCell sx={getCellSx()}>
+                          <Chip
+                            label={row.name}
+                            size="small"
+                            sx={{
+                              borderRadius: 2,
+                              backgroundColor: brand.soft,
+                              color: brand.primaryDark,
+                              fontWeight: 700,
+                            }}
+                          />
+                        </TableCell>
 
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
                         <TableCell
-                          colSpan={5}
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
-                        >
-                          Loading...
-                        </TableCell>
-                      </TableRow>
-                    ) : visibleRows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
-                        >
-                          No staff type found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      visibleRows.map((row) => (
-                        <TableRow
-                          key={row._id}
-                          hover
                           sx={{
-                            backgroundColor: "#FFFFFF",
-                            "&:hover": {
-                              backgroundColor: "#FAFBFC",
-                            },
+                            ...getCellSx(),
+                            color: brand.text,
+                            fontWeight: 600,
                           }}
                         >
-                          <TableCell sx={getCellSx()}>
-                            <Chip
-                              label={row.name}
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                backgroundColor: brand.soft,
-                                color: brand.primaryDark,
-                                fontWeight: 700,
-                              }}
-                            />
-                          </TableCell>
+                          {row.createdBy || "-"}
+                        </TableCell>
 
-                          <TableCell
-                            sx={{
-                              ...getCellSx(),
-                              color: brand.text,
-                              fontWeight: 600,
-                            }}
-                          >
-                            {row.createdBy || "-"}
-                          </TableCell>
+                        <TableCell
+                          sx={{
+                            ...getCellSx(),
+                            color: brand.textSoft,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDateTime(row.createdAt)}
+                        </TableCell>
 
-                          <TableCell
-                            sx={{
-                              ...getCellSx(),
-                              color: brand.textSoft,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {formatDateTime(row.createdAt)}
-                          </TableCell>
+                        <TableCell
+                          sx={{
+                            ...getCellSx(),
+                            color: brand.textSoft,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDateTime(row.updatedAt)}
+                        </TableCell>
 
-                          <TableCell
-                            sx={{
-                              ...getCellSx(),
-                              color: brand.textSoft,
-                              whiteSpace: "nowrap",
-                            }}
+                        <TableCell
+                          align="center"
+                          sx={getCellSx({ isLast: true, align: "center" })}
+                        >
+                          <Stack
+                            direction="row"
+                            justifyContent="center"
+                            spacing={1}
                           >
-                            {formatDateTime(row.updatedAt)}
-                          </TableCell>
-
-                          <TableCell
-                            align="center"
-                            sx={getCellSx({ isLast: true, align: "center" })}
-                          >
-                            <Stack
-                              direction="row"
-                              justifyContent="center"
-                              spacing={1}
+                            <IconButton
+                              onClick={() => handleEdit(row)}
+                              sx={actionButtonSx}
                             >
-                              <IconButton
-                                onClick={() => handleEdit(row)}
-                                sx={actionButtonSx}
-                              >
-                                <EditRoundedIcon
-                                  sx={{
-                                    fontSize: 18,
-                                    color: brand.primaryDark,
-                                  }}
-                                />
-                              </IconButton>
-
-                              <IconButton
-                                onClick={() => handleDelete(row)}
+                              <EditRoundedIcon
                                 sx={{
-                                  ...actionButtonSx,
-                                  "&:hover": {
-                                    backgroundColor: brand.dangerSoft,
-                                  },
+                                  fontSize: 18,
+                                  color: brand.primaryDark,
                                 }}
-                              >
-                                <DeleteOutlineRoundedIcon
-                                  sx={{ fontSize: 18, color: brand.danger }}
-                                />
-                              </IconButton>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          </Paper>
-        </Box>
+                              />
+                            </IconButton>
+
+                            <IconButton
+                              onClick={() => handleDelete(row)}
+                              sx={{
+                                ...actionButtonSx,
+                                "&:hover": {
+                                  backgroundColor: brand.dangerSoft,
+                                },
+                              }}
+                            >
+                              <DeleteOutlineRoundedIcon
+                                sx={{ fontSize: 18, color: brand.danger }}
+                              />
+                            </IconButton>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        </Paper>
       </Box>
     </Box>
   );

@@ -24,9 +24,6 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 
-import { useAuth } from "../../store/AuthContext.jsx";
-import SideBar from "../SideBar.jsx";
-
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -109,15 +106,6 @@ const getCellSx = ({ isLast = false, align = "center" } = {}) => ({
   backgroundColor: "inherit",
 });
 
-const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "U";
-
 const pad = (value) => String(value).padStart(2, "0");
 
 const formatDateTime = (value) => {
@@ -135,7 +123,6 @@ const formatDateTime = (value) => {
 };
 
 const StaffList = () => {
-  const { user, logout, canViewTeam } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -143,8 +130,6 @@ const StaffList = () => {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const initials = useMemo(() => getInitials(user?.name), [user?.name]);
 
   const fetchStaff = async () => {
     try {
@@ -206,11 +191,6 @@ const StaffList = () => {
     });
   }, [search, staffList]);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
-
   const handleRefresh = () => {
     setSearch("");
     fetchStaff();
@@ -261,377 +241,357 @@ const StaffList = () => {
     >
       <Box
         sx={{
-          display: "flex",
-          minHeight: "100vh",
-          flexDirection: { xs: "column", md: "row" },
+          minWidth: 0,
+          px: { xs: 2, md: 3 },
+          py: { xs: 2, md: 3 },
         }}
       >
-        <SideBar
-          user={user}
-          initials={initials}
-          canViewTeam={canViewTeam}
-          location={location}
-          navigate={navigate}
-          handleLogout={handleLogout}
-        />
-
         <Box
           sx={{
-            flex: 1,
-            minWidth: 0,
-            px: { xs: 2, md: 3 },
-            py: { xs: 2, md: 3 },
+            mb: 2,
+            px: { xs: 1, sm: 2 },
+            pt: 1,
+            backgroundColor: "#FFFFFF",
+            borderBottom: "none",
+            overflowX: "auto",
           }}
         >
-          <Box
+          <Stack
+            direction="row"
+            spacing={{ xs: 0.5, sm: 1.25 }}
             sx={{
-              mb: 2,
-              px: { xs: 1, sm: 2 },
-              pt: 1,
-              backgroundColor: "#FFFFFF",
-              borderBottom: "none",
-              overflowX: "auto",
+              minWidth: "max-content",
+              alignItems: "flex-end",
             }}
           >
-            <Stack
-              direction="row"
-              spacing={{ xs: 0.5, sm: 1.25 }}
-              sx={{
-                minWidth: "max-content",
-                alignItems: "flex-end",
-              }}
-            >
-              {tabs.map((tab) => {
-                const active = location.pathname === tab.path;
+            {tabs.map((tab) => {
+              const active = location.pathname === tab.path;
 
-                return (
-                  <Button
-                    key={tab.label}
-                    onClick={() => navigate(tab.path)}
-                    sx={tabButtonSx(active)}
-                  >
-                    <Box className="tab-icon">{tab.icon}</Box>
-                    <Box component="span" className="tab-label">
-                      {tab.label}
-                    </Box>
-                  </Button>
-                );
-              })}
-            </Stack>
-          </Box>
-
-          <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
-            <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
-              <Stack
-                direction={{ xs: "column", lg: "row" }}
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mb: 2 }}
-              >
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.25}
-                  flexWrap="wrap"
-                  useFlexGap
+              return (
+                <Button
+                  key={tab.label}
+                  onClick={() => navigate(tab.path)}
+                  sx={tabButtonSx(active)}
                 >
-                  <Button
-                    variant="outlined"
-                    startIcon={<RefreshRoundedIcon />}
-                    onClick={handleRefresh}
-                    sx={{
-                      borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      color: brand.text,
-                      borderColor: brand.border,
-                      "&:hover": {
-                        borderColor: brand.primaryLight,
-                        backgroundColor: brand.soft,
-                      },
-                    }}
-                  >
-                    Refresh
-                  </Button>
+                  <Box className="tab-icon">{tab.icon}</Box>
+                  <Box component="span" className="tab-label">
+                    {tab.label}
+                  </Box>
+                </Button>
+              );
+            })}
+          </Stack>
+        </Box>
 
-                  <Button
-                    variant="outlined"
-                    startIcon={<DownloadRoundedIcon />}
-                    onClick={handleDownload}
-                    sx={{
-                      borderRadius: 3,
-                      px: 2,
-                      py: 1.15,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      color: brand.text,
-                      borderColor: brand.border,
-                      "&:hover": {
-                        borderColor: brand.primaryLight,
-                        backgroundColor: brand.soft,
-                      },
-                    }}
-                  >
-                    Download
-                  </Button>
-                </Stack>
-
-                <TextField
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                  }}
-                  placeholder="Search name, email, role..."
-                  size="small"
+        <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
+          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+            <Stack
+              direction={{ xs: "column", lg: "row" }}
+              justifyContent="space-between"
+              spacing={2}
+              sx={{ mb: 2 }}
+            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.25}
+                flexWrap="wrap"
+                useFlexGap
+              >
+                <Button
+                  variant="outlined"
+                  startIcon={<RefreshRoundedIcon />}
+                  onClick={handleRefresh}
                   sx={{
-                    minWidth: { xs: "100%", sm: 280 },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 999,
-                      backgroundColor: "#FFFFFF",
-                      boxShadow: brand.shadow,
-                      "& fieldset": {
-                        borderColor: brand.border,
-                      },
-                      "&:hover fieldset": {
-                        borderColor: brand.primaryLight,
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: brand.primary,
-                      },
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    color: brand.text,
+                    borderColor: brand.border,
+                    "&:hover": {
+                      borderColor: brand.primaryLight,
+                      backgroundColor: brand.soft,
                     },
                   }}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <SearchRoundedIcon sx={{ color: brand.textSoft }} />
-                      </InputAdornment>
-                    ),
+                >
+                  Refresh
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadRoundedIcon />}
+                  onClick={handleDownload}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2,
+                    py: 1.15,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    color: brand.text,
+                    borderColor: brand.border,
+                    "&:hover": {
+                      borderColor: brand.primaryLight,
+                      backgroundColor: brand.soft,
+                    },
                   }}
-                />
+                >
+                  Download
+                </Button>
               </Stack>
 
-              {error && (
-                <Typography
-                  sx={{ color: "#C2410C", mb: 2, fontWeight: 600 }}
-                >
-                  {error}
-                </Typography>
-              )}
-
-              <TableContainer
+              <TextField
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                }}
+                placeholder="Search name, email, role..."
+                size="small"
                 sx={{
-                  borderRadius: 3,
-                  border: `1px solid ${brand.border}`,
-                  overflowX: "auto",
-                  overflowY: "hidden",
+                  minWidth: { xs: "100%", sm: 280 },
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 999,
+                    backgroundColor: "#FFFFFF",
+                    boxShadow: brand.shadow,
+                    "& fieldset": {
+                      borderColor: brand.border,
+                    },
+                    "&:hover fieldset": {
+                      borderColor: brand.primaryLight,
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: brand.primary,
+                    },
+                  },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchRoundedIcon sx={{ color: brand.textSoft }} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Stack>
+
+            {error && (
+              <Typography sx={{ color: "#C2410C", mb: 2, fontWeight: 600 }}>
+                {error}
+              </Typography>
+            )}
+
+            <TableContainer
+              sx={{
+                borderRadius: 3,
+                border: `1px solid ${brand.border}`,
+                overflowX: "auto",
+                overflowY: "hidden",
+                backgroundColor: "#FFFFFF",
+              }}
+            >
+              <Table
+                sx={{
+                  width: "100%",
+                  minWidth: 980,
                   backgroundColor: "#FFFFFF",
+                  tableLayout: "fixed",
+                  borderCollapse: "collapse",
                 }}
               >
-                <Table
-                  sx={{
-                    width: "100%",
-                    minWidth: 980,
-                    backgroundColor: "#FFFFFF",
-                    tableLayout: "fixed",
-                    borderCollapse: "collapse",
-                  }}
-                >
-                  <TableHead>
-                    <TableRow
+                <TableHead>
+                  <TableRow
+                    sx={{
+                      backgroundColor: brand.softAlt,
+                    }}
+                  >
+                    <TableCell
                       sx={{
-                        backgroundColor: brand.softAlt,
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "19%",
                       }}
                     >
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "19%",
-                        }}
-                      >
-                        Name
-                      </TableCell>
+                      Name
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "24%",
-                        }}
-                      >
-                        Email
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "24%",
+                      }}
+                    >
+                      Email
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "14%",
-                        }}
-                      >
-                        Role
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "14%",
+                      }}
+                    >
+                      Role
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "16%",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Create Time
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "16%",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Create Time
+                    </TableCell>
 
-                      <TableCell
-                        sx={{
-                          ...getCellSx(),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "16%",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        Update Time
-                      </TableCell>
+                    <TableCell
+                      sx={{
+                        ...getCellSx(),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "16%",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Update Time
+                    </TableCell>
 
+                    <TableCell
+                      align="center"
+                      sx={{
+                        ...getCellSx({ isLast: true, align: "center" }),
+                        fontWeight: 800,
+                        color: brand.text,
+                        width: "11%",
+                      }}
+                    >
+                      Status
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
                       <TableCell
+                        colSpan={6}
                         align="center"
-                        sx={{
-                          ...getCellSx({ isLast: true, align: "center" }),
-                          fontWeight: 800,
-                          color: brand.text,
-                          width: "11%",
-                        }}
+                        sx={getCellSx({ isLast: true, align: "center" })}
                       >
-                        Status
+                        Loading staff...
                       </TableCell>
                     </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
+                  ) : filteredRows.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={6}
+                        align="center"
+                        sx={getCellSx({ isLast: true, align: "center" })}
+                      >
+                        No staff found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRows.map((row) => (
+                      <TableRow
+                        key={row._id}
+                        hover
+                        sx={{
+                          backgroundColor: "#FFFFFF",
+                          "&:hover": {
+                            backgroundColor: "#FAFBFC",
+                          },
+                        }}
+                      >
                         <TableCell
-                          colSpan={6}
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
-                        >
-                          Loading staff...
-                        </TableCell>
-                      </TableRow>
-                    ) : filteredRows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={6}
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
-                        >
-                          No staff found
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredRows.map((row) => (
-                        <TableRow
-                          key={row._id}
-                          hover
                           sx={{
-                            backgroundColor: "#FFFFFF",
-                            "&:hover": {
-                              backgroundColor: "#FAFBFC",
-                            },
+                            ...getCellSx(),
+                            color: brand.text,
+                            fontWeight: 600,
                           }}
                         >
-                          <TableCell
+                          {row.name || "-"}
+                        </TableCell>
+
+                        <TableCell
+                          sx={{
+                            ...getCellSx(),
+                            color: brand.textSoft,
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {row.email || "-"}
+                        </TableCell>
+
+                        <TableCell sx={getCellSx()}>
+                          <Chip
+                            label={row.roles || "-"}
+                            size="small"
                             sx={{
-                              ...getCellSx(),
-                              color: brand.text,
-                              fontWeight: 600,
+                              borderRadius: 2,
+                              backgroundColor: brand.soft,
+                              color: brand.primaryDark,
+                              fontWeight: 700,
                             }}
-                          >
-                            {row.name || "-"}
-                          </TableCell>
+                          />
+                        </TableCell>
 
-                          <TableCell
+                        <TableCell
+                          sx={{
+                            ...getCellSx(),
+                            color: brand.textSoft,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDateTime(row.createdAt)}
+                        </TableCell>
+
+                        <TableCell
+                          sx={{
+                            ...getCellSx(),
+                            color: brand.textSoft,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {formatDateTime(row.updatedAt)}
+                        </TableCell>
+
+                        <TableCell
+                          align="center"
+                          sx={getCellSx({ isLast: true, align: "center" })}
+                        >
+                          <Chip
+                            label={
+                              row.isVerified === false ? "Pending" : "Active"
+                            }
+                            size="small"
                             sx={{
-                              ...getCellSx(),
-                              color: brand.textSoft,
-                              wordBreak: "break-word",
+                              borderRadius: 2,
+                              fontWeight: 700,
+                              backgroundColor:
+                                row.isVerified === false
+                                  ? "#FFF8ED"
+                                  : brand.soft,
+                              color:
+                                row.isVerified === false
+                                  ? "#D97706"
+                                  : brand.primaryDark,
                             }}
-                          >
-                            {row.email || "-"}
-                          </TableCell>
-
-                          <TableCell sx={getCellSx()}>
-                            <Chip
-                              label={row.roles || "-"}
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                backgroundColor: brand.soft,
-                                color: brand.primaryDark,
-                                fontWeight: 700,
-                              }}
-                            />
-                          </TableCell>
-
-                          <TableCell
-                            sx={{
-                              ...getCellSx(),
-                              color: brand.textSoft,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {formatDateTime(row.createdAt)}
-                          </TableCell>
-
-                          <TableCell
-                            sx={{
-                              ...getCellSx(),
-                              color: brand.textSoft,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            {formatDateTime(row.updatedAt)}
-                          </TableCell>
-
-                          <TableCell
-                            align="center"
-                            sx={getCellSx({ isLast: true, align: "center" })}
-                          >
-                            <Chip
-                              label={
-                                row.isVerified === false ? "Pending" : "Active"
-                              }
-                              size="small"
-                              sx={{
-                                borderRadius: 2,
-                                fontWeight: 700,
-                                backgroundColor:
-                                  row.isVerified === false
-                                    ? "#FFF8ED"
-                                    : brand.soft,
-                                color:
-                                  row.isVerified === false
-                                    ? "#D97706"
-                                    : brand.primaryDark,
-                              }}
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          </Paper>
-        </Box>
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
+        </Paper>
       </Box>
     </Box>
   );

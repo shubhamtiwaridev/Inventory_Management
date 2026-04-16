@@ -3,10 +3,12 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
+import { protect } from "./middleware/authMiddleware.js";
 
 import authRoutes from "./modules/auth/authRoute.js";
 import staffPageRoutes from "./modules/staff/staffpage/staffPageRoute.js";
 import staffTypeRoutes from "./modules/staff/stafftype/staffTypeRoute.js";
+
 dotenv.config();
 connectDB();
 

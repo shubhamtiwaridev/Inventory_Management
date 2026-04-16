@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import UserMenu from "../components/UserMenu.jsx";
 import {
-  Avatar,
   Badge,
   Box,
   Button,
@@ -17,17 +17,19 @@ import {
 } from "@mui/material";
 
 import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
+import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
-import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import TrendingUpRoundedIcon from "@mui/icons-material/TrendingUpRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
-import InventoryRoundedIcon from "@mui/icons-material/InventoryRounded";
+import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
+import HandymanRoundedIcon from "@mui/icons-material/HandymanRounded";
+import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
+import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
+import logo from "../assets/decostyle-logo.png";
 import { useAuth } from "../store/AuthContext.jsx";
-import SideBar from "./SideBar.jsx";
 
 const brand = {
   primary: "#106C6B",
@@ -47,40 +49,44 @@ const brand = {
 
 const stats = [
   {
-    title: "Total Products",
-    value: "12,847",
-    subtitle: "+8.2%",
+    title: "Machine Maintenance",
+    value: "12",
+    subtitle: "Open schedules",
     subtitleTone: "success",
-    icon: <InventoryRoundedIcon />,
-    iconBg: "#F3F5F7",
+    icon: <BuildCircleRoundedIcon />,
+    iconBg: "#EEF8F7",
     iconColor: "#106C6B",
+    path: "/machine-maintenance",
   },
   {
-    title: "Low Stock Items",
+    title: "Spares",
     value: "142",
-    subtitle: "+12 today",
+    subtitle: "Available items",
     subtitleTone: "error",
-    icon: <WarningAmberRoundedIcon />,
+    icon: <HandymanRoundedIcon />,
     iconBg: "#FFF3E8",
     iconColor: "#D97706",
+    path: "/spares",
   },
   {
-    title: "Total Stock Value",
+    title: "Inventory",
     value: "$2.4M",
-    subtitle: "+3.5%",
+    subtitle: "Current stock",
     subtitleTone: "success",
-    icon: <TrendingUpRoundedIcon />,
-    iconBg: "#F3F5F7",
+    icon: <Inventory2RoundedIcon />,
+    iconBg: "#EEF8F7",
     iconColor: "#0C5A58",
+    path: "/inventory",
   },
   {
-    title: "Orders Pending",
+    title: "Staff",
     value: "384",
-    subtitle: "24 new",
+    subtitle: "Active members",
     subtitleTone: "success",
-    icon: <ShoppingCartRoundedIcon />,
-    iconBg: "#F3F5F7",
+    icon: <BadgeRoundedIcon />,
+    iconBg: "#EEF8F7",
     iconColor: "#12807B",
+    path: "/staff",
   },
 ];
 
@@ -243,10 +249,9 @@ const softCardSx = {
 };
 
 const Dashboard = () => {
-  const { user, logout, canViewTeam } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  
+
   const initials = useMemo(() => {
     const name = user && user.name ? user.name.trim() : "";
 
@@ -284,20 +289,9 @@ const Dashboard = () => {
     >
       <Box
         sx={{
-          display: "flex",
           minHeight: "100vh",
-          flexDirection: { xs: "column", md: "row" },
         }}
       >
-        <SideBar
-          user={user}
-          initials={initials}
-          canViewTeam={canViewTeam}
-          location={location}
-          navigate={navigate}
-          handleLogout={handleLogout}
-        />
-
         <Box
           sx={{
             flex: 1,
@@ -313,17 +307,20 @@ const Dashboard = () => {
             sx={{ mb: 3 }}
           >
             <Box>
-              <Typography
-                variant="h4"
-                sx={{ fontWeight: 800, color: brand.text, mb: 0.5 }}
-              >
-                Dashboard
-              </Typography>
-              <Typography sx={{ color: brand.textSoft, mb: 1 }}>
+              <Box
+                component="img"
+                src={logo}
+                alt="Decostyle"
+                sx={{
+                  width: { xs: 170, sm: 210 },
+                  height: "auto",
+                  objectFit: "contain",
+                  display: "block",
+                  mb: 1,
+                }}
+              />
+              <Typography sx={{ color: brand.textSoft }}>
                 {currentDate}
-              </Typography>
-              <Typography fontWeight={600} sx={{ color: brand.text }}>
-                Welcome back, {user?.name || "User"}
               </Typography>
             </Box>
 
@@ -394,17 +391,11 @@ const Dashboard = () => {
                 </Badge>
               </IconButton>
 
-              <Avatar
-                sx={{
-                  bgcolor: brand.primary,
-                  width: 42,
-                  height: 42,
-                  fontWeight: 700,
-                  boxShadow: brand.shadow,
-                }}
-              >
-                {initials}
-              </Avatar>
+              <UserMenu
+                user={user}
+                initials={initials}
+                onLogout={handleLogout}
+              />
             </Stack>
           </Stack>
 
@@ -424,7 +415,19 @@ const Dashboard = () => {
               <Paper
                 key={item.title}
                 elevation={0}
-                sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+                onClick={() => navigate(item.path)}
+                sx={{
+                  ...softCardSx,
+                  p: 2.25,
+                  boxShadow: brand.shadowStrong,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    boxShadow:
+                      "0 0 0 1px rgba(15, 23, 42, 0.04), 0 18px 44px rgba(15, 23, 42, 0.12)",
+                  },
+                }}
               >
                 <Stack
                   direction="row"

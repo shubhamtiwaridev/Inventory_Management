@@ -222,6 +222,7 @@ export const forgotPasswordNotification = async (req, res) => {
     });
   }
 };
+
 export const getMe = async (req, res) => {
   res.status(200).json({
     success: true,

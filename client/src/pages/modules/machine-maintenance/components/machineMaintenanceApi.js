@@ -1,4 +1,7 @@
+
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const SERVER_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 const isFormDataPayload = (value) =>
   typeof FormData !== "undefined" && value instanceof FormData;
@@ -42,61 +45,183 @@ const formatDateInputValue = (value) => {
   return date.toISOString().split("T")[0];
 };
 
+const formatValue = (value) => {
+  if (value === undefined || value === null || value === "") return "-";
+  return value;
+};
+
+const normalizeFilePath = (value) => {
+  if (!value) return "";
+
+  let normalized = String(value).replace(/\\/g, "/");
+
+  if (normalized.startsWith("/app/uploads/")) {
+    normalized = normalized.replace("/app/uploads/", "/uploads/");
+  } else if (normalized.startsWith("app/uploads/")) {
+    normalized = normalized.replace("app/uploads/", "/uploads/");
+  } else if (normalized.startsWith("uploads/")) {
+    normalized = `/${normalized}`;
+  }
+
+  return normalized;
+};
+const getFileExtension = (value) => {
+  const normalized = normalizeFilePath(value);
+  const fileName = normalized.split("/").pop() || "";
+  const extension = fileName.includes(".") ? fileName.split(".").pop() : "";
+  return String(extension || "").toLowerCase();
+};
+
+const buildFileUrl = (value) => {
+  const normalized = normalizeFilePath(value);
+  if (!normalized) return "";
+
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+
+  const cleanedPath = normalized.startsWith("/") ? normalized : `/${normalized}`;
+  return `${SERVER_BASE_URL}${cleanedPath}`;
+};
+
+const buildAssetFileDisplayName = (fieldName, storedValue) => {
+  const extension = getFileExtension(storedValue);
+  if (!extension) return "-";
+
+  if (fieldName === "operatingManual") {
+    return `manual.${extension}`;
+  }
+
+  if (fieldName === "machineImage") {
+    return `machine.${extension}`;
+  }
+
+  return `file.${extension}`;
+};
+
+const buildAssetFileValue = (fieldName, storedValue) => {
+  if (!storedValue) return "-";
+
+  const extension = getFileExtension(storedValue);
+  const url = buildFileUrl(storedValue);
+
+  if (!extension || !url) return "-";
+
+  const isPdf = extension === "pdf";
+  const isImage = ["jpg", "jpeg", "png"].includes(extension);
+
+  return {
+    kind: "file",
+    fieldName,
+    displayName: buildAssetFileDisplayName(fieldName, storedValue),
+    url,
+    extension,
+    fileType: isPdf ? "pdf" : isImage ? "image" : "file",
+    previewUrl: isImage ? url : "",
+    searchableText: buildAssetFileDisplayName(fieldName, storedValue),
+  };
+};
+
 export const mapAssetListRow = (item) => ({
   id: item._id,
-  assetCode: item.assetCode || "-",
-  assetName: item.assetName || "-",
-  category: item.category || "-",
-  serialNumber: item.serialNumber || "-",
-  department: item.department || "-",
-  installDate: formatDateValue(item.commissioningDate || item.purchaseDate),
-  status: item.status || "-",
+  assetCode: formatValue(item.assetCode),
+  assetName: formatValue(item.assetName),
+  category: formatValue(item.category),
+  plant: formatValue(item.plant),
+  department: formatValue(item.department),
+  manufacturer: formatValue(item.manufacturer),
+  modelNumber: formatValue(item.modelNumber),
+  serialNumber: formatValue(item.serialNumber),
+  commissioningDate: formatDateValue(item.commissioningDate),
+  purchaseDate: formatDateValue(item.purchaseDate),
+  warrantyStart: formatDateValue(item.warrantyStart),
+  warrantyEnd: formatDateValue(item.warrantyEnd),
+  criticality: formatValue(item.criticality),
+  status: formatValue(item.status),
+  powerRating: formatValue(item.powerRating),
+  technicalSpecifications: formatValue(item.technicalSpecifications),
+  operatingManual: buildAssetFileValue("operatingManual", item.operatingManual),
+  machineImage: buildAssetFileValue("machineImage", item.machineImage),
+  qrCode: formatValue(item.qrCode),
 });
 
 export const mapSpareListRow = (item) => ({
   id: item._id,
-  spareCode: item.spareCode || "-",
-  spareName: item.spareName || "-",
-  partNo: item.partNo || "-",
-  unit: item.unit || "-",
-  minQty: item.minQty ?? "-",
-  maxQty: item.maxQty ?? "-",
-  vendor: item.vendor || "-",
-  status: item.status || "-",
+  spareCode: formatValue(item.spareCode),
+  spareName: formatValue(item.spareName),
+  description: formatValue(item.description),
+  linkedMachine: formatValue(item.linkedMachine),
+  partCategory: formatValue(item.partCategory),
+  vendor: formatValue(item.vendor),
+  partNo: formatValue(item.partNo),
+  unit: formatValue(item.unit),
+  reorderLevel: formatValue(item.reorderLevel),
+  minQty: formatValue(item.minQty),
+  maxQty: formatValue(item.maxQty),
+  currentStock: formatValue(item.currentStock),
+  leadTime: formatValue(item.leadTime),
+  costPerUnit: formatValue(item.costPerUnit),
+  alternatePart: formatValue(item.alternatePart),
+  shelfLocation: formatValue(item.shelfLocation),
+  batchNo: formatValue(item.batchNo),
+  status: formatValue(item.status),
 });
 
 export const mapTaskListRow = (item) => ({
   id: item._id,
-  taskCode: item.taskCode || "-",
-  taskName: item.taskName || "-",
-  frequency: item.frequency || "-",
-  assignedUser: item.assignedUser || "-",
+  taskCode: formatValue(item.taskCode),
+  taskName: formatValue(item.taskName),
+  taskCategory: formatValue(item.taskCategory),
+  applicableMachine: formatValue(item.applicableMachine),
+  frequency: formatValue(item.frequency),
+  assignedUser: formatValue(item.assignedUser),
+  shift: formatValue(item.shift),
   startDate: formatDateValue(item.startDate),
   endDate: formatDateValue(item.endDate),
-  shift: item.shift || "-",
-  status: item.status || "-",
+  estimatedDuration: formatValue(item.estimatedDuration),
+  requiredManpower: formatValue(item.requiredManpower),
+  requiredTools: formatValue(item.requiredTools),
+  requiredSpareParts: formatValue(item.requiredSpareParts),
+  checklistSteps: formatValue(item.checklistSteps),
+  instructions: formatValue(item.instructions),
+  safetyPrecautions: formatValue(item.safetyPrecautions),
+  skillRequirement: formatValue(item.skillRequirement),
+  escalationLevel: formatValue(item.escalationLevel),
+  status: formatValue(item.status),
 });
 
 export const mapUserAllocationListRow = (item) => ({
   id: item._id,
-  employeeId: item.employeeId || "-",
-  userName: item.userName || "-",
-  machine: item.machine || "-",
-  task: item.task || "-",
-  shift: item.shift || "-",
-  status: item.status || "-",
+  employeeId: formatValue(item.employeeId),
+  userName: formatValue(item.userName),
+  role: formatValue(item.role),
+  department: formatValue(item.department),
+  skillSet: formatValue(item.skillSet),
+  shift: formatValue(item.shift),
+  mobileNumber: formatValue(item.mobileNumber),
+  email: formatValue(item.email),
+  supervisor: formatValue(item.supervisor),
+  machine: formatValue(item.machine),
+  task: formatValue(item.task),
+  accessRights: formatValue(item.accessRights),
+  status: formatValue(item.status),
 });
 
 export const mapVendorListRow = (item) => ({
   id: item._id,
-  vendorCode: item.vendorCode || "-",
-  vendorName: item.vendorName || "-",
-  contactPerson: item.contactPerson || "-",
-  phone: item.phone || "-",
-  email: item.email || "-",
-  city: item.city || "-",
-  contractType: item.contractType || "-",
-  status: item.status || "-",
+  vendorCode: formatValue(item.vendorCode),
+  vendorName: formatValue(item.vendorName),
+  contactPerson: formatValue(item.contactPerson),
+  phone: formatValue(item.phone),
+  email: formatValue(item.email),
+  city: formatValue(item.city),
+  contractType: formatValue(item.contractType),
+  sla: formatValue(item.sla),
+  machinesCovered: formatValue(item.machinesCovered),
+  contractValidityFrom: formatDateValue(item.contractValidityFrom),
+  contractValidityTo: formatDateValue(item.contractValidityTo),
+  escalationContacts: formatValue(item.escalationContacts),
+  status: formatValue(item.status),
 });
 
 export const mapAssetFormValues = (item) => ({
@@ -197,7 +322,8 @@ export const mapVendorFormValues = (item) => ({
 });
 
 export const getAssets = async () => request("/machine-maintenance/assets");
-export const getAssetById = async (id) => request(`/machine-maintenance/assets/${id}`);
+export const getAssetById = async (id) =>
+  request(`/machine-maintenance/assets/${id}`);
 export const createAsset = async (payload) =>
   request("/machine-maintenance/assets", { method: "POST", body: payload });
 export const updateAsset = async (id, payload) =>
@@ -206,7 +332,8 @@ export const deleteAsset = async (id) =>
   request(`/machine-maintenance/assets/${id}`, { method: "DELETE" });
 
 export const getSpares = async () => request("/machine-maintenance/spares");
-export const getSpareById = async (id) => request(`/machine-maintenance/spares/${id}`);
+export const getSpareById = async (id) =>
+  request(`/machine-maintenance/spares/${id}`);
 export const createSpare = async (payload) =>
   request("/machine-maintenance/spares", { method: "POST", body: payload });
 export const updateSpare = async (id, payload) =>
@@ -215,7 +342,8 @@ export const deleteSpare = async (id) =>
   request(`/machine-maintenance/spares/${id}`, { method: "DELETE" });
 
 export const getTasks = async () => request("/machine-maintenance/tasks");
-export const getTaskById = async (id) => request(`/machine-maintenance/tasks/${id}`);
+export const getTaskById = async (id) =>
+  request(`/machine-maintenance/tasks/${id}`);
 export const createTask = async (payload) =>
   request("/machine-maintenance/tasks", { method: "POST", body: payload });
 export const updateTask = async (id, payload) =>
@@ -228,17 +356,23 @@ export const getUserAllocations = async () =>
 export const getUserAllocationById = async (id) =>
   request(`/machine-maintenance/user-allocations/${id}`);
 export const createUserAllocation = async (payload) =>
-  request("/machine-maintenance/user-allocations", { method: "POST", body: payload });
+  request("/machine-maintenance/user-allocations", {
+    method: "POST",
+    body: payload,
+  });
 export const updateUserAllocation = async (id, payload) =>
   request(`/machine-maintenance/user-allocations/${id}`, {
     method: "PUT",
     body: payload,
   });
 export const deleteUserAllocation = async (id) =>
-  request(`/machine-maintenance/user-allocations/${id}`, { method: "DELETE" });
+  request(`/machine-maintenance/user-allocations/${id}`, {
+    method: "DELETE",
+  });
 
 export const getVendors = async () => request("/machine-maintenance/vendors");
-export const getVendorById = async (id) => request(`/machine-maintenance/vendors/${id}`);
+export const getVendorById = async (id) =>
+  request(`/machine-maintenance/vendors/${id}`);
 export const createVendor = async (payload) =>
   request("/machine-maintenance/vendors", { method: "POST", body: payload });
 export const updateVendor = async (id, payload) =>

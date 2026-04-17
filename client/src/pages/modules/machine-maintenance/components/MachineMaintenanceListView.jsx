@@ -1,14 +1,13 @@
-
-
-
 import { useMemo, useState } from "react";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   CircularProgress,
   IconButton,
   InputAdornment,
+  Link,
   Stack,
   Table,
   TableBody,
@@ -25,6 +24,9 @@ import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
+import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
+import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 
 import {
   actionIconButtonSx,
@@ -35,20 +37,35 @@ import {
   searchFieldSx,
 } from "./machineMaintenanceUi.jsx";
 
+const getPlainValue = (value) => {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+
+  if (typeof value === "object") {
+    if (value.displayName) return String(value.displayName);
+    if (value.searchableText) return String(value.searchableText);
+    if (value.label) return String(value.label);
+  }
+
+  return String(value);
+};
+
 const matchesSearch = (row, keyword) => {
   if (!keyword) return true;
 
   return Object.values(row).some((value) =>
-    String(value || "")
-      .toLowerCase()
-      .includes(keyword),
+    getPlainValue(value).toLowerCase().includes(keyword),
   );
 };
 
 const getStatusChipSx = (value) => {
   const lowered = String(value).toLowerCase();
 
-  if (lowered === "critical" || lowered === "breakdown") {
+  if (
+    lowered === "critical" ||
+    lowered === "breakdown" ||
+    lowered === "high"
+  ) {
     return {
       borderRadius: 2,
       fontWeight: 700,
@@ -74,6 +91,108 @@ const getStatusChipSx = (value) => {
   };
 };
 
+const FilePreviewCell = ({ value }) => {
+  if (!value || value === "-" || typeof value !== "object" || value.kind !== "file") {
+    return "-";
+  }
+
+  const isPdf = value.fileType === "pdf";
+  const isImage = value.fileType === "image";
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      justifyContent="center"
+      sx={{
+        width: "100%",
+        minWidth: 0,
+        maxWidth: "100%",
+        mx: "auto",
+      }}
+    >
+      <Link
+        href={value.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        underline="none"
+        sx={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 28,
+          height: 28,
+          borderRadius: 1.5,
+          border: `1px solid ${brand.border}`,
+          backgroundColor: "#FFFFFF",
+          overflow: "hidden",
+          flexShrink: 0,
+        }}
+      >
+        {isImage ? (
+          <Box
+            component="img"
+            src={value.previewUrl}
+            alt={value.displayName}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+          />
+        ) : isPdf ? (
+          <PictureAsPdfRoundedIcon sx={{ fontSize: 18, color: "#C2410C" }} />
+        ) : (
+          <InsertDriveFileRoundedIcon sx={{ fontSize: 18, color: brand.textSoft }} />
+        )}
+      </Link>
+
+      <Link
+        href={value.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        underline="hover"
+        sx={{
+          maxWidth: "160px",
+          color: brand.primaryDark,
+          fontWeight: 600,
+          fontSize: "0.92rem",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          display: "inline-block",
+          textAlign: "left",
+        }}
+      >
+        {value.displayName}
+      </Link>
+    </Stack>
+  );
+};
+
+const renderCellContent = (column, value) => {
+  if (column.type === "status") {
+    return (
+      <Chip
+        label={getPlainValue(value)}
+        size="small"
+        sx={getStatusChipSx(getPlainValue(value))}
+      />
+    );
+  }
+
+  if (
+    column.type === "file" ||
+    (typeof value === "object" && value?.kind === "file")
+  ) {
+    return <FilePreviewCell value={value} />;
+  }
+
+  return value ?? "-";
+};
+
 const MachineMaintenanceListView = ({
   title,
   columns = [],
@@ -96,6 +215,11 @@ const MachineMaintenanceListView = ({
     [rows, keyword],
   );
 
+  const tableMinWidth = Math.max(
+    980,
+    (columns.length + (showActions ? 1 : 0)) * 180,
+  );
+
   const handleRefresh = () => {
     setSearch("");
     onRefresh?.();
@@ -104,7 +228,7 @@ const MachineMaintenanceListView = ({
   const handleDownload = () => {
     const header = columns.map((column) => column.label);
     const csvRows = filteredRows.map((row) =>
-      columns.map((column) => row[column.key] || ""),
+      columns.map((column) => getPlainValue(row[column.key] ?? "")),
     );
 
     const csv = [header, ...csvRows]
@@ -128,238 +252,294 @@ const MachineMaintenanceListView = ({
   };
 
   return (
-    <Stack spacing={2.25}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 0.5 }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.25}
-          flexWrap="wrap"
-          useFlexGap
-        >
-          {showPrimaryAction ? (
-            <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
-              sx={filledActionButtonSx}
-              onClick={onPrimaryAction}
-            >
-              {primaryButtonLabel}
-            </Button>
-          ) : null}
-
-          <Button
-            variant="outlined"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={handleRefresh}
-            sx={outlinedActionButtonSx}
-          >
-            Refresh
-          </Button>
-
-          <Button
-            variant="outlined"
-            startIcon={<DownloadRoundedIcon />}
-            onClick={handleDownload}
-            sx={outlinedActionButtonSx}
-            disabled={loading || filteredRows.length === 0}
-          >
-            Download
-          </Button>
-        </Stack>
-
-        <TextField
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-          }}
-          placeholder={`Search ${title.toLowerCase()}...`}
-          size="small"
-          sx={searchFieldSx}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <SearchRoundedIcon sx={{ color: brand.textSoft }} />
-              </InputAdornment>
-            ),
-          }}
-        />
-      </Stack>
-
-      <Stack direction="row" alignItems="center">
-        <Typography
-          sx={{ color: brand.text, fontWeight: 800, fontSize: "1.05rem" }}
-        >
-          {title}
-        </Typography>
-      </Stack>
-
-      {error ? <Alert severity="error">{error}</Alert> : null}
-
-      <TableContainer
+    <Box
+      sx={{
+        height: "100%",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
+      <Box
         sx={{
-          borderRadius: 3,
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
           border: `1px solid ${brand.border}`,
-          overflowX: "auto",
-          overflowY: "hidden",
+          borderRadius: 3,
+          overflow: "hidden",
           backgroundColor: "#FFFFFF",
         }}
       >
-        <Table
+        <Box
           sx={{
-            width: "100%",
-            minWidth: 980,
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 1.5, sm: 2 },
+            borderBottom: `1px solid ${brand.border}`,
             backgroundColor: "#FFFFFF",
-            tableLayout: "fixed",
-            borderCollapse: "collapse",
+            flexShrink: 0,
+            zIndex: 5,
           }}
         >
-          <TableHead>
-            <TableRow
+          <Stack
+            direction={{ xs: "column", lg: "row" }}
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.25}
+              flexWrap="wrap"
+              useFlexGap
+            >
+              {showPrimaryAction ? (
+                <Button
+                  variant="contained"
+                  startIcon={<AddRoundedIcon />}
+                  sx={filledActionButtonSx}
+                  onClick={onPrimaryAction}
+                >
+                  {primaryButtonLabel}
+                </Button>
+              ) : null}
+
+              <Button
+                variant="outlined"
+                startIcon={<RefreshRoundedIcon />}
+                onClick={handleRefresh}
+                sx={outlinedActionButtonSx}
+              >
+                Refresh
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<DownloadRoundedIcon />}
+                onClick={handleDownload}
+                sx={outlinedActionButtonSx}
+                disabled={loading || filteredRows.length === 0}
+              >
+                Download
+              </Button>
+            </Stack>
+
+            <TextField
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+              }}
+              placeholder={`Search ${title.toLowerCase()}...`}
+              size="small"
               sx={{
-                backgroundColor: brand.softAlt,
+                width: { xs: "100%", lg: 320 },
+                ...searchFieldSx,
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <SearchRoundedIcon sx={{ color: brand.textSoft }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Stack>
+        </Box>
+
+        {error ? (
+          <Alert severity="error" sx={{ mx: 2, mt: 2, flexShrink: 0 }}>
+            {error}
+          </Alert>
+        ) : null}
+
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "hidden",
+            backgroundColor: "#FFFFFF",
+          }}
+        >
+          <TableContainer
+            sx={{
+              height: "100%",
+              maxHeight: "100%",
+              overflowY: "auto",
+              overflowX: "auto",
+              backgroundColor: "#FFFFFF",
+            }}
+          >
+            <Table
+              stickyHeader
+              sx={{
+                width: "100%",
+                minWidth: tableMinWidth,
+                backgroundColor: "#FFFFFF",
+                tableLayout: "auto",
+                borderCollapse: "separate",
+                borderSpacing: 0,
               }}
             >
-              {columns.map((column) => (
-                <TableCell
-                  key={column.key}
-                  sx={{
-                    ...getCellSx({ isLast: false }),
-                    fontWeight: 800,
-                    color: brand.text,
-                    width: column.width || "auto",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {column.label}
-                </TableCell>
-              ))}
-
-              {showActions ? (
-                <TableCell
-                  align="center"
-                  sx={{
-                    ...getCellSx({ isLast: true, align: "center" }),
-                    fontWeight: 800,
-                    color: brand.text,
-                    width: "12%",
-                  }}
-                >
-                  Action
-                </TableCell>
-              ) : null}
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + (showActions ? 1 : 0)}
-                  align="center"
-                  sx={getCellSx({ isLast: true, align: "center" })}
-                >
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    justifyContent="center"
-                    alignItems="center"
-                  >
-                    <CircularProgress size={18} />
-                    <Typography sx={{ color: brand.textSoft }}>
-                      Loading records...
-                    </Typography>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-            ) : filteredRows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length + (showActions ? 1 : 0)}
-                  align="center"
-                  sx={getCellSx({ isLast: true, align: "center" })}
-                >
-                  No records found
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredRows.map((row) => (
+              <TableHead>
                 <TableRow
-                  key={row.id || row._id}
-                  hover
                   sx={{
-                    backgroundColor: "#FFFFFF",
-                    "&:hover": {
-                      backgroundColor: "#FAFBFC",
-                    },
+                    backgroundColor: brand.softAlt,
                   }}
                 >
-                  {columns.map((column, index) => {
-                    const value = row[column.key] || "-";
-                    const isStatus = column.type === "status";
-
-                    return (
-                      <TableCell
-                        key={column.key}
-                        sx={{
-                          ...getCellSx({ isLast: false }),
-                          color: isStatus ? brand.text : brand.textSoft,
-                          fontWeight: index === 0 ? 700 : 500,
-                          wordBreak: "break-word",
-                          whiteSpace: column.nowrap ? "nowrap" : "normal",
-                        }}
-                      >
-                        {isStatus ? (
-                          <Chip
-                            label={value}
-                            size="small"
-                            sx={getStatusChipSx(value)}
-                          />
-                        ) : (
-                          value
-                        )}
-                      </TableCell>
-                    );
-                  })}
+                  {columns.map((column, index) => (
+                    <TableCell
+                      key={column.key}
+                      sx={{
+                        ...getCellSx({
+                          isLast: !showActions && index === columns.length - 1,
+                        }),
+                        fontWeight: 800,
+                        color: brand.text,
+                        minWidth: column.width || "180px",
+                        whiteSpace: "nowrap",
+                        backgroundColor: brand.softAlt,
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 3,
+                      }}
+                    >
+                      {column.label}
+                    </TableCell>
+                  ))}
 
                   {showActions ? (
                     <TableCell
                       align="center"
-                      sx={getCellSx({ isLast: true, align: "center" })}
+                      sx={{
+                        ...getCellSx({ isLast: true, align: "center" }),
+                        fontWeight: 800,
+                        color: brand.text,
+                        minWidth: "150px",
+                        whiteSpace: "nowrap",
+                        backgroundColor: brand.softAlt,
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 3,
+                      }}
                     >
-                      <Stack direction="row" spacing={1} justifyContent="center">
-                        <IconButton
-                          sx={actionIconButtonSx}
-                          onClick={() => onEdit?.(row)}
-                          disabled={!onEdit}
-                        >
-                          <EditRoundedIcon
-                            sx={{ fontSize: 18, color: brand.text }}
-                          />
-                        </IconButton>
-                        <IconButton
-                          sx={actionIconButtonSx}
-                          onClick={() => onDelete?.(row)}
-                          disabled={!onDelete}
-                        >
-                          <DeleteOutlineRoundedIcon
-                            sx={{ fontSize: 18, color: brand.danger }}
-                          />
-                        </IconButton>
-                      </Stack>
+                      Action
                     </TableCell>
                   ) : null}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Stack>
+              </TableHead>
+
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length + (showActions ? 1 : 0)}
+                      align="center"
+                      sx={getCellSx({ isLast: true, align: "center" })}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        <CircularProgress size={18} />
+                        <Typography sx={{ color: brand.textSoft }}>
+                          Loading records...
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredRows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length + (showActions ? 1 : 0)}
+                      align="center"
+                      sx={getCellSx({ isLast: true, align: "center" })}
+                    >
+                      No records found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRows.map((row) => (
+                    <TableRow
+                      key={row.id || row._id}
+                      hover
+                      sx={{
+                        backgroundColor: "#FFFFFF",
+                        "&:hover": {
+                          backgroundColor: "#FAFBFC",
+                        },
+                      }}
+                    >
+                      {columns.map((column, index) => {
+                        const value = row[column.key] ?? "-";
+                        const isStatus = column.type === "status";
+
+                        return (
+                          <TableCell
+                            key={column.key}
+                            sx={{
+                              ...getCellSx({
+                                isLast:
+                                  !showActions && index === columns.length - 1,
+                              }),
+                              color: isStatus ? brand.text : brand.textSoft,
+                              fontWeight: index === 0 ? 700 : 500,
+                              wordBreak: "break-word",
+                              whiteSpace: column.type === "file"
+                                ? "normal"
+                                : column.nowrap
+                                  ? "nowrap"
+                                  : "normal",
+                              minWidth: column.width || "180px",
+                            }}
+                          >
+                            {renderCellContent(column, value)}
+                          </TableCell>
+                        );
+                      })}
+
+                      {showActions ? (
+                        <TableCell
+                          align="center"
+                          sx={getCellSx({ isLast: true, align: "center" })}
+                        >
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            justifyContent="center"
+                          >
+                            <IconButton
+                              sx={actionIconButtonSx}
+                              onClick={() => onEdit?.(row)}
+                              disabled={!onEdit}
+                            >
+                              <EditRoundedIcon
+                                sx={{ fontSize: 18, color: brand.text }}
+                              />
+                            </IconButton>
+                            <IconButton
+                              sx={actionIconButtonSx}
+                              onClick={() => onDelete?.(row)}
+                              disabled={!onDelete}
+                            >
+                              <DeleteOutlineRoundedIcon
+                                sx={{ fontSize: 18, color: brand.danger }}
+                              />
+                            </IconButton>
+                          </Stack>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </Box>
+    </Box>
   );
 };
 

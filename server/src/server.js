@@ -32,7 +32,10 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use(
+  "/uploads",
+  express.static(path.join(process.cwd(), "uploads")),
+);
 
 app.get("/", (req, res) => {
   res.send("Server is running");

@@ -125,101 +125,6 @@ const machineOptions = ["CNC Machine 01", "Hydraulic Press", "Lathe Machine"];
 const departmentOptions = ["Production", "Maintenance", "Utility", "Quality"];
 const shiftOptions = ["Morning", "Evening", "Night", "General"];
 
-export const pageTableData = {
-  assetList: {
-    columns: [
-      { key: "assetCode", label: "Asset Code", width: "14%" },
-      { key: "assetName", label: "Machine Name", width: "20%" },
-      { key: "category", label: "Category", width: "14%" },
-      { key: "serialNumber", label: "Serial Number", width: "16%" },
-      { key: "department", label: "Department", width: "14%" },
-      { key: "installDate", label: "Install Date", width: "14%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: [],
-  },
-
-  spareList: {
-    columns: [
-      { key: "spareCode", label: "Spare Code", width: "14%" },
-      { key: "spareName", label: "Spare Name", width: "18%" },
-      { key: "partNo", label: "Part No", width: "14%" },
-      { key: "unit", label: "Unit", width: "10%" },
-      { key: "minQty", label: "Min Qty", width: "12%" },
-      { key: "maxQty", label: "Max Qty", width: "12%" },
-      { key: "vendor", label: "Vendor", width: "16%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: []
-      
-  },
-
-  taskList: {
-    columns: [
-      { key: "taskCode", label: "Task Code", width: "14%" },
-      { key: "taskName", label: "Task Name", width: "20%" },
-      { key: "frequency", label: "Frequency", width: "14%" },
-      { key: "assignedUser", label: "Assigned User", width: "18%" },
-      { key: "startDate", label: "Start Date", width: "12%" },
-      { key: "endDate", label: "End Date", width: "12%" },
-      { key: "shift", label: "Shift", width: "10%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: [],
-  },
-
-  userList: {
-    columns: [
-      { key: "employeeId", label: "Employee ID", width: "14%" },
-      { key: "userName", label: "User Name", width: "20%" },
-      { key: "machine", label: "Machine / Asset", width: "18%" },
-      { key: "task", label: "Task", width: "18%" },
-      { key: "shift", label: "Shift", width: "12%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: [],
-  },
-
-  vendorList: {
-    columns: [
-      { key: "vendorCode", label: "Vendor Code", width: "14%" },
-      { key: "vendorName", label: "Vendor Name", width: "18%" },
-      { key: "contactPerson", label: "Contact Person", width: "18%" },
-      { key: "phone", label: "Phone", width: "14%" },
-      { key: "email", label: "Email", width: "18%" },
-      { key: "city", label: "City", width: "10%" },
-      { key: "contractType", label: "Contract Type", width: "14%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: [],
-  },
-
-  breakdownList: {
-    columns: [
-      { key: "breakdownCode", label: "Breakdown ID", width: "14%" },
-      { key: "machineName", label: "Machine", width: "20%" },
-      { key: "issueType", label: "Issue Type", width: "18%" },
-      { key: "priority", label: "Priority", width: "12%" },
-      { key: "reportedBy", label: "Reported By", width: "18%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: [],
-  },
-
-  consumeList: {
-    columns: [
-      { key: "entryNo", label: "Entry No", width: "14%" },
-      { key: "itemName", label: "Asset / Spare", width: "20%" },
-      { key: "requestedBy", label: "Requested By", width: "18%" },
-      { key: "issueDate", label: "Issue Date", width: "14%" },
-      { key: "unit", label: "Unit", width: "10%" },
-      { key: "consumeQty", label: "Consume Qty", width: "12%" },
-      { key: "status", label: "Status", width: "12%", type: "status" },
-    ],
-    rows: [],
-  },
-};
-
 export const pageFormData = {
   assetRegister: {
     title: "Machine Registration",
@@ -266,19 +171,18 @@ export const pageFormData = {
         multiline: true,
         minRows: 3,
       },
-      {
-        name: "operatingManual",
-        label: "Operating Manual",
-        type: "file",
-        accept: ".pdf,.doc,.docx",
-      },
-      {
-        name: "machineImage",
-        label: "Machine Image",
-        type: "file",
-        accept: "image/*",
-      },
-      { name: "qrCode", label: "QR Code / Barcode" },
+{
+  name: "operatingManual",
+  label: "Operating Manual",
+  type: "file",
+  accept: ".pdf,.jpg,.jpeg,.png",
+},
+{
+  name: "machineImage",
+  label: "Machine Image",
+  type: "file",
+  accept: ".pdf,.jpg,.jpeg,.png",
+},   { name: "qrCode", label: "QR Code / Barcode" },
     ],
   },
 
@@ -497,5 +401,86 @@ export const pageFormData = {
         defaultValue: "Active",
       },
     ],
+  },
+};
+
+const getDynamicColumnWidth = (field) => {
+  if (field.multiline) return "260px";
+  if (field.type === "file") return "260px";
+  if (field.type === "date") return "160px";
+  if (field.type === "number") return "140px";
+  if (field.select) return "180px";
+  return "190px";
+};
+
+const getDynamicColumnType = (field) => {
+  if (field.name === "status") return "status";
+  if (field.name === "criticality") return "status";
+  if (field.type === "file") return "file";
+  return "text";
+};
+
+const createColumnsFromFields = (fields = []) =>
+  fields.map((field) => ({
+    key: field.name,
+    label: field.label,
+    width: getDynamicColumnWidth(field),
+    type: getDynamicColumnType(field),
+    nowrap:
+      field.type === "date" ||
+      field.type === "number" ||
+      field.type === "file" ||
+      field.select,
+  }));
+
+export const pageTableData = {
+  assetList: {
+    columns: createColumnsFromFields(pageFormData.assetRegister.fields),
+    rows: [],
+  },
+
+  spareList: {
+    columns: createColumnsFromFields(pageFormData.spareRegister.fields),
+    rows: [],
+  },
+
+  taskList: {
+    columns: createColumnsFromFields(pageFormData.taskSchedule.fields),
+    rows: [],
+  },
+
+  userList: {
+    columns: createColumnsFromFields(pageFormData.userAllocation.fields),
+    rows: [],
+  },
+
+  vendorList: {
+    columns: createColumnsFromFields(pageFormData.vendorRegister.fields),
+    rows: [],
+  },
+
+  breakdownList: {
+    columns: [
+      { key: "breakdownCode", label: "Breakdown ID", width: "180px" },
+      { key: "machineName", label: "Machine", width: "220px" },
+      { key: "issueType", label: "Issue Type", width: "200px" },
+      { key: "priority", label: "Priority", width: "150px" },
+      { key: "reportedBy", label: "Reported By", width: "180px" },
+      { key: "status", label: "Status", width: "150px", type: "status" },
+    ],
+    rows: [],
+  },
+
+  consumeList: {
+    columns: [
+      { key: "entryNo", label: "Entry No", width: "180px" },
+      { key: "itemName", label: "Asset / Spare", width: "220px" },
+      { key: "requestedBy", label: "Requested By", width: "180px" },
+      { key: "issueDate", label: "Issue Date", width: "150px" },
+      { key: "unit", label: "Unit", width: "120px" },
+      { key: "consumeQty", label: "Consume Qty", width: "150px" },
+      { key: "status", label: "Status", width: "150px", type: "status" },
+    ],
+    rows: [],
   },
 };

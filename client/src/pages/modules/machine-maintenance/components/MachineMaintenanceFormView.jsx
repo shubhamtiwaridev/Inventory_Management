@@ -1,6 +1,3 @@
-
-
-
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -10,7 +7,6 @@ import {
   MenuItem,
   Stack,
   TextField,
-  Typography,
 } from "@mui/material";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
@@ -251,166 +247,193 @@ const MachineMaintenanceFormView = ({
   };
 
   return (
-    <Stack spacing={2.25} component="form" onSubmit={handleSubmit}>
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 0.5 }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1.25}
-          flexWrap="wrap"
-          useFlexGap
-        >
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={
-              submitState.loading ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <SaveRoundedIcon />
-              )
-            }
-            disabled={submitState.loading || loadingInitialValues}
-            sx={filledActionButtonSx}
-          >
-            {submitState.loading ? "Saving..." : primaryActionLabel}
-          </Button>
-
-          <Button
-            type="button"
-            variant="outlined"
-            startIcon={<RefreshRoundedIcon />}
-            onClick={handleReset}
-            disabled={submitState.loading || loadingInitialValues}
-            sx={outlinedActionButtonSx}
-          >
-            {secondaryActionLabel}
-          </Button>
-        </Stack>
-      </Stack>
-
-      <Stack direction="row" alignItems="center">
-        <Typography
-          sx={{ color: brand.text, fontWeight: 800, fontSize: "1.05rem" }}
-        >
-          {title}
-        </Typography>
-      </Stack>
-
-      {loadingInitialValues ? (
-        <Alert severity="info">Loading existing record...</Alert>
-      ) : null}
-      {submitState.success ? (
-        <Alert severity="success">{submitState.success}</Alert>
-      ) : null}
-      {submitState.error ? (
-        <Alert severity="error">{submitState.error}</Alert>
-      ) : null}
-
+    <Box
+      sx={{
+        height: "100%",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <Box
         sx={{
-          borderRadius: 3,
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
           border: `1px solid ${brand.border}`,
+          borderRadius: 3,
           backgroundColor: "#FFFFFF",
           overflow: "hidden",
         }}
       >
         <Box
+          component="form"
+          onSubmit={handleSubmit}
           sx={{
-            px: { xs: 2, sm: 2.5 },
-            py: 2,
-            borderBottom: `1px solid ${brand.border}`,
-            backgroundColor: brand.softAlt,
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          <Typography sx={{ color: brand.text, fontWeight: 800 }}>
-            Entry Details
-          </Typography>
-        </Box>
-
-        <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
           <Box
             sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(2, minmax(0, 1fr))",
+              flex: 1,
+              minHeight: 0,
+              overflow: "auto",
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 1.5, sm: 2 },
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
+              "&::-webkit-scrollbar": {
+                display: "none",
               },
-              gap: 2,
             }}
           >
-            {fields.map((field) => {
-              const commonProps = {
-                name: field.name,
-                label: field.label,
-                value:
-                  field.type === "file"
-                    ? undefined
-                    : formData[field.name] ?? "",
-                onChange: handleChange(field),
-                placeholder: field.placeholder || "",
-                fullWidth: true,
-                required: !!field.required,
-                error: !!errors[field.name],
-                helperText:
-                  errors[field.name] ||
-                  (field.type === "file" && formData[field.name]
-                    ? formData[field.name]?.name
-                    : " "),
-                sx: textFieldStyles,
-                disabled: submitState.loading || loadingInitialValues,
-              };
+            <Stack spacing={2.25}>
+              {loadingInitialValues ? (
+                <Alert severity="info">Loading existing record...</Alert>
+              ) : null}
 
-              if (field.type === "file") {
-                return (
-                  <TextField
-                    key={field.name}
-                    {...commonProps}
-                    type="file"
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ accept: field.accept || "*" }}
-                  />
-                );
-              }
+              {submitState.success ? (
+                <Alert severity="success">{submitState.success}</Alert>
+              ) : null}
 
-              if (field.select) {
-                return (
-                  <TextField key={field.name} {...commonProps} select>
-                    {field.options?.map((option) => (
-                      <MenuItem
-                        key={getOptionValue(option)}
-                        value={getOptionValue(option)}
-                      >
-                        {getOptionLabel(option)}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                );
-              }
+              {submitState.error ? (
+                <Alert severity="error">{submitState.error}</Alert>
+              ) : null}
 
-              return (
-                <TextField
-                  key={field.name}
-                  {...commonProps}
-                  type={field.type || "text"}
-                  multiline={field.multiline}
-                  minRows={field.multiline ? field.minRows || 3 : undefined}
-                  InputLabelProps={
-                    field.type === "date" || field.type === "datetime-local"
-                      ? { shrink: true }
-                      : undefined
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "repeat(2, minmax(0, 1fr))",
+                  },
+                  gap: 2,
+                }}
+              >
+                {fields.map((field) => {
+                  const commonProps = {
+                    name: field.name,
+                    label: field.label,
+                    value:
+                      field.type === "file"
+                        ? undefined
+                        : formData[field.name] ?? "",
+                    onChange: handleChange(field),
+                    placeholder: field.placeholder || "",
+                    fullWidth: true,
+                    required: !!field.required,
+                    error: !!errors[field.name],
+                    helperText:
+                      errors[field.name] ||
+                      (field.type === "file" && formData[field.name]
+                        ? formData[field.name]?.name
+                        : " "),
+                    sx: textFieldStyles,
+                    disabled: submitState.loading || loadingInitialValues,
+                  };
+
+                  if (field.type === "file") {
+                    return (
+                      <TextField
+                        key={field.name}
+                        {...commonProps}
+                        type="file"
+                        InputLabelProps={{ shrink: true }}
+                        inputProps={{ accept: field.accept || "*" }}
+                      />
+                    );
                   }
-                />
-              );
-            })}
+
+                  if (field.select) {
+                    return (
+                      <TextField key={field.name} {...commonProps} select>
+                        {field.options?.map((option) => (
+                          <MenuItem
+                            key={getOptionValue(option)}
+                            value={getOptionValue(option)}
+                          >
+                            {getOptionLabel(option)}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    );
+                  }
+
+                  return (
+                    <TextField
+                      key={field.name}
+                      {...commonProps}
+                      type={field.type || "text"}
+                      multiline={field.multiline}
+                      minRows={field.multiline ? field.minRows || 3 : undefined}
+                      InputLabelProps={
+                        field.type === "date" || field.type === "datetime-local"
+                          ? { shrink: true }
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+              </Box>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "flex-end",
+              px: { xs: 1.5, sm: 2 },
+              py: 1.5,
+              backgroundColor: "#FFFFFF",
+              flexShrink: 0,
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.25}
+              flexWrap="wrap"
+              useFlexGap
+              sx={{
+                alignItems: { xs: "stretch", sm: "center" },
+              }}
+            >
+              <Button
+                type="submit"
+                variant="contained"
+                startIcon={
+                  submitState.loading ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <SaveRoundedIcon />
+                  )
+                }
+                disabled={submitState.loading || loadingInitialValues}
+                sx={filledActionButtonSx}
+              >
+                {submitState.loading ? "Saving..." : primaryActionLabel}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outlined"
+                startIcon={<RefreshRoundedIcon />}
+                onClick={handleReset}
+                disabled={submitState.loading || loadingInitialValues}
+                sx={outlinedActionButtonSx}
+              >
+                {secondaryActionLabel}
+              </Button>
+            </Stack>
           </Box>
         </Box>
       </Box>
-    </Stack>
+    </Box>
   );
 };
 

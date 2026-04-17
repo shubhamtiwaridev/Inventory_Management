@@ -191,18 +191,29 @@ const Register = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        px: 2,
-        py: 5,
-      }}
-    >
-      <Box sx={{ width: "100%", maxWidth: 620 }}>
+ <Box
+  sx={{
+    position: "fixed",
+    inset: 0,
+    width: "100%",
+    height: "100dvh",
+    background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    px: 2,
+    py: 0.75,
+    boxSizing: "border-box",
+    overflow: "hidden",
+  }}
+>
+  <Box
+    sx={{
+      width: "100%",
+      maxWidth: 620,
+      mx: "auto",
+    }}
+  >
         <Paper
           elevation={0}
           sx={{

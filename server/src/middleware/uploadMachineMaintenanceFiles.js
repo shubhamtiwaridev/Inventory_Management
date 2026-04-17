@@ -6,39 +6,53 @@ const uploadRoot = path.join(process.cwd(), "uploads", "machine-maintenance");
 
 fs.mkdirSync(uploadRoot, { recursive: true });
 
+const allowedMimeTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+];
+
+const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png"];
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadRoot);
   },
   filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname);
-    const baseName = path
-      .basename(file.originalname, extension)
+    const extension = path.extname(file.originalname || "").toLowerCase();
+    const safeBaseName = path
+      .basename(file.originalname || "file", extension)
       .replace(/[^a-zA-Z0-9-_]/g, "-")
       .toLowerCase();
 
-    cb(null, `${Date.now()}-${baseName}${extension}`);
+    cb(cb ? null : null, `${Date.now()}-${safeBaseName}${extension}`);
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  if (file.fieldname === "operatingManual") {
-    const allowedDocuments = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
+const isAllowedFile = (file) => {
+  const extension = path.extname(file.originalname || "").toLowerCase();
+  const mimeType = String(file.mimetype || "").toLowerCase();
 
-    if (!allowedDocuments.includes(file.mimetype)) {
-      return cb(new Error("Operating manual must be PDF, DOC or DOCX"));
-    }
+  const extensionAllowed = allowedExtensions.includes(extension);
+  const mimeAllowed =
+    allowedMimeTypes.includes(mimeType) ||
+    mimeType === "" ||
+    mimeType === "application/octet-stream";
+
+  return extensionAllowed && mimeAllowed;
+};
+
+const fileFilter = (req, file, cb) => {
+  if (
+    file.fieldname !== "operatingManual" &&
+    file.fieldname !== "machineImage"
+  ) {
+    return cb(new Error("Unsupported upload field"));
   }
 
-  if (
-    file.fieldname === "machineImage" &&
-    !file.mimetype.startsWith("image/")
-  ) {
-    return cb(new Error("Machine image must be an image file"));
+  if (!isAllowedFile(file)) {
+    return cb(new Error("Only PDF, JPG, JPEG and PNG files are allowed"));
   }
 
   cb(null, true);

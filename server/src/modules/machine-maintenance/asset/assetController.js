@@ -9,6 +9,11 @@ const normalizeNullableDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
+const getUploadedFilePublicPath = (file) => {
+  if (!file) return "";
+  return `/uploads/machine-maintenance/${file.filename}`;
+};
+
 const buildAssetPayload = (req) => ({
   assetCode: normalizeText(req.body.assetCode),
   assetName: normalizeText(req.body.assetName),
@@ -27,10 +32,11 @@ const buildAssetPayload = (req) => ({
   powerRating: normalizeText(req.body.powerRating),
   technicalSpecifications: normalizeText(req.body.technicalSpecifications),
   operatingManual:
-    req.files?.operatingManual?.[0]?.path ||
+    getUploadedFilePublicPath(req.files?.operatingManual?.[0]) ||
     normalizeText(req.body.operatingManual),
   machineImage:
-    req.files?.machineImage?.[0]?.path || normalizeText(req.body.machineImage),
+    getUploadedFilePublicPath(req.files?.machineImage?.[0]) ||
+    normalizeText(req.body.machineImage),
   qrCode: normalizeText(req.body.qrCode),
   createdBy: normalizeText(req.user?.name),
   updatedBy: normalizeText(req.user?.name),

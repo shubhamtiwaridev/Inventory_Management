@@ -1,40 +1,67 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import MachineMaintenanceFormView from "../components/MachineMaintenanceFormView.jsx";
 import { pageFormData } from "../components/machineMaintenanceUi.jsx";
 import {
-  prependStoredRow,
-  STORAGE_KEYS,
-} from "../components/machineMaintenanceStorage";
+  createAsset,
+  getAssetById,
+  mapAssetFormValues,
+  updateAsset,
+} from "../components/machineMaintenanceApi.js";
 
-const valueOrNA = (value) =>
-  value === null || value === undefined || value === ""
-    ? "Not Available"
-    : value;
+const buildPayload = (payload) => {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") return;
+    formData.append(key, value);
+  });
+
+  return formData;
+};
 
 const AssetRegisterPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const config = pageFormData.assetRegister;
+  const [initialValues, setInitialValues] = useState(null);
+  const [loadingInitialValues, setLoadingInitialValues] = useState(false);
 
-  const submitHandler = async (payload) => {
-    const row = {
-      id: Date.now(),
-      assetCode: valueOrNA(payload.assetCode),
-      assetName: valueOrNA(payload.assetName),
-      category: valueOrNA(payload.category),
-      serialNumber: valueOrNA(payload.serialNumber),
-      department: valueOrNA(payload.department),
-      installDate: valueOrNA(payload.commissioningDate || payload.purchaseDate),
-      status: valueOrNA(payload.status || "Running"),
+  useEffect(() => {
+    if (!id) {
+      setInitialValues(null);
+      return;
+    }
+
+    const loadRecord = async () => {
+      try {
+        setLoadingInitialValues(true);
+        const response = await getAssetById(id);
+        setInitialValues(mapAssetFormValues(response?.data || {}));
+      } catch (error) {
+        alert(error.message || "Failed to load asset details");
+      } finally {
+        setLoadingInitialValues(false);
+      }
     };
 
-    prependStoredRow(STORAGE_KEYS.assets, row, "assetCode", []);
-    return row;
+    loadRecord();
+  }, [id]);
+
+  const submitHandler = async (payload) => {
+    const formData = buildPayload(payload);
+    return id ? updateAsset(id, formData) : createAsset(formData);
   };
 
   return (
     <MachineMaintenanceFormView
       {...config}
+      title={id ? "Machine Registration" : config.title}
+      primaryActionLabel={id ? "Update" : config.primaryActionLabel}
+      successMessage={id ? "Machine updated successfully." : config.successMessage}
       submitHandler={submitHandler}
+      initialValues={initialValues}
+      loadingInitialValues={loadingInitialValues}
       onSuccess={() => navigate("/machine-maintenance/assets/list")}
     />
   );

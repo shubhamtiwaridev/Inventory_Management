@@ -1,39 +1,56 @@
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import MachineMaintenanceFormView from "../components/MachineMaintenanceFormView.jsx";
 import { pageFormData } from "../components/machineMaintenanceUi.jsx";
 import {
-  prependStoredRow,
-  STORAGE_KEYS,
-} from "../components/machineMaintenanceStorage";
-
-const valueOrNA = (value) =>
-  value === null || value === undefined || value === ""
-    ? "Not Available"
-    : value;
+  createUserAllocation,
+  getUserAllocationById,
+  mapUserAllocationFormValues,
+  updateUserAllocation,
+} from "../components/machineMaintenanceApi.js";
 
 const UserAllocationPage = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const config = pageFormData.userAllocation;
+  const [initialValues, setInitialValues] = useState(null);
+  const [loadingInitialValues, setLoadingInitialValues] = useState(false);
 
-  const submitHandler = async (payload) => {
-    const row = {
-      id: Date.now(),
-      employeeId: valueOrNA(payload.employeeId),
-      userName: valueOrNA(payload.userName),
-      machine: valueOrNA(payload.machine),
-      task: valueOrNA(payload.task),
-      shift: valueOrNA(payload.shift),
-      status: valueOrNA(payload.status || "Active"),
+  useEffect(() => {
+    if (!id) {
+      setInitialValues(null);
+      return;
+    }
+
+    const loadRecord = async () => {
+      try {
+        setLoadingInitialValues(true);
+        const response = await getUserAllocationById(id);
+        setInitialValues(mapUserAllocationFormValues(response?.data || {}));
+      } catch (error) {
+        alert(error.message || "Failed to load user allocation details");
+      } finally {
+        setLoadingInitialValues(false);
+      }
     };
 
-    prependStoredRow(STORAGE_KEYS.users, row, "employeeId", []);
-    return row;
+    loadRecord();
+  }, [id]);
+
+  const submitHandler = async (payload) => {
+    return id ? updateUserAllocation(id, payload) : createUserAllocation(payload);
   };
 
   return (
     <MachineMaintenanceFormView
       {...config}
+      primaryActionLabel={id ? "Update" : config.primaryActionLabel}
+      successMessage={
+        id ? "User allocation updated successfully." : config.successMessage
+      }
       submitHandler={submitHandler}
+      initialValues={initialValues}
+      loadingInitialValues={loadingInitialValues}
       onSuccess={() => navigate("/machine-maintenance/user-allocation/list")}
     />
   );

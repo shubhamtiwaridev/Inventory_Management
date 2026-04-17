@@ -1,3 +1,6 @@
+
+
+
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -47,9 +50,6 @@ const normalizePayload = (values) => {
     if (payload[key] === "") payload[key] = null;
   });
 
-  payload.createdAt = new Date().toISOString();
-  payload.updatedAt = new Date().toISOString();
-
   return payload;
 };
 
@@ -69,10 +69,25 @@ const buildFormData = (payload, fields) => {
     }
   });
 
-  formData.append("createdAt", payload.createdAt);
-  formData.append("updatedAt", payload.updatedAt);
-
   return formData;
+};
+
+const mergeInitialValues = (initialState, incomingValues, fields) => {
+  if (!incomingValues) return initialState;
+
+  const nextState = { ...initialState };
+
+  fields.forEach((field) => {
+    if (field.type === "file") {
+      nextState[field.name] = null;
+      return;
+    }
+
+    nextState[field.name] =
+      incomingValues[field.name] ?? initialState[field.name];
+  });
+
+  return nextState;
 };
 
 const MachineMaintenanceFormView = ({
@@ -82,10 +97,13 @@ const MachineMaintenanceFormView = ({
   fields = [],
   apiEndpoint,
   apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000",
+  requestMethod = "POST",
   submitHandler,
   onSuccess,
   onError,
   successMessage = "Saved successfully.",
+  initialValues = null,
+  loadingInitialValues = false,
 }) => {
   const initialState = useMemo(() => createInitialState(fields), [fields]);
   const [formData, setFormData] = useState(initialState);
@@ -97,10 +115,10 @@ const MachineMaintenanceFormView = ({
   });
 
   useEffect(() => {
-    setFormData(initialState);
+    setFormData(mergeInitialValues(initialState, initialValues, fields));
     setErrors({});
     setSubmitState({ loading: false, success: "", error: "" });
-  }, [initialState]);
+  }, [fields, initialState, initialValues]);
 
   const validateForm = () => {
     const nextErrors = {};
@@ -121,14 +139,6 @@ const MachineMaintenanceFormView = ({
     });
 
     if (
-      formData.startDate &&
-      formData.dueDate &&
-      new Date(formData.dueDate) < new Date(formData.startDate)
-    ) {
-      nextErrors.dueDate = "Due Date cannot be before Start Date";
-    }
-
-    if (
       formData.contractValidityFrom &&
       formData.contractValidityTo &&
       new Date(formData.contractValidityTo) <
@@ -139,12 +149,11 @@ const MachineMaintenanceFormView = ({
     }
 
     if (
-      formData.startDateTime &&
-      formData.endDateTime &&
-      new Date(formData.endDateTime) < new Date(formData.startDateTime)
+      formData.startDate &&
+      formData.endDate &&
+      new Date(formData.endDate) < new Date(formData.startDate)
     ) {
-      nextErrors.endDateTime =
-        "End Date & Time cannot be before Start Date & Time";
+      nextErrors.endDate = "End Date cannot be before Start Date";
     }
 
     setErrors(nextErrors);
@@ -167,7 +176,7 @@ const MachineMaintenanceFormView = ({
   };
 
   const handleReset = () => {
-    setFormData(initialState);
+    setFormData(mergeInitialValues(initialState, initialValues, fields));
     setErrors({});
     setSubmitState({ loading: false, success: "", error: "" });
   };
@@ -189,8 +198,6 @@ const MachineMaintenanceFormView = ({
           error: "",
         });
         onSuccess?.(result || payload);
-        setFormData(initialState);
-        setErrors({});
         return;
       }
 
@@ -206,7 +213,8 @@ const MachineMaintenanceFormView = ({
       const requestHasFile = hasFileFieldValue(formData, fields);
 
       const response = await fetch(`${apiBaseUrl}${apiEndpoint}`, {
-        method: "POST",
+        method: requestMethod,
+        credentials: "include",
         headers: requestHasFile
           ? undefined
           : {
@@ -217,12 +225,7 @@ const MachineMaintenanceFormView = ({
           : JSON.stringify(payload),
       });
 
-      let responseData = null;
-      try {
-        responseData = await response.json();
-      } catch {
-        responseData = null;
-      }
+      const responseData = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
@@ -237,8 +240,6 @@ const MachineMaintenanceFormView = ({
       });
 
       onSuccess?.(responseData?.data || responseData || payload);
-      setFormData(initialState);
-      setErrors({});
     } catch (error) {
       setSubmitState({
         loading: false,
@@ -273,7 +274,7 @@ const MachineMaintenanceFormView = ({
                 <SaveRoundedIcon />
               )
             }
-            disabled={submitState.loading}
+            disabled={submitState.loading || loadingInitialValues}
             sx={filledActionButtonSx}
           >
             {submitState.loading ? "Saving..." : primaryActionLabel}
@@ -284,7 +285,7 @@ const MachineMaintenanceFormView = ({
             variant="outlined"
             startIcon={<RefreshRoundedIcon />}
             onClick={handleReset}
-            disabled={submitState.loading}
+            disabled={submitState.loading || loadingInitialValues}
             sx={outlinedActionButtonSx}
           >
             {secondaryActionLabel}
@@ -300,6 +301,9 @@ const MachineMaintenanceFormView = ({
         </Typography>
       </Stack>
 
+      {loadingInitialValues ? (
+        <Alert severity="info">Loading existing record...</Alert>
+      ) : null}
       {submitState.success ? (
         <Alert severity="success">{submitState.success}</Alert>
       ) : null}
@@ -346,7 +350,7 @@ const MachineMaintenanceFormView = ({
                 value:
                   field.type === "file"
                     ? undefined
-                    : (formData[field.name] ?? ""),
+                    : formData[field.name] ?? "",
                 onChange: handleChange(field),
                 placeholder: field.placeholder || "",
                 fullWidth: true,
@@ -358,6 +362,7 @@ const MachineMaintenanceFormView = ({
                     ? formData[field.name]?.name
                     : " "),
                 sx: textFieldStyles,
+                disabled: submitState.loading || loadingInitialValues,
               };
 
               if (field.type === "file") {

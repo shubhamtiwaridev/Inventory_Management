@@ -1,7 +1,12 @@
+
+
+
 import { useMemo, useState } from "react";
 import {
+  Alert,
   Button,
   Chip,
+  CircularProgress,
   IconButton,
   InputAdornment,
   Stack,
@@ -76,6 +81,12 @@ const MachineMaintenanceListView = ({
   primaryButtonLabel = "New",
   onPrimaryAction,
   showPrimaryAction = true,
+  showActions = true,
+  onEdit,
+  onDelete,
+  onRefresh,
+  loading = false,
+  error = "",
 }) => {
   const [search, setSearch] = useState("");
   const keyword = search.trim().toLowerCase();
@@ -87,6 +98,7 @@ const MachineMaintenanceListView = ({
 
   const handleRefresh = () => {
     setSearch("");
+    onRefresh?.();
   };
 
   const handleDownload = () => {
@@ -154,6 +166,7 @@ const MachineMaintenanceListView = ({
             startIcon={<DownloadRoundedIcon />}
             onClick={handleDownload}
             sx={outlinedActionButtonSx}
+            disabled={loading || filteredRows.length === 0}
           >
             Download
           </Button>
@@ -184,6 +197,8 @@ const MachineMaintenanceListView = ({
           {title}
         </Typography>
       </Stack>
+
+      {error ? <Alert severity="error">{error}</Alert> : null}
 
       <TableContainer
         sx={{
@@ -224,25 +239,47 @@ const MachineMaintenanceListView = ({
                 </TableCell>
               ))}
 
-              <TableCell
-                align="center"
-                sx={{
-                  ...getCellSx({ isLast: true, align: "center" }),
-                  fontWeight: 800,
-                  color: brand.text,
-                  width: "12%",
-                }}
-              >
-                Action
-              </TableCell>
+              {showActions ? (
+                <TableCell
+                  align="center"
+                  sx={{
+                    ...getCellSx({ isLast: true, align: "center" }),
+                    fontWeight: 800,
+                    color: brand.text,
+                    width: "12%",
+                  }}
+                >
+                  Action
+                </TableCell>
+              ) : null}
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {filteredRows.length === 0 ? (
+            {loading ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length + 1}
+                  colSpan={columns.length + (showActions ? 1 : 0)}
+                  align="center"
+                  sx={getCellSx({ isLast: true, align: "center" })}
+                >
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    justifyContent="center"
+                    alignItems="center"
+                  >
+                    <CircularProgress size={18} />
+                    <Typography sx={{ color: brand.textSoft }}>
+                      Loading records...
+                    </Typography>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ) : filteredRows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length + (showActions ? 1 : 0)}
                   align="center"
                   sx={getCellSx({ isLast: true, align: "center" })}
                 >
@@ -252,7 +289,7 @@ const MachineMaintenanceListView = ({
             ) : (
               filteredRows.map((row) => (
                 <TableRow
-                  key={row.id}
+                  key={row.id || row._id}
                   hover
                   sx={{
                     backgroundColor: "#FFFFFF",
@@ -289,23 +326,33 @@ const MachineMaintenanceListView = ({
                     );
                   })}
 
-                  <TableCell
-                    align="center"
-                    sx={getCellSx({ isLast: true, align: "center" })}
-                  >
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <IconButton sx={actionIconButtonSx}>
-                        <EditRoundedIcon
-                          sx={{ fontSize: 18, color: brand.text }}
-                        />
-                      </IconButton>
-                      <IconButton sx={actionIconButtonSx}>
-                        <DeleteOutlineRoundedIcon
-                          sx={{ fontSize: 18, color: brand.danger }}
-                        />
-                      </IconButton>
-                    </Stack>
-                  </TableCell>
+                  {showActions ? (
+                    <TableCell
+                      align="center"
+                      sx={getCellSx({ isLast: true, align: "center" })}
+                    >
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <IconButton
+                          sx={actionIconButtonSx}
+                          onClick={() => onEdit?.(row)}
+                          disabled={!onEdit}
+                        >
+                          <EditRoundedIcon
+                            sx={{ fontSize: 18, color: brand.text }}
+                          />
+                        </IconButton>
+                        <IconButton
+                          sx={actionIconButtonSx}
+                          onClick={() => onDelete?.(row)}
+                          disabled={!onDelete}
+                        >
+                          <DeleteOutlineRoundedIcon
+                            sx={{ fontSize: 18, color: brand.danger }}
+                          />
+                        </IconButton>
+                      </Stack>
+                    </TableCell>
+                  ) : null}
                 </TableRow>
               ))
             )}

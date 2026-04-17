@@ -136,38 +136,7 @@ export const pageTableData = {
       { key: "installDate", label: "Install Date", width: "14%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        assetCode: "AST-1001",
-        assetName: "CNC Machine 01",
-        category: "Production",
-        serialNumber: "SN-449001",
-        department: "Production",
-        installDate: "2026-01-12",
-        status: "Running",
-      },
-      {
-        id: 2,
-        assetCode: "AST-1002",
-        assetName: "Hydraulic Press",
-        category: "Press",
-        serialNumber: "SN-449002",
-        department: "Maintenance",
-        installDate: "2026-01-18",
-        status: "Under Maintenance",
-      },
-      {
-        id: 3,
-        assetCode: "AST-1003",
-        assetName: "Lathe Machine",
-        category: "Machining",
-        serialNumber: "SN-449003",
-        department: "Production",
-        installDate: "2026-02-04",
-        status: "Running",
-      },
-    ],
+    rows: [],
   },
 
   spareList: {
@@ -181,30 +150,8 @@ export const pageTableData = {
       { key: "vendor", label: "Vendor", width: "16%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        spareCode: "SPR-2001",
-        spareName: "Bearing Set",
-        partNo: "BR-44A",
-        unit: "PCS",
-        minQty: "15",
-        maxQty: "50",
-        vendor: "Prime Industrial",
-        status: "Active",
-      },
-      {
-        id: 2,
-        spareCode: "SPR-2002",
-        spareName: "Drive Belt",
-        partNo: "DB-20X",
-        unit: "PCS",
-        minQty: "12",
-        maxQty: "40",
-        vendor: "Metro Tech Supply",
-        status: "Pending",
-      },
-    ],
+    rows: []
+      
   },
 
   taskList: {
@@ -218,19 +165,7 @@ export const pageTableData = {
       { key: "shift", label: "Shift", width: "10%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        taskCode: "TSK-3001",
-        taskName: "Lubrication Check",
-        frequency: "Weekly",
-        assignedUser: "Rohit Sharma",
-        startDate: "2026-04-14",
-        endDate: "2026-04-21",
-        shift: "Morning",
-        status: "Active",
-      },
-    ],
+    rows: [],
   },
 
   userList: {
@@ -242,17 +177,7 @@ export const pageTableData = {
       { key: "shift", label: "Shift", width: "12%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        employeeId: "EMP-104",
-        userName: "Amit Kumar",
-        machine: "CNC Machine 01",
-        task: "Lubrication Check",
-        shift: "Morning",
-        status: "Active",
-      },
-    ],
+    rows: [],
   },
 
   vendorList: {
@@ -266,19 +191,7 @@ export const pageTableData = {
       { key: "contractType", label: "Contract Type", width: "14%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        vendorCode: "VEN-401",
-        vendorName: "Prime Industrial",
-        contactPerson: "Rakesh Jain",
-        phone: "+91 9999999991",
-        email: "prime@example.com",
-        city: "Ahmedabad",
-        contractType: "AMC",
-        status: "Active",
-      },
-    ],
+    rows: [],
   },
 
   breakdownList: {
@@ -290,17 +203,7 @@ export const pageTableData = {
       { key: "reportedBy", label: "Reported By", width: "18%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        breakdownCode: "BRK-501",
-        machineName: "CNC Machine 01",
-        issueType: "Motor Fault",
-        priority: "High",
-        reportedBy: "Rohit Sharma",
-        status: "Pending",
-      },
-    ],
+    rows: [],
   },
 
   consumeList: {
@@ -313,18 +216,7 @@ export const pageTableData = {
       { key: "consumeQty", label: "Consume Qty", width: "12%" },
       { key: "status", label: "Status", width: "12%", type: "status" },
     ],
-    rows: [
-      {
-        id: 1,
-        entryNo: "CON-7001",
-        itemName: "Bearing Set",
-        requestedBy: "Amit Kumar",
-        issueDate: "2026-04-16",
-        unit: "PCS",
-        consumeQty: "5",
-        status: "Active",
-      },
-    ],
+    rows: [],
   },
 };
 

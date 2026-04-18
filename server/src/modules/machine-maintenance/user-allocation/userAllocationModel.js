@@ -30,7 +30,6 @@ const userAllocationSchema = new mongoose.Schema(
     },
     shift: {
       type: String,
-      enum: ["", "Morning", "Evening", "Night", "General"],
       default: "",
       trim: true,
     },
@@ -67,15 +66,6 @@ const userAllocationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: [
-        "Active",
-        "Pending",
-        "Running",
-        "Idle",
-        "Under Maintenance",
-        "Breakdown",
-        "Retired",
-      ],
       default: "Active",
       trim: true,
     },

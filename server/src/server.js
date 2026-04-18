@@ -16,6 +16,16 @@ import taskRoutes from "./modules/machine-maintenance/task/taskRoute.js";
 import userAllocationRoutes from "./modules/machine-maintenance/user-allocation/userAllocationRoute.js";
 import vendorRoutes from "./modules/machine-maintenance/vendor/vendorRoute.js";
 
+import departmentRoute from "./modules/configure/department/departmentRoute.js";
+import shiftTimingRoute from "./modules/configure/shift-timing/shiftTimingRoute.js";
+import plantSiteRoute from "./modules/configure/plant-site/plantSiteRoute.js";
+import statusRoute from "./modules/configure/status/statusRoute.js";
+import criticalLevelRoute from "./modules/configure/critical-level/criticalLevelRoute.js";
+import unitOfMeasureRoute from "./modules/configure/unit-of-measure/unitOfMeasureRoute.js";
+import taskCategoryRoute from "./modules/configure/task-category/taskCategoryRoute.js";
+import frequencyRoute from "./modules/configure/frequency/frequencyRoute.js";
+import contractTypeRoute from "./modules/configure/contract-type/contractTypeRoute.js";
+
 dotenv.config();
 connectDB();
 
@@ -32,10 +42,7 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  "/uploads",
-  express.static(path.join(process.cwd(), "uploads")),
-);
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (req, res) => {
   res.send("Server is running");
@@ -50,6 +57,16 @@ app.use("/api/machine-maintenance/spares", spareRoutes);
 app.use("/api/machine-maintenance/tasks", taskRoutes);
 app.use("/api/machine-maintenance/user-allocations", userAllocationRoutes);
 app.use("/api/machine-maintenance/vendors", vendorRoutes);
+
+app.use("/api/configure/departments", departmentRoute);
+app.use("/api/configure/shift-timings", shiftTimingRoute);
+app.use("/api/configure/plant-sites", plantSiteRoute);
+app.use("/api/configure/statuses", statusRoute);
+app.use("/api/configure/critical-levels", criticalLevelRoute);
+app.use("/api/configure/units-of-measure", unitOfMeasureRoute);
+app.use("/api/configure/task-categories", taskCategoryRoute);
+app.use("/api/configure/frequencies", frequencyRoute);
+app.use("/api/configure/contract-types", contractTypeRoute);
 
 const PORT = process.env.PORT || 5000;
 

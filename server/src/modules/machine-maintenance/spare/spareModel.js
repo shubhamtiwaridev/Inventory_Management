@@ -40,7 +40,6 @@ const spareSchema = new mongoose.Schema(
     },
     unit: {
       type: String,
-      enum: ["PCS", "SET", "LTR", "KG", ""],
       required: [true, "Unit is required"],
       trim: true,
     },
@@ -87,15 +86,6 @@ const spareSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: [
-        "Active",
-        "Pending",
-        "Running",
-        "Idle",
-        "Under Maintenance",
-        "Breakdown",
-        "Retired",
-      ],
       default: "Active",
       trim: true,
     },

@@ -36,7 +36,6 @@ const vendorSchema = new mongoose.Schema(
     },
     contractType: {
       type: String,
-      enum: ["AMC", "Service", "Supply", "On-call"],
       required: [true, "Contract type is required"],
       trim: true,
     },
@@ -65,15 +64,6 @@ const vendorSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: [
-        "Active",
-        "Pending",
-        "Running",
-        "Idle",
-        "Under Maintenance",
-        "Breakdown",
-        "Retired",
-      ],
       default: "Active",
       trim: true,
     },

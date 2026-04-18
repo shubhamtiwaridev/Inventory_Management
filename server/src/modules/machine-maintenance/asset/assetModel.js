@@ -61,21 +61,11 @@ const assetSchema = new mongoose.Schema(
     },
     criticality: {
       type: String,
-      enum: ["", "Low", "Medium", "High", "Critical"],
       default: "",
       trim: true,
     },
     status: {
       type: String,
-      enum: [
-        "Active",
-        "Pending",
-        "Running",
-        "Idle",
-        "Under Maintenance",
-        "Breakdown",
-        "Retired",
-      ],
       default: "Running",
       trim: true,
     },

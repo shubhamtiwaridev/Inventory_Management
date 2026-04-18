@@ -15,7 +15,6 @@ const taskSchema = new mongoose.Schema(
     },
     taskCategory: {
       type: String,
-      enum: ["Preventive", "Corrective", "Predictive", "Calibration", "Safety"],
       required: [true, "Task category is required"],
       trim: true,
     },
@@ -26,7 +25,6 @@ const taskSchema = new mongoose.Schema(
     },
     frequency: {
       type: String,
-      enum: ["Daily", "Weekly", "Monthly", "Runtime-based"],
       required: [true, "Frequency is required"],
       trim: true,
     },
@@ -37,7 +35,6 @@ const taskSchema = new mongoose.Schema(
     },
     shift: {
       type: String,
-      enum: ["", "Morning", "Evening", "Night", "General"],
       default: "",
       trim: true,
     },
@@ -96,15 +93,6 @@ const taskSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: [
-        "Active",
-        "Pending",
-        "Running",
-        "Idle",
-        "Under Maintenance",
-        "Breakdown",
-        "Retired",
-      ],
       default: "Active",
       trim: true,
     },

@@ -39,7 +39,8 @@ import {
 
 const getPlainValue = (value) => {
   if (value === undefined || value === null) return "";
-  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (typeof value === "string" || typeof value === "number")
+    return String(value);
 
   if (typeof value === "object") {
     if (value.displayName) return String(value.displayName);
@@ -61,11 +62,7 @@ const matchesSearch = (row, keyword) => {
 const getStatusChipSx = (value) => {
   const lowered = String(value).toLowerCase();
 
-  if (
-    lowered === "critical" ||
-    lowered === "breakdown" ||
-    lowered === "high"
-  ) {
+  if (lowered === "critical" || lowered === "breakdown" || lowered === "high") {
     return {
       borderRadius: 2,
       fontWeight: 700,
@@ -92,7 +89,12 @@ const getStatusChipSx = (value) => {
 };
 
 const FilePreviewCell = ({ value }) => {
-  if (!value || value === "-" || typeof value !== "object" || value.kind !== "file") {
+  if (
+    !value ||
+    value === "-" ||
+    typeof value !== "object" ||
+    value.kind !== "file"
+  ) {
     return "-";
   }
 
@@ -145,7 +147,9 @@ const FilePreviewCell = ({ value }) => {
         ) : isPdf ? (
           <PictureAsPdfRoundedIcon sx={{ fontSize: 18, color: "#C2410C" }} />
         ) : (
-          <InsertDriveFileRoundedIcon sx={{ fontSize: 18, color: brand.textSoft }} />
+          <InsertDriveFileRoundedIcon
+            sx={{ fontSize: 18, color: brand.textSoft }}
+          />
         )}
       </Link>
 
@@ -487,11 +491,12 @@ const MachineMaintenanceListView = ({
                               color: isStatus ? brand.text : brand.textSoft,
                               fontWeight: index === 0 ? 700 : 500,
                               wordBreak: "break-word",
-                              whiteSpace: column.type === "file"
-                                ? "normal"
-                                : column.nowrap
-                                  ? "nowrap"
-                                  : "normal",
+                              whiteSpace:
+                                column.type === "file"
+                                  ? "normal"
+                                  : column.nowrap
+                                    ? "nowrap"
+                                    : "normal",
                               minWidth: column.width || "180px",
                             }}
                           >

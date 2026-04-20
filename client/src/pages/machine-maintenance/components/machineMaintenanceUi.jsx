@@ -159,8 +159,6 @@ export const pageFormData = {
       {
         name: "technicalSpecifications",
         label: "Technical Specifications",
-        multiline: true,
-        minRows: 3,
       },
       {
         name: "operatingManual",
@@ -191,8 +189,6 @@ export const pageFormData = {
       {
         name: "description",
         label: "Description",
-        multiline: true,
-        minRows: 3,
       },
       {
         name: "linkedMachine",
@@ -285,20 +281,14 @@ export const pageFormData = {
       {
         name: "checklistSteps",
         label: "Checklist Steps",
-        multiline: true,
-        minRows: 3,
       },
       {
         name: "instructions",
         label: "SOP / Instructions",
-        multiline: true,
-        minRows: 3,
       },
       {
         name: "safetyPrecautions",
         label: "Safety Precautions / LOTO",
-        multiline: true,
-        minRows: 3,
       },
       { name: "skillRequirement", label: "Skill Requirement" },
       { name: "escalationLevel", label: "Escalation Level" },
@@ -380,8 +370,6 @@ export const pageFormData = {
       {
         name: "escalationContacts",
         label: "Escalation Contacts",
-        multiline: true,
-        minRows: 3,
       },
       {
         name: "status",

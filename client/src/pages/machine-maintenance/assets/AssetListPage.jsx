@@ -1,66 +1,106 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import MachineMaintenanceListView from "../components/MachineMaintenanceListView.jsx";
-import { pageTableData } from "../components/machineMaintenanceUi.jsx";
 import {
+  pageFormData,
+  pageTableData,
+} from "../components/machineMaintenanceUi.jsx";
+import MachineMaintenanceDialogPage from "../components/MachineMaintenanceDialogPage.jsx";
+import {
+  createAsset,
   deleteAsset,
+  getAssetById,
   getAssets,
+  getConfiguredCriticalLevels,
+  getConfiguredDepartments,
+  getConfiguredPlantSites,
+  getConfiguredStatuses,
+  mapAssetFormValues,
   mapAssetListRow,
+  updateAsset,
 } from "../components/machineMaintenanceApi.js";
 
+const buildAssetPayload = (payload) => {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") return;
+    formData.append(key, value);
+  });
+
+  return formData;
+};
+
+const loadAssetDropdownData = async () => {
+  const [departments, plants, criticalLevels, statuses] = await Promise.all([
+    getConfiguredDepartments(),
+    getConfiguredPlantSites(),
+    getConfiguredCriticalLevels(),
+    getConfiguredStatuses(),
+  ]);
+
+  return {
+    departments,
+    plants,
+    criticalLevels,
+    statuses,
+  };
+};
+
+const buildAssetFormConfig = ({ baseConfig, dropdownData }) => ({
+  ...baseConfig,
+  fields: baseConfig.fields.map((field) => {
+    if (field.name === "plant") {
+      return { ...field, select: true, options: dropdownData.plants || [] };
+    }
+
+    if (field.name === "department") {
+      return {
+        ...field,
+        select: true,
+        options: dropdownData.departments || [],
+      };
+    }
+
+    if (field.name === "criticality") {
+      return {
+        ...field,
+        select: true,
+        options: dropdownData.criticalLevels || [],
+      };
+    }
+
+    if (field.name === "status") {
+      return { ...field, select: true, options: dropdownData.statuses || [] };
+    }
+
+    return field;
+  }),
+});
+
 const AssetListPage = () => {
-  const navigate = useNavigate();
-  const config = pageTableData.assetList;
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const fetchRows = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const response = await getAssets();
-      const records = Array.isArray(response?.data) ? response.data : [];
-      setRows(records.map(mapAssetListRow));
-    } catch (err) {
-      setError(err.message || "Failed to fetch assets");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchRows();
-  }, [fetchRows]);
-
-  const handleEdit = (row) => {
-    navigate(`/machine-maintenance/assets/register/${row.id}`);
-  };
-
-  const handleDelete = async (row) => {
-    const confirmed = window.confirm("Are you sure you want to delete this asset?");
-    if (!confirmed) return;
-
-    try {
-      await deleteAsset(row.id);
-      setRows((prev) => prev.filter((item) => item.id !== row.id));
-    } catch (err) {
-      alert(err.message || "Failed to delete asset");
-    }
-  };
-
   return (
-    <MachineMaintenanceListView
-      title="List of Assets"
-      columns={config.columns}
-      rows={rows}
-      loading={loading}
-      error={error}
-      onRefresh={fetchRows}
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      primaryButtonLabel="New Asset"
-      onPrimaryAction={() => navigate("/machine-maintenance/assets/register")}
+    <MachineMaintenanceDialogPage
+      listTitle="List of Assets"
+      formTitle="Machine Registration"
+      listConfig={pageTableData.assetList}
+      formConfig={pageFormData.assetRegister}
+      listPath="/machine-maintenance/assets/list"
+      getList={getAssets}
+      mapListRow={mapAssetListRow}
+      deleteItem={deleteAsset}
+      getItemById={getAssetById}
+      createItem={createAsset}
+      updateItem={updateAsset}
+      mapFormValues={mapAssetFormValues}
+      loadDropdownData={loadAssetDropdownData}
+      buildFormConfig={buildAssetFormConfig}
+      buildSubmitPayload={buildAssetPayload}
+      createSuccessMessage="Machine registered successfully."
+      updateSuccessMessage="Machine updated successfully."
+      deleteConfirmMessage="Are you sure you want to delete this asset?"
+      fetchErrorMessage="Failed to fetch assets"
+      deleteErrorMessage="Failed to delete asset"
+      primaryButtonLabel="New"
+      dialogMaxWidth="sm"
+      dialogWidth={{ xs: "calc(100% - 24px)", sm: "496px" }}
     />
   );
 };

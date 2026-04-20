@@ -1,12 +1,13 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import PublicRoute from "./routes/PublicRoute.jsx";
 
 import Register from "./pages/auth/Register.jsx";
 import Login from "./pages/auth/Login.jsx";
-import Dashboard from "./pages/mainpages/Dashboard.jsx";
 import ForgetPassword from "./pages/auth/ForgetPassword.jsx";
+
+import Dashboard from "./pages/mainpages/Dashboard.jsx";
 
 import StaffPage from "./pages/staffs/StaffPage.jsx";
 import StaffList from "./pages/staffs/StaffList.jsx";
@@ -17,15 +18,10 @@ import SparesPage from "./pages/spares/SparesPage.jsx";
 import InventoryPage from "./pages/inventory/InventoryPage.jsx";
 
 import AssetListPage from "./pages/machine-maintenance/assets/AssetListPage.jsx";
-import AssetRegisterPage from "./pages/machine-maintenance/assets/AssetRegisterPage.jsx";
 import SpareListPage from "./pages/machine-maintenance/assets/SpareListPage.jsx";
-import SpareRegisterPage from "./pages/machine-maintenance/assets/SpareRegisterPage.jsx";
 import TaskListPage from "./pages/machine-maintenance/assets/TaskListPage.jsx";
-import TaskSchedulePage from "./pages/machine-maintenance/assets/TaskSchedulePage.jsx";
 import UserListPage from "./pages/machine-maintenance/assets/UserListPage.jsx";
-import UserAllocationPage from "./pages/machine-maintenance/assets/UserAllocationPage.jsx";
 import VendorListPage from "./pages/machine-maintenance/assets/VendorListPage.jsx";
-import VendorRegisterPage from "./pages/machine-maintenance/assets/VendorRegisterPage.jsx";
 import BreakdownListPage from "./pages/machine-maintenance/assets/BreakdownListPage.jsx";
 import ConsumeEntryPage from "./pages/machine-maintenance/assets/ConsumeEntryPage.jsx";
 
@@ -72,33 +68,27 @@ function App() {
           />
 
           <Route path="assets/list" element={<AssetListPage />} />
-          <Route path="assets/register" element={<AssetRegisterPage />} />
-          <Route path="assets/register/:id" element={<AssetRegisterPage />} />
+          <Route path="assets/register" element={<AssetListPage />} />
+          <Route path="assets/register/:id" element={<AssetListPage />} />
 
           <Route path="spare-master/list" element={<SpareListPage />} />
-          <Route path="spare-master/register" element={<SpareRegisterPage />} />
-          <Route
-            path="spare-master/register/:id"
-            element={<SpareRegisterPage />}
-          />
+          <Route path="spare-master/register" element={<SpareListPage />} />
+          <Route path="spare-master/register/:id" element={<SpareListPage />} />
 
           <Route path="tasks/list" element={<TaskListPage />} />
-          <Route path="tasks/schedule" element={<TaskSchedulePage />} />
-          <Route path="tasks/schedule/:id" element={<TaskSchedulePage />} />
+          <Route path="tasks/schedule" element={<TaskListPage />} />
+          <Route path="tasks/schedule/:id" element={<TaskListPage />} />
 
           <Route path="user-allocation/list" element={<UserListPage />} />
-          <Route
-            path="user-allocation/allocation"
-            element={<UserAllocationPage />}
-          />
+          <Route path="user-allocation/allocation" element={<UserListPage />} />
           <Route
             path="user-allocation/allocation/:id"
-            element={<UserAllocationPage />}
+            element={<UserListPage />}
           />
 
           <Route path="vendors/list" element={<VendorListPage />} />
-          <Route path="vendors/register" element={<VendorRegisterPage />} />
-          <Route path="vendors/register/:id" element={<VendorRegisterPage />} />
+          <Route path="vendors/register" element={<VendorListPage />} />
+          <Route path="vendors/register/:id" element={<VendorListPage />} />
 
           <Route
             path="consume/breakdown-list"
@@ -108,6 +98,7 @@ function App() {
         </Route>
 
         <Route path="/spares" element={<SparesPage />} />
+
         <Route path="/inventory/*" element={<InventoryPage />}>
           <Route
             path="goodslist/:tabKey"
@@ -136,45 +127,17 @@ function App() {
             element={<Navigate to="/configure/department" replace />}
           />
           <Route
-            path="shift-timing/list"
-            element={<Navigate to="/configure/shift-timing" replace />}
-          />
-          <Route
-            path="plant-site/list"
-            element={<Navigate to="/configure/plant-site" replace />}
-          />
-          <Route
-            path="status/list"
-            element={<Navigate to="/configure/status" replace />}
-          />
-          <Route
-            path="critical-level/list"
-            element={<Navigate to="/configure/critical-level" replace />}
-          />
-          <Route
-            path="unit-of-measure/list"
-            element={<Navigate to="/configure/unit-of-measure" replace />}
-          />
-          <Route
-            path="task-category/list"
-            element={<Navigate to="/configure/task-category" replace />}
-          />
-          <Route
-            path="frequency/list"
-            element={<Navigate to="/configure/frequency" replace />}
-          />
-          <Route
-            path="contract-type/list"
-            element={<Navigate to="/configure/contract-type" replace />}
-          />
-
-          <Route
             path="department/register"
             element={<Navigate to="/configure/department" replace />}
           />
           <Route
             path="department/register/:id"
             element={<Navigate to="/configure/department" replace />}
+          />
+
+          <Route
+            path="shift-timing/list"
+            element={<Navigate to="/configure/shift-timing" replace />}
           />
           <Route
             path="shift-timing/register"
@@ -184,6 +147,11 @@ function App() {
             path="shift-timing/register/:id"
             element={<Navigate to="/configure/shift-timing" replace />}
           />
+
+          <Route
+            path="plant-site/list"
+            element={<Navigate to="/configure/plant-site" replace />}
+          />
           <Route
             path="plant-site/register"
             element={<Navigate to="/configure/plant-site" replace />}
@@ -191,6 +159,11 @@ function App() {
           <Route
             path="plant-site/register/:id"
             element={<Navigate to="/configure/plant-site" replace />}
+          />
+
+          <Route
+            path="status/list"
+            element={<Navigate to="/configure/status" replace />}
           />
           <Route
             path="status/register"
@@ -200,6 +173,11 @@ function App() {
             path="status/register/:id"
             element={<Navigate to="/configure/status" replace />}
           />
+
+          <Route
+            path="critical-level/list"
+            element={<Navigate to="/configure/critical-level" replace />}
+          />
           <Route
             path="critical-level/register"
             element={<Navigate to="/configure/critical-level" replace />}
@@ -207,6 +185,11 @@ function App() {
           <Route
             path="critical-level/register/:id"
             element={<Navigate to="/configure/critical-level" replace />}
+          />
+
+          <Route
+            path="unit-of-measure/list"
+            element={<Navigate to="/configure/unit-of-measure" replace />}
           />
           <Route
             path="unit-of-measure/register"
@@ -216,6 +199,11 @@ function App() {
             path="unit-of-measure/register/:id"
             element={<Navigate to="/configure/unit-of-measure" replace />}
           />
+
+          <Route
+            path="task-category/list"
+            element={<Navigate to="/configure/task-category" replace />}
+          />
           <Route
             path="task-category/register"
             element={<Navigate to="/configure/task-category" replace />}
@@ -224,6 +212,11 @@ function App() {
             path="task-category/register/:id"
             element={<Navigate to="/configure/task-category" replace />}
           />
+
+          <Route
+            path="frequency/list"
+            element={<Navigate to="/configure/frequency" replace />}
+          />
           <Route
             path="frequency/register"
             element={<Navigate to="/configure/frequency" replace />}
@@ -231,6 +224,11 @@ function App() {
           <Route
             path="frequency/register/:id"
             element={<Navigate to="/configure/frequency" replace />}
+          />
+
+          <Route
+            path="contract-type/list"
+            element={<Navigate to="/configure/contract-type" replace />}
           />
           <Route
             path="contract-type/register"

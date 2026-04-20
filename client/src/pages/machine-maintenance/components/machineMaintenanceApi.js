@@ -417,6 +417,67 @@ const getConfiguredOptions = async (url, mapOption) => {
   return uniqueOptions(records.map(mapOption).filter(Boolean));
 };
 
+const firstNonEmpty = (...values) => {
+  for (const value of values) {
+    const cleanValue = String(value ?? "").trim();
+    if (cleanValue) return cleanValue;
+  }
+  return "";
+};
+
+const getStaffResponseList = (response) => {
+  if (Array.isArray(response?.users)) return response.users;
+  if (Array.isArray(response?.data?.users)) return response.data.users;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.rows)) return response.rows;
+  if (Array.isArray(response?.staffs)) return response.staffs;
+  if (Array.isArray(response?.staffList)) return response.staffList;
+  if (Array.isArray(response?.employees)) return response.employees;
+  if (Array.isArray(response?.results)) return response.results;
+  if (Array.isArray(response)) return response;
+  return [];
+};
+
+const getStaffOptionFromItem = (item) => {
+  const name = firstNonEmpty(
+    item?.name,
+    item?.userName,
+    item?.staffName,
+    item?.fullName,
+    item?.employeeName,
+  );
+
+  if (!name) return null;
+
+  return {
+    label: name,
+    value: name,
+    data: {
+      employeeId: firstNonEmpty(
+        item?.employeeId,
+        item?.employeeCode,
+        item?.staffId,
+        item?.empId,
+        item?.code,
+        item?._id,
+      ),
+      role: firstNonEmpty(
+        item?.role,
+        item?.roles,
+        item?.roleName,
+        item?.staffType,
+        item?.designation,
+      ),
+      email: firstNonEmpty(item?.email, item?.emailAddress, item?.mail),
+    },
+  };
+};
+
+const getStaffDirectory = async () => {
+  const response = await request("/staff-page");
+  return getStaffResponseList(response);
+};
+
 export const getConfiguredDepartments = async () =>
   getConfiguredOptions("/configure/departments", getDepartmentOptionFromItem);
 
@@ -464,6 +525,11 @@ export const getConfiguredContractTypes = async () =>
     "/configure/contract-types",
     getSimpleOptionFromItem("contractType"),
   );
+
+export const getStaffMemberOptions = async () => {
+  const records = await getStaffDirectory();
+  return uniqueOptions(records.map(getStaffOptionFromItem).filter(Boolean));
+};
 
 export const getAssets = async () => request("/machine-maintenance/assets");
 

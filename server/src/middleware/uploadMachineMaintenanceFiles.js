@@ -11,9 +11,46 @@ const allowedMimeTypes = [
   "image/jpeg",
   "image/png",
   "image/jpg",
+
+  "video/mp4",
+  "video/mpeg",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/x-ms-wmv",
+  "video/webm",
+  "video/x-flv",
+  "video/3gpp",
+  "video/3gpp2",
+  "video/ogg",
+  "video/mp2t",
+  "video/x-matroska",
+
+  "application/octet-stream",
 ];
 
-const allowedExtensions = [".pdf", ".jpg", ".jpeg", ".png"];
+const allowedExtensions = [
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+
+  ".mp4",
+  ".mpeg",
+  ".mpg",
+  ".mov",
+  ".avi",
+  ".wmv",
+  ".webm",
+  ".flv",
+  ".3gp",
+  ".3g2",
+  ".ogv",
+  ".ts",
+  ".m2ts",
+  ".mts",
+  ".mkv",
+  ".m4v",
+];
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -26,7 +63,7 @@ const storage = multer.diskStorage({
       .replace(/[^a-zA-Z0-9-_]/g, "-")
       .toLowerCase();
 
-    cb(cb ? null : null, `${Date.now()}-${safeBaseName}${extension}`);
+    cb(null, `${Date.now()}-${safeBaseName}${extension}`);
   },
 });
 
@@ -52,7 +89,9 @@ const fileFilter = (req, file, cb) => {
   }
 
   if (!isAllowedFile(file)) {
-    return cb(new Error("Only PDF, JPG, JPEG and PNG files are allowed"));
+    return cb(
+      new Error("Only PDF, JPG, JPEG, PNG and video files are allowed"),
+    );
   }
 
   cb(null, true);
@@ -62,7 +101,7 @@ const uploadMachineMaintenanceFiles = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024,
+    fileSize: 100 * 1024 * 1024,
   },
 });
 

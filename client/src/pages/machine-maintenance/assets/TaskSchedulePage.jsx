@@ -6,12 +6,50 @@ import {
   createTask,
   getConfiguredFrequencies,
   getConfiguredShiftTimings,
+  getConfiguredStatuses,
   getConfiguredTaskCategories,
   getRegisteredMachineOptions,
+  getStaffMemberOptions,
   getTaskById,
   mapTaskFormValues,
   updateTask,
 } from "../components/machineMaintenanceApi.js";
+
+const toOption = (value) => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) {
+    return null;
+  }
+
+  return {
+    label: cleanValue,
+    value: cleanValue,
+  };
+};
+
+const mergeOptionsWithExistingValue = (options = [], value = "") => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) {
+    return options;
+  }
+
+  const optionExists = options.some((option) => {
+    const optionValue =
+      typeof option === "string" ? option : String(option?.value || "").trim();
+
+    return optionValue === cleanValue;
+  });
+
+  if (optionExists) {
+    return options;
+  }
+
+  const currentValueOption = toOption(cleanValue);
+
+  return currentValueOption ? [currentValueOption, ...options] : options;
+};
 
 const TaskSchedulePage = () => {
   const navigate = useNavigate();
@@ -22,30 +60,42 @@ const TaskSchedulePage = () => {
   const [loadingInitialValues, setLoadingInitialValues] = useState(false);
   const [loadingDropdownOptions, setLoadingDropdownOptions] = useState(false);
 
-  const [shiftOptions, setShiftOptions] = useState([]);
   const [taskCategoryOptions, setTaskCategoryOptions] = useState([]);
-  const [frequencyOptions, setFrequencyOptions] = useState([]);
   const [machineOptions, setMachineOptions] = useState([]);
+  const [frequencyOptions, setFrequencyOptions] = useState([]);
+  const [assignedUserOptions, setAssignedUserOptions] = useState([]);
+  const [shiftOptions, setShiftOptions] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([]);
 
   useEffect(() => {
     const loadDropdownOptions = async () => {
       try {
         setLoadingDropdownOptions(true);
 
-        const [shifts, taskCategories, frequencies, machines] =
-          await Promise.all([
-            getConfiguredShiftTimings(),
-            getConfiguredTaskCategories(),
-            getConfiguredFrequencies(),
-            getRegisteredMachineOptions(),
-          ]);
+        const [
+          taskCategories,
+          machines,
+          frequencies,
+          assignedUsers,
+          shifts,
+          statuses,
+        ] = await Promise.all([
+          getConfiguredTaskCategories(),
+          getRegisteredMachineOptions(),
+          getConfiguredFrequencies(),
+          getStaffMemberOptions(),
+          getConfiguredShiftTimings(),
+          getConfiguredStatuses(),
+        ]);
 
-        setShiftOptions(shifts);
         setTaskCategoryOptions(taskCategories);
-        setFrequencyOptions(frequencies);
         setMachineOptions(machines);
+        setFrequencyOptions(frequencies);
+        setAssignedUserOptions(assignedUsers);
+        setShiftOptions(shifts);
+        setStatusOptions(statuses);
       } catch (error) {
-        console.error("Failed to load configure dropdown data:", error);
+        console.error("Failed to load task dropdown data:", error);
       } finally {
         setLoadingDropdownOptions(false);
       }
@@ -83,7 +133,10 @@ const TaskSchedulePage = () => {
           return {
             ...field,
             select: true,
-            options: taskCategoryOptions,
+            options: mergeOptionsWithExistingValue(
+              taskCategoryOptions,
+              initialValues?.taskCategory,
+            ),
           };
         }
 
@@ -91,7 +144,10 @@ const TaskSchedulePage = () => {
           return {
             ...field,
             select: true,
-            options: machineOptions,
+            options: mergeOptionsWithExistingValue(
+              machineOptions,
+              initialValues?.applicableMachine,
+            ),
           };
         }
 
@@ -99,7 +155,21 @@ const TaskSchedulePage = () => {
           return {
             ...field,
             select: true,
-            options: frequencyOptions,
+            options: mergeOptionsWithExistingValue(
+              frequencyOptions,
+              initialValues?.frequency,
+            ),
+          };
+        }
+
+        if (field.name === "assignedUser") {
+          return {
+            ...field,
+            select: true,
+            options: mergeOptionsWithExistingValue(
+              assignedUserOptions,
+              initialValues?.assignedUser,
+            ),
           };
         }
 
@@ -107,7 +177,21 @@ const TaskSchedulePage = () => {
           return {
             ...field,
             select: true,
-            options: shiftOptions,
+            options: mergeOptionsWithExistingValue(
+              shiftOptions,
+              initialValues?.shift,
+            ),
+          };
+        }
+
+        if (field.name === "status") {
+          return {
+            ...field,
+            select: true,
+            options: mergeOptionsWithExistingValue(
+              statusOptions,
+              initialValues?.status,
+            ),
           };
         }
 
@@ -119,7 +203,10 @@ const TaskSchedulePage = () => {
       taskCategoryOptions,
       machineOptions,
       frequencyOptions,
+      assignedUserOptions,
       shiftOptions,
+      statusOptions,
+      initialValues,
     ],
   );
 

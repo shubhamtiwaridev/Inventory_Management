@@ -66,7 +66,7 @@ const assetSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: "Running",
+      default: "",
       trim: true,
     },
     powerRating: {

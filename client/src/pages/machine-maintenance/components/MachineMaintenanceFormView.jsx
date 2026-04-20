@@ -128,6 +128,7 @@ const MachineMaintenanceFormView = ({
   submitHandler,
   onSuccess,
   onError,
+  onFieldChange,
   successMessage = "Saved successfully.",
   initialValues = null,
   loadingInitialValues = false,
@@ -195,14 +196,50 @@ const MachineMaintenanceFormView = ({
 
     if (type === "file") {
       const file = event.target.files?.[0] || null;
-      setFormData((prev) => ({ ...prev, [name]: file }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: event.target.value }));
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: file,
+      }));
+
+      if (errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+      }
+
+      return;
     }
 
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    const nextValue = event.target.value;
+    const nextValues = {
+      ...formData,
+      [name]: nextValue,
+    };
+
+    const derivedValues =
+      typeof onFieldChange === "function"
+        ? onFieldChange({
+            field,
+            value: nextValue,
+            values: nextValues,
+          }) || {}
+        : {};
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: nextValue,
+      ...derivedValues,
+    }));
+
+    setErrors((prev) => {
+      const nextErrors = { ...prev };
+      delete nextErrors[name];
+
+      Object.keys(derivedValues).forEach((key) => {
+        delete nextErrors[key];
+      });
+
+      return nextErrors;
+    });
   };
 
   const handleReset = () => {

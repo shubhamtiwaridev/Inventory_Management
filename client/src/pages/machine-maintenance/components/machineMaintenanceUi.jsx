@@ -111,16 +111,6 @@ export const getCellSx = ({ isLast = false, align = "center" } = {}) => ({
   backgroundColor: "inherit",
 });
 
-const statusOptions = [
-  "Active",
-  "Pending",
-  "Running",
-  "Idle",
-  "Under Maintenance",
-  "Breakdown",
-  "Retired",
-];
-
 export const pageFormData = {
   assetRegister: {
     title: "Machine Registration",
@@ -131,7 +121,13 @@ export const pageFormData = {
       { name: "assetCode", label: "Machine ID / Asset Code", required: true },
       { name: "assetName", label: "Machine Name", required: true },
       { name: "category", label: "Machine Category", required: true },
-      { name: "plant", label: "Plant / Site", required: true },
+      {
+        name: "plant",
+        label: "Plant / Site",
+        required: true,
+        select: true,
+        options: [],
+      },
       {
         name: "department",
         label: "Department",
@@ -158,7 +154,6 @@ export const pageFormData = {
         required: true,
         select: true,
         options: [],
-        defaultValue: "Running",
       },
       { name: "powerRating", label: "Power Rating / Capacity" },
       {
@@ -171,13 +166,15 @@ export const pageFormData = {
         name: "operatingManual",
         label: "Operating Manual",
         type: "file",
-        accept: ".pdf,.jpg,.jpeg,.png",
+        accept:
+          ".pdf,.jpg,.jpeg,.png,.mp4,.mpeg,.mpg,.mov,.avi,.wmv,.webm,.flv,.3gp,.3g2,.ogv,.ts,.m2ts,.mts,.mkv,.m4v",
       },
       {
         name: "machineImage",
         label: "Machine Image",
         type: "file",
-        accept: ".pdf,.jpg,.jpeg,.png",
+        accept:
+          ".pdf,.jpg,.jpeg,.png,.mp4,.mpeg,.mpg,.mov,.avi,.wmv,.webm,.flv,.3gp,.3g2,.ogv,.ts,.m2ts,.mts,.mkv,.m4v",
       },
       { name: "qrCode", label: "QR Code / Barcode" },
     ],
@@ -238,7 +235,6 @@ export const pageFormData = {
         required: true,
         select: true,
         options: [],
-        defaultValue: "Active",
       },
     ],
   },
@@ -272,7 +268,13 @@ export const pageFormData = {
         select: true,
         options: [],
       },
-      { name: "assignedUser", label: "Assigned User", required: true },
+      {
+        name: "assignedUser",
+        label: "Assigned User",
+        required: true,
+        select: true,
+        options: [],
+      },
       { name: "shift", label: "Shift", select: true, options: [] },
       { name: "startDate", label: "Start Date", required: true, type: "date" },
       { name: "endDate", label: "End Date", required: true, type: "date" },
@@ -306,10 +308,10 @@ export const pageFormData = {
         required: true,
         select: true,
         options: [],
-        defaultValue: "Active",
       },
     ],
   },
+
   userAllocation: {
     title: "User Allocation",
     primaryActionLabel: "Save",
@@ -344,7 +346,6 @@ export const pageFormData = {
         required: true,
         select: true,
         options: [],
-        defaultValue: "Active",
       },
     ],
   },
@@ -366,7 +367,7 @@ export const pageFormData = {
         label: "Contract Type",
         required: true,
         select: true,
-        options: ["AMC", "Service", "Supply", "On-call"],
+        options: [],
       },
       { name: "sla", label: "SLA" },
       { name: "machinesCovered", label: "Machines Covered" },
@@ -387,8 +388,7 @@ export const pageFormData = {
         label: "Status",
         required: true,
         select: true,
-        options: statusOptions,
-        defaultValue: "Active",
+        options: [],
       },
     ],
   },

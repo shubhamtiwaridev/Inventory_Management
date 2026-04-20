@@ -28,7 +28,7 @@ const buildAssetPayload = (req) => ({
   warrantyStart: normalizeNullableDate(req.body.warrantyStart),
   warrantyEnd: normalizeNullableDate(req.body.warrantyEnd),
   criticality: normalizeText(req.body.criticality),
-  status: normalizeText(req.body.status) || "Running",
+  status: normalizeText(req.body.status),
   powerRating: normalizeText(req.body.powerRating),
   technicalSpecifications: normalizeText(req.body.technicalSpecifications),
   operatingManual:

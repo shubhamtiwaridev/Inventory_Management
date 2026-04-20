@@ -8,10 +8,48 @@ import {
   getConfiguredShiftTimings,
   getConfiguredStatuses,
   getRegisteredMachineOptions,
+  getStaffMemberOptions,
   getUserAllocationById,
   mapUserAllocationFormValues,
   updateUserAllocation,
 } from "../components/machineMaintenanceApi.js";
+
+const normalizeString = (value) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+const toOption = (value) => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) return null;
+
+  return {
+    label: cleanValue,
+    value: cleanValue,
+  };
+};
+
+const mergeOptionsWithExistingValue = (options = [], value = "") => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) {
+    return options;
+  }
+
+  const exists = options.some((option) => {
+    const optionValue =
+      typeof option === "string" ? option : String(option?.value || "").trim();
+    return optionValue === cleanValue;
+  });
+
+  if (exists) {
+    return options;
+  }
+
+  const currentValueOption = toOption(cleanValue);
+  return currentValueOption ? [currentValueOption, ...options] : options;
+};
 
 const UserAllocationPage = () => {
   const navigate = useNavigate();
@@ -22,6 +60,7 @@ const UserAllocationPage = () => {
   const [loadingInitialValues, setLoadingInitialValues] = useState(false);
   const [loadingDropdownOptions, setLoadingDropdownOptions] = useState(false);
 
+  const [staffOptions, setStaffOptions] = useState([]);
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [shiftOptions, setShiftOptions] = useState([]);
   const [machineOptions, setMachineOptions] = useState([]);
@@ -32,19 +71,22 @@ const UserAllocationPage = () => {
       try {
         setLoadingDropdownOptions(true);
 
-        const [departments, shifts, machines, statuses] = await Promise.all([
-          getConfiguredDepartments(),
-          getConfiguredShiftTimings(),
-          getRegisteredMachineOptions(),
-          getConfiguredStatuses(),
-        ]);
+        const [staffs, departments, shifts, machines, statuses] =
+          await Promise.all([
+            getStaffMemberOptions(),
+            getConfiguredDepartments(),
+            getConfiguredShiftTimings(),
+            getRegisteredMachineOptions(),
+            getConfiguredStatuses(),
+          ]);
 
+        setStaffOptions(staffs);
         setDepartmentOptions(departments);
         setShiftOptions(shifts);
         setMachineOptions(machines);
         setStatusOptions(statuses);
       } catch (error) {
-        console.error("Failed to load dropdown data:", error);
+        console.error("Failed to load user allocation dropdown data:", error);
       } finally {
         setLoadingDropdownOptions(false);
       }
@@ -78,11 +120,25 @@ const UserAllocationPage = () => {
     () => ({
       ...baseConfig,
       fields: baseConfig.fields.map((field) => {
+        if (field.name === "userName") {
+          return {
+            ...field,
+            select: true,
+            options: mergeOptionsWithExistingValue(
+              staffOptions,
+              initialValues?.userName,
+            ),
+          };
+        }
+
         if (field.name === "department") {
           return {
             ...field,
             select: true,
-            options: departmentOptions,
+            options: mergeOptionsWithExistingValue(
+              departmentOptions,
+              initialValues?.department,
+            ),
           };
         }
 
@@ -90,7 +146,10 @@ const UserAllocationPage = () => {
           return {
             ...field,
             select: true,
-            options: shiftOptions,
+            options: mergeOptionsWithExistingValue(
+              shiftOptions,
+              initialValues?.shift,
+            ),
           };
         }
 
@@ -98,7 +157,10 @@ const UserAllocationPage = () => {
           return {
             ...field,
             select: true,
-            options: machineOptions,
+            options: mergeOptionsWithExistingValue(
+              machineOptions,
+              initialValues?.machine,
+            ),
           };
         }
 
@@ -106,7 +168,10 @@ const UserAllocationPage = () => {
           return {
             ...field,
             select: true,
-            options: statusOptions,
+            options: mergeOptionsWithExistingValue(
+              statusOptions,
+              initialValues?.status,
+            ),
           };
         }
 
@@ -115,12 +180,34 @@ const UserAllocationPage = () => {
     }),
     [
       baseConfig,
+      staffOptions,
       departmentOptions,
       shiftOptions,
       machineOptions,
       statusOptions,
+      initialValues,
     ],
   );
+
+  const handleFieldChange = ({ field, value }) => {
+    if (field.name !== "userName") {
+      return {};
+    }
+
+    const selectedStaff = staffOptions.find(
+      (option) => normalizeString(option?.value) === normalizeString(value),
+    );
+
+    if (!selectedStaff?.data) {
+      return {};
+    }
+
+    return {
+      employeeId: selectedStaff.data.employeeId || "",
+      role: selectedStaff.data.role || "",
+      email: selectedStaff.data.email || "",
+    };
+  };
 
   const submitHandler = async (payload) => {
     return id
@@ -138,6 +225,7 @@ const UserAllocationPage = () => {
       submitHandler={submitHandler}
       initialValues={initialValues}
       loadingInitialValues={loadingInitialValues || loadingDropdownOptions}
+      onFieldChange={handleFieldChange}
       onSuccess={() => navigate("/machine-maintenance/user-allocation/list")}
     />
   );

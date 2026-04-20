@@ -328,6 +328,26 @@ const MachineMaintenanceFormView = ({
     }
   };
 
+  const isPickerField = (fieldType) =>
+    fieldType === "date" || fieldType === "datetime-local";
+
+  const openNativePicker = (element) => {
+    const input = element?.querySelector?.("input");
+
+    if (!input || input.disabled || input.readOnly) return;
+
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+        // Fallback to focus and click if showPicker fails (e.g., Safari)
+      }
+    }
+
+    input.focus();
+    input.click();
+  };
   return (
     <Box
       sx={{
@@ -456,9 +476,15 @@ const MachineMaintenanceFormView = ({
                       type={field.type || "text"}
                       multiline={field.multiline}
                       minRows={field.multiline ? field.minRows || 3 : undefined}
+                      InputProps={
+                        field.readOnly ? { readOnly: true } : undefined
+                      }
                       InputLabelProps={
-                        field.type === "date" || field.type === "datetime-local"
-                          ? { shrink: true }
+                        isPickerField(field.type) ? { shrink: true } : undefined
+                      }
+                      onClick={
+                        isPickerField(field.type)
+                          ? (event) => openNativePicker(event.currentTarget)
                           : undefined
                       }
                     />

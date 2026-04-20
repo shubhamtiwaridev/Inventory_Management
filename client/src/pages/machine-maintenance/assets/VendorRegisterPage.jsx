@@ -6,6 +6,7 @@ import {
   createVendor,
   getConfiguredContractTypes,
   getConfiguredStatuses,
+  getRegisteredMachineOptions,
   getVendorById,
   mapVendorFormValues,
   updateVendor,
@@ -22,19 +23,22 @@ const VendorRegisterPage = () => {
 
   const [contractTypeOptions, setContractTypeOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
+  const [machineOptions, setMachineOptions] = useState([]);
 
   useEffect(() => {
     const loadDropdownOptions = async () => {
       try {
         setLoadingDropdownOptions(true);
 
-        const [contractTypes, statuses] = await Promise.all([
+        const [contractTypes, statuses, machines] = await Promise.all([
           getConfiguredContractTypes(),
           getConfiguredStatuses(),
+          getRegisteredMachineOptions(),
         ]);
 
         setContractTypeOptions(contractTypes);
         setStatusOptions(statuses);
+        setMachineOptions(machines);
       } catch (error) {
         console.error("Failed to load dropdown data:", error);
       } finally {
@@ -78,6 +82,15 @@ const VendorRegisterPage = () => {
           };
         }
 
+        if (field.name === "machinesCovered") {
+          return {
+            ...field,
+            label: "Machines Covered",
+            select: true,
+            options: machineOptions,
+          };
+        }
+
         if (field.name === "status") {
           return {
             ...field,
@@ -89,7 +102,7 @@ const VendorRegisterPage = () => {
         return field;
       }),
     }),
-    [baseConfig, contractTypeOptions, statusOptions],
+    [baseConfig, contractTypeOptions, machineOptions, statusOptions],
   );
 
   const submitHandler = async (payload) => {

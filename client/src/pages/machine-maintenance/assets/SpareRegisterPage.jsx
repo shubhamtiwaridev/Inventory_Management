@@ -8,9 +8,33 @@ import {
   getConfiguredUnitsOfMeasure,
   getRegisteredMachineOptions,
   getSpareById,
+  getVendors,
   mapSpareFormValues,
   updateSpare,
 } from "../components/machineMaintenanceApi.js";
+
+const getVendorOptions = (response) => {
+  const records = Array.isArray(response?.data)
+    ? response.data
+    : Array.isArray(response)
+      ? response
+      : [];
+
+  const optionMap = new Map();
+
+  records.forEach((item) => {
+    const vendorName = String(item?.vendorName || "").trim();
+
+    if (!vendorName) return;
+
+    optionMap.set(vendorName, {
+      label: vendorName,
+      value: vendorName,
+    });
+  });
+
+  return Array.from(optionMap.values());
+};
 
 const SpareRegisterPage = () => {
   const navigate = useNavigate();
@@ -24,21 +48,24 @@ const SpareRegisterPage = () => {
   const [machineOptions, setMachineOptions] = useState([]);
   const [unitOptions, setUnitOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
+  const [vendorOptions, setVendorOptions] = useState([]);
 
   useEffect(() => {
     const loadDropdownOptions = async () => {
       try {
         setLoadingDropdownOptions(true);
 
-        const [machines, units, statuses] = await Promise.all([
+        const [machines, units, statuses, vendorsResponse] = await Promise.all([
           getRegisteredMachineOptions(),
           getConfiguredUnitsOfMeasure(),
           getConfiguredStatuses(),
+          getVendors(),
         ]);
 
         setMachineOptions(machines);
         setUnitOptions(units);
         setStatusOptions(statuses);
+        setVendorOptions(getVendorOptions(vendorsResponse));
       } catch (error) {
         console.error("Failed to load dropdown data:", error);
       } finally {
@@ -82,6 +109,15 @@ const SpareRegisterPage = () => {
           };
         }
 
+        if (field.name === "vendor") {
+          return {
+            ...field,
+            label: "Supplier",
+            select: true,
+            options: vendorOptions,
+          };
+        }
+
         if (field.name === "unit") {
           return {
             ...field,
@@ -101,7 +137,7 @@ const SpareRegisterPage = () => {
         return field;
       }),
     }),
-    [baseConfig, machineOptions, unitOptions, statusOptions],
+    [baseConfig, machineOptions, vendorOptions, unitOptions, statusOptions],
   );
 
   const submitHandler = async (payload) => {

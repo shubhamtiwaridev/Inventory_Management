@@ -40,6 +40,8 @@ import TaskCategoryListPage from "./pages/configure/TaskCategoryListPage.jsx";
 import FrequencyListPage from "./pages/configure/FrequencyListPage.jsx";
 import ContractTypeListPage from "./pages/configure/ContractTypeListPage.jsx";
 
+import InventoryMasterListPage from "./pages/inventory/components/InventoryMasterListPage.jsx";
+
 function App() {
   return (
     <Routes>
@@ -106,7 +108,12 @@ function App() {
         </Route>
 
         <Route path="/spares" element={<SparesPage />} />
-        <Route path="/inventory/*" element={<InventoryPage />} />
+        <Route path="/inventory/*" element={<InventoryPage />}>
+          <Route
+            path="goodslist/:tabKey"
+            element={<InventoryMasterListPage />}
+          />
+        </Route>
 
         <Route path="/configure" element={<ConfigurePage />}>
           <Route

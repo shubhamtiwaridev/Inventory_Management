@@ -28,7 +28,6 @@ import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import HandymanRoundedIcon from "@mui/icons-material/HandymanRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
-import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
 
@@ -88,16 +87,6 @@ const stats = [
     iconBg: "#EEF8F7",
     iconColor: "#12807B",
     path: "/staff",
-  },
-  {
-    title: "Configure",
-    value: "03",
-    subtitle: "Master setup",
-    subtitleTone: "success",
-    icon: <SettingsRoundedIcon />,
-    iconBg: "#EEF8F7",
-    iconColor: "#106C6B",
-    path: "/configure",
   },
 ];
 

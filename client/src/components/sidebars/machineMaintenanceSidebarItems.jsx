@@ -13,6 +13,15 @@ import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import PlaylistAddCheckRoundedIcon from "@mui/icons-material/PlaylistAddCheckRounded";
 import RemoveCircleOutlineRoundedIcon from "@mui/icons-material/RemoveCircleOutlineRounded";
 import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import FactoryRoundedIcon from "@mui/icons-material/FactoryRounded";
+import ToggleOnRoundedIcon from "@mui/icons-material/ToggleOnRounded";
+import StraightenRoundedIcon from "@mui/icons-material/StraightenRounded";
+import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
+import RepeatRoundedIcon from "@mui/icons-material/RepeatRounded";
+import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 
 export const machineMaintenanceSidebarItems = [
   {
@@ -137,6 +146,68 @@ export const machineMaintenanceSidebarItems = [
         icon: <RemoveCircleOutlineRoundedIcon />,
         path: "/machine-maintenance/consume/entry",
         description: "Manage consume entries.",
+      },
+    ],
+  },
+  {
+    label: "Configure",
+    icon: <SettingsRoundedIcon />,
+    path: "/machine-maintenance/configure/department",
+    description: "Manage configure master records.",
+    children: [
+      {
+        label: "Department",
+        icon: <ApartmentRoundedIcon />,
+        path: "/machine-maintenance/configure/department",
+        description: "Manage department master records.",
+      },
+      {
+        label: "Shift Timing",
+        icon: <AccessTimeRoundedIcon />,
+        path: "/machine-maintenance/configure/shift-timing",
+        description: "Manage shift timing master records.",
+      },
+      {
+        label: "Plant Site",
+        icon: <FactoryRoundedIcon />,
+        path: "/machine-maintenance/configure/plant-site",
+        description: "Manage plant and site master records.",
+      },
+      {
+        label: "Status",
+        icon: <ToggleOnRoundedIcon />,
+        path: "/machine-maintenance/configure/status",
+        description: "Manage status master records.",
+      },
+      {
+        label: "Critical Level",
+        icon: <WarningAmberRoundedIcon />,
+        path: "/machine-maintenance/configure/critical-level",
+        description: "Manage critical level master records.",
+      },
+      {
+        label: "Units of Measure",
+        icon: <StraightenRoundedIcon />,
+        path: "/machine-maintenance/configure/unit-of-measure",
+        description: "Manage units of measure master records.",
+      },
+      {
+        label: "Task Category",
+        icon: <CategoryRoundedIcon />,
+        path: "/machine-maintenance/configure/task-category",
+        description: "Manage task category master records.",
+      },
+      {
+        label: "Frequency",
+        icon: <RepeatRoundedIcon />,
+        path: "/machine-maintenance/configure/frequency",
+        description: "Manage frequency master records.",
+      },
+      {
+        label: "Contract Type",
+        icon: <AssignmentRoundedIcon />,
+        path: "/machine-maintenance/configure/contract-type",
+        description: "Manage contract type master records.",
       },
     ],
   },

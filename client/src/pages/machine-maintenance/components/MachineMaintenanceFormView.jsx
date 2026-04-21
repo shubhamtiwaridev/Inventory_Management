@@ -16,6 +16,7 @@ import {
   outlinedActionButtonSx,
   textFieldStyles,
 } from "./machineMaintenanceUi.jsx";
+import { API_BASE_URL } from "../../../api/config";
 
 const createInitialState = (fields = []) =>
   fields.reduce((accumulator, field) => {
@@ -132,7 +133,7 @@ const MachineMaintenanceFormView = ({
   secondaryActionLabel = "Reset",
   fields = [],
   apiEndpoint,
-  apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000",
+  apiBaseUrl = API_BASE_URL,
   requestMethod = "POST",
   submitHandler,
   onSuccess,

@@ -31,9 +31,7 @@ import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useAuth } from "../../store/AuthContext.jsx";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "../../api/config";
 
 const request = async (url, options = {}) => {
   const response = await fetch(`${API_BASE_URL}${url}`, {

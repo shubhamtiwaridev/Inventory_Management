@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/decostyle-logo.png";
+import { API_BASE_URL } from "../../api/config";
 
 import {
   Box,
@@ -31,9 +32,6 @@ const brand = {
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
-
-  const API_BASE_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
   const [changePasswordData, setChangePasswordData] = useState({
     email: "",
@@ -227,28 +225,28 @@ const ForgetPassword = () => {
 
   return (
     <Box
-  sx={{
-    position: "fixed",
-    inset: 0,
-    width: "100%",
-    height: "100dvh",
-    background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    px: 2,
-    py: 1.25,
-    boxSizing: "border-box",
-    overflow: "hidden",
-  }}
->
-  <Box
-    sx={{
-      width: "100%",
-      maxWidth: 520,
-      mx: "auto",
-    }}
-  >
+      sx={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100dvh",
+        background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        px: 2,
+        py: 1.25,
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 520,
+          mx: "auto",
+        }}
+      >
         <Paper
           elevation={0}
           sx={{

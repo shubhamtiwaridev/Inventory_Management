@@ -23,9 +23,7 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "../../api/config";
 
 const brand = {
   primary: "#106C6B",

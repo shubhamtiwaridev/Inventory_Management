@@ -26,6 +26,11 @@ import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import {
+  filledActionButtonSx,
+  outlinedActionButtonSx,
+  textFieldStyles,
+} from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
 
 const brand = {
   primary: "#106C6B",
@@ -417,6 +422,8 @@ const ConfigureMasterPage = ({
               border: `1px solid ${brand.border}`,
               boxShadow: brand.shadowStrong,
               overflow: "hidden",
+              width: "100%",
+              maxWidth: { xs: "calc(100% - 24px)", sm: "496px" },
             },
           }}
         >
@@ -431,8 +438,19 @@ const ConfigureMasterPage = ({
           </DialogTitle>
 
           <Box component="form" onSubmit={handleSubmit}>
-            <DialogContent sx={{ pt: 1 }}>
-              <Stack spacing={2}>
+            <DialogContent
+              sx={{
+                pt: 2.5,
+                pb: 3,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr",
+                  gap: 2,
+                }}
+              >
                 {config.fields.map((field, index) => (
                   <TextField
                     key={field.name}
@@ -449,57 +467,40 @@ const ConfigureMasterPage = ({
                     minRows={field.minRows}
                     InputLabelProps={field.inputLabelProps}
                     autoFocus={index === 0}
+                    sx={textFieldStyles}
                   />
                 ))}
-              </Stack>
+              </Box>
             </DialogContent>
 
             <DialogActions
               sx={{
                 px: 3,
                 pb: 3,
-                pt: 1,
-                gap: 1,
+                pt: 1.5,
+                borderTop: `1px solid ${brand.border}`,
+                flexShrink: 0,
               }}
             >
-              <Button
-                type="button"
-                variant="outlined"
-                onClick={handleCancel}
-                sx={{
-                  minWidth: 110,
-                  borderRadius: 3,
-                  px: 3,
-                  py: 1.2,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  color: brand.text,
-                  borderColor: brand.border,
-                }}
-              >
-                Cancel
-              </Button>
+              <Stack direction="row" spacing={1.25}>
+                <Button
+                  type="button"
+                  variant="outlined"
+                  onClick={handleCancel}
+                  sx={outlinedActionButtonSx}
+                >
+                  Cancel
+                </Button>
 
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={saving}
-                sx={{
-                  minWidth: 110,
-                  borderRadius: 3,
-                  px: 3,
-                  py: 1.2,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
-                  boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
-                  "&:hover": {
-                    background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
-                  },
-                }}
-              >
-                {saving ? "Saving..." : editingId ? "Update" : "Add"}
-              </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={saving}
+                  sx={filledActionButtonSx}
+                >
+                  {saving ? "Saving..." : editingId ? "Update" : "Save"}
+                </Button>
+              </Stack>
             </DialogActions>
           </Box>
         </Dialog>

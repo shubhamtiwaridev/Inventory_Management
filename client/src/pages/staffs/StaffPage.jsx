@@ -40,11 +40,8 @@ import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import HighlightOffRoundedIcon from "@mui/icons-material/HighlightOffRounded";
-
 import { useAuth } from "../../store/AuthContext.jsx";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import { API_BASE_URL } from "../../api/config";
 
 const brand = {
   primary: "#106C6B",

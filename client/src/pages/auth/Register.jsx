@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
 import logo from "../../assets/decostyle-logo.png";
+import { API_BASE_URL } from "../../api/config";
 
 import {
   Box,
@@ -22,9 +23,6 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const brand = {
   primary: "#139B98",
@@ -191,29 +189,29 @@ const Register = () => {
   };
 
   return (
- <Box
-  sx={{
-    position: "fixed",
-    inset: 0,
-    width: "100%",
-    height: "100dvh",
-    background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    px: 2,
-    py: 0.75,
-    boxSizing: "border-box",
-    overflow: "hidden",
-  }}
->
-  <Box
-    sx={{
-      width: "100%",
-      maxWidth: 620,
-      mx: "auto",
-    }}
-  >
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100dvh",
+        background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        px: 2,
+        py: 0.75,
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 620,
+          mx: "auto",
+        }}
+      >
         <Paper
           elevation={0}
           sx={{

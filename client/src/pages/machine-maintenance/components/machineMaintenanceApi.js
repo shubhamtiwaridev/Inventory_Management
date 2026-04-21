@@ -1,6 +1,4 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const SERVER_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+import { API_BASE_URL, SERVER_BASE_URL } from "../../../api/config";
 
 const isFormDataPayload = (value) =>
   typeof FormData !== "undefined" && value instanceof FormData;

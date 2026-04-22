@@ -20,19 +20,44 @@ const buildUserResponse = (user) => ({
   passwordChangeRequestMessage: user.passwordChangeRequestMessage,
 });
 
+const isProduction = process.env.NODE_ENV === "production";
+
+const parseOrigin = (value = "") => {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+};
+
+const configuredClientOrigins = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => parseOrigin(origin.trim()))
+  .filter(Boolean);
+
+const shouldUseCrossSiteCookies = configuredClientOrigins.some(
+  (origin) => origin && origin !== parseOrigin(process.env.SERVER_URL || ""),
+);
+
+const authCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction && shouldUseCrossSiteCookies ? "none" : "lax",
+  path: "/",
+};
+
 const sendTokenResponse = (user, statusCode, res, message) => {
   const token = generateToken(user._id);
 
   res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    ...authCookieOptions,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   res.status(statusCode).json({
     success: true,
     message,
+    token,
     user: {
       _id: user._id,
       name: user.name,
@@ -40,6 +65,33 @@ const sendTokenResponse = (user, statusCode, res, message) => {
       roles: user.roles,
     },
   });
+};
+
+const getTokensFromRequest = (req) => {
+  const cookieToken = req.cookies?.token || null;
+
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  const bearerToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
+
+  return {
+    bearerToken,
+    cookieToken,
+  };
+};
+
+const getUserFromToken = async (token) => {
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    return user || null;
+  } catch {
+    return null;
+  }
 };
 
 export const register = async (req, res) => {
@@ -53,7 +105,9 @@ export const register = async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
 
     if (existingUser) {
       return res.status(400).json({
@@ -64,7 +118,7 @@ export const register = async (req, res) => {
 
     const user = await User.create({
       name: name.trim(),
-      email: email.trim(),
+      email: normalizedEmail,
       roles: roles.trim(),
       password,
       isVerified: false,
@@ -113,7 +167,7 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid credentials",
+        message: "Password or email are not match",
       });
     }
 
@@ -224,10 +278,34 @@ export const forgotPasswordNotification = async (req, res) => {
 };
 
 export const getMe = async (req, res) => {
-  res.status(200).json({
-    success: true,
-    user: req.user,
-  });
+  try {
+    const { bearerToken, cookieToken } = getTokensFromRequest(req);
+
+    const user =
+      (await getUserFromToken(bearerToken)) ||
+      (await getUserFromToken(cookieToken));
+
+    if (!user) {
+      res.clearCookie("token", authCookieOptions);
+
+      return res.status(200).json({
+        success: true,
+        user: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user: buildUserResponse(user),
+    });
+  } catch {
+    res.clearCookie("token", authCookieOptions);
+
+    return res.status(200).json({
+      success: true,
+      user: null,
+    });
+  }
 };
 
 export const getAllUsers = async (req, res) => {
@@ -268,15 +346,11 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
-export const logout = async (req, res) => {
-  res.cookie("token", "", {
-    httpOnly: true,
-    expires: new Date(0),
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  });
 
-  res.status(200).json({
+export const logout = async (req, res) => {
+  res.clearCookie("token", authCookieOptions);
+
+  return res.status(200).json({
     success: true,
     message: "Logged out successfully",
   });

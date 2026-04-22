@@ -3,6 +3,7 @@ import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
 import logo from "../../assets/decostyle-logo.png";
 import { API_BASE_URL } from "../../api/config";
+import { authFetch } from "../../api/authFetch";
 
 import {
   Box,
@@ -69,9 +70,7 @@ const Register = () => {
       try {
         setLoadingRoles(true);
 
-        const response = await fetch(`${API_BASE_URL}/staff-types`, {
-          credentials: "include",
-        });
+        const response = await authFetch(`${API_BASE_URL}/staff-types`);
 
         const data = await response.json().catch(() => ({}));
 

@@ -1,92 +1,171 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { getMe, loginUser, logoutUser, registerUser } from "../api/auth";
+import {
+  AUTH_SESSION_CLEARED_EVENT,
+  clearStoredAuthSession,
+  getAuthToken,
+  getStoredAuthUser,
+  removeStoredAuthUser,
+  setAuthToken,
+  setStoredAuthUser,
+} from "../api/authStorage";
 
 const AuthContext = createContext(null);
-const AUTH_FLAG = "isAuthenticated";
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() =>
+    getAuthToken() ? getStoredAuthUser() : null,
+  );
+  const [authLoading, setAuthLoading] = useState(true);
 
-  const fetchMe = async () => {
+  const clearAuth = useCallback(() => {
+    clearStoredAuthSession();
+    setUser(null);
+  }, []);
+
+  const fetchMe = useCallback(async () => {
     try {
-      const res = await getMe();
-      const loggedInUser = res?.data?.user || null;
-
-      setUser(loggedInUser);
+      const response = await getMe();
+      const loggedInUser = response?.data?.user || null;
 
       if (loggedInUser) {
-        localStorage.setItem(AUTH_FLAG, "true");
-      } else {
-        localStorage.removeItem(AUTH_FLAG);
+        setUser(loggedInUser);
+        setStoredAuthUser(loggedInUser);
+        return {
+          user: loggedInUser,
+          shouldLogout: false,
+        };
       }
 
-      return loggedInUser;
-    } catch (err) {
-      if (!err.response) {
-        console.error("Backend server is not running");
-      } else if (err.response?.status === 401) {
-        localStorage.removeItem(AUTH_FLAG);
-      } else {
-        console.error("fetchMe error:", err);
+      clearAuth();
+      return {
+        user: null,
+        shouldLogout: true,
+      };
+    } catch (error) {
+      const status = error?.response?.status;
+
+      if (status === 401 || status === 403) {
+        clearAuth();
+        return {
+          user: null,
+          shouldLogout: true,
+        };
       }
 
-      setUser(null);
-      return null;
-    } finally {
-      setLoading(false);
+      return {
+        user: getStoredAuthUser(),
+        shouldLogout: false,
+      };
     }
-  };
+  }, [clearAuth]);
+
+  const restoreSession = useCallback(async () => {
+    setAuthLoading(true);
+
+    try {
+      const token = getAuthToken();
+
+      const cachedUser = getStoredAuthUser();
+      if (token && cachedUser) {
+        setUser(cachedUser);
+      }
+
+      let result = await fetchMe();
+
+      if (!token && !result?.user) {
+        clearAuth();
+        return;
+      }
+
+      if (token && !result?.user && !result?.shouldLogout) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        result = await fetchMe();
+      }
+
+      if (result?.shouldLogout) {
+        try {
+          await logoutUser();
+        } catch {
+          // ignore logout cleanup error
+        }
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [clearAuth, fetchMe]);
 
   useEffect(() => {
-    const hasSession = localStorage.getItem(AUTH_FLAG) === "true";
+    restoreSession();
+  }, [restoreSession]);
 
-    if (hasSession) {
-      fetchMe();
-    } else {
-      setLoading(false);
-    }
+  useEffect(() => {
+    const handleSessionCleared = () => {
+      removeStoredAuthUser();
+      setUser(null);
+    };
+
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, handleSessionCleared);
+
+    return () => {
+      window.removeEventListener(
+        AUTH_SESSION_CLEARED_EVENT,
+        handleSessionCleared,
+      );
+    };
   }, []);
 
   const register = async (formData) => {
-    const res = await registerUser(formData);
-    return res.data;
+    const response = await registerUser(formData);
+    return response?.data;
   };
 
   const login = async (formData) => {
-    const res = await loginUser(formData);
-    const loggedInUser = res?.data?.user || null;
+    const response = await loginUser(formData);
+    const data = response?.data || {};
 
-    setUser(loggedInUser);
-
-    if (loggedInUser) {
-      localStorage.setItem(AUTH_FLAG, "true");
+    if (!data?.token || !data?.user) {
+      throw new Error(data?.message || "Login failed");
     }
 
-    return res.data;
+    setAuthToken(data.token);
+    setStoredAuthUser(data.user);
+    setUser(data.user);
+
+    return data;
   };
 
   const logout = async () => {
     try {
       await logoutUser();
     } finally {
-      localStorage.removeItem(AUTH_FLAG);
-      setUser(null);
+      clearAuth();
     }
   };
 
   const value = useMemo(
     () => ({
       user,
-      loading,
+      setUser,
+      loading: authLoading,
+      authLoading,
+      hasValidToken: !!getAuthToken(),
       isAuthenticated: !!user,
       register,
       login,
       logout,
       fetchMe,
+      refreshMe: restoreSession,
     }),
-    [user, loading],
+    [user, authLoading, fetchMe, restoreSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

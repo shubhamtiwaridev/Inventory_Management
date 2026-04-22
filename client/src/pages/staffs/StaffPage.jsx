@@ -42,6 +42,7 @@ import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import HighlightOffRoundedIcon from "@mui/icons-material/HighlightOffRounded";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { API_BASE_URL } from "../../api/config";
+import { authFetch } from "../../api/authFetch";
 
 const brand = {
   primary: "#106C6B",
@@ -227,9 +228,8 @@ const StaffPage = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${API_BASE_URL}/staff-page`, {
+      const response = await authFetch(`${API_BASE_URL}/staff-page`, {
         method: "GET",
-        credentials: "include",
       });
 
       const data = await response.json().catch(() => ({}));
@@ -257,7 +257,7 @@ const StaffPage = () => {
       setLoadingRoles(true);
       setRegisterError("");
 
-      const response = await fetch(`${API_BASE_URL}/staff-types`, {
+      const response = await authFetch(`${API_BASE_URL}/staff-types`, {
         credentials: "include",
       });
 
@@ -410,7 +410,7 @@ const StaffPage = () => {
     try {
       setSavingEdit(true);
 
-      const response = await fetch(
+      const response = await authFetch(
         `${API_BASE_URL}/staff-page/${editFormData.id}`,
         {
           method: "PATCH",
@@ -507,7 +507,7 @@ const StaffPage = () => {
     try {
       setSavingRegister(true);
 
-      const response = await fetch(`${API_BASE_URL}/staff-page`, {
+      const response = await authFetch(`${API_BASE_URL}/staff-page`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -548,9 +548,8 @@ const StaffPage = () => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/staff-page/${id}`, {
+      const response = await authFetch(`${API_BASE_URL}/staff-page/${id}`, {
         method: "DELETE",
-        credentials: "include",
       });
 
       const data = await response.json().catch(() => ({}));
@@ -567,9 +566,8 @@ const StaffPage = () => {
 
   const handleVerify = async (id) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/staff-page/${id}/verify`, {
+      const response = await authFetch(`${API_BASE_URL}/staff-page/${id}/verify`, {
         method: "PATCH",
-        credentials: "include",
       });
 
       const data = await response.json().catch(() => ({}));
@@ -595,11 +593,10 @@ const StaffPage = () => {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${API_BASE_URL}/staff-page/${id}/clear-password-request`,
         {
           method: "PATCH",
-          credentials: "include",
         },
       );
 

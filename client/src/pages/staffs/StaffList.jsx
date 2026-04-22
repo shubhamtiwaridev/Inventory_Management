@@ -24,6 +24,7 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import { API_BASE_URL } from "../../api/config";
+import { authFetch } from "../../api/authFetch";
 
 const brand = {
   primary: "#106C6B",
@@ -134,9 +135,8 @@ const StaffList = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch(`${API_BASE_URL}/staff-page`, {
+      const response = await authFetch(`${API_BASE_URL}/staff-page`, {
         method: "GET",
-        credentials: "include",
       });
 
       const data = await response.json().catch(() => ({}));

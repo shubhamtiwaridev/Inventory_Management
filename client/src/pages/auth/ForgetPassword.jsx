@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/decostyle-logo.png";
 import { API_BASE_URL } from "../../api/config";
+import { authFetch } from "../../api/authFetch";
 
 import {
   Box,
@@ -131,9 +132,8 @@ const ForgetPassword = () => {
     try {
       setUpdatingPassword(true);
 
-      const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+      const response = await authFetch(`${API_BASE_URL}/auth/change-password`, {
         method: "POST",
-        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -170,11 +170,10 @@ const ForgetPassword = () => {
     try {
       setSendingNotification(true);
 
-      const response = await fetch(
+      const response = await authFetch(
         `${API_BASE_URL}/auth/forgot-password-notification`,
         {
           method: "POST",
-          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },

@@ -32,10 +32,10 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { API_BASE_URL } from "../../api/config";
+import { authFetch } from "../../api/authFetch";
 
 const request = async (url, options = {}) => {
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    credentials: "include",
+  const response = await authFetch(`${API_BASE_URL}${url}`, {
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
@@ -51,7 +51,6 @@ const request = async (url, options = {}) => {
 
   return data;
 };
-
 const getStaffTypes = async () => {
   return request("/staff-types");
 };

@@ -1,4 +1,5 @@
 import { API_BASE_URL, SERVER_BASE_URL } from "../../../api/config";
+import { clearAuthSession, getAuthHeaders } from "../../../api/authStorage";
 
 const isFormDataPayload = (value) =>
   typeof FormData !== "undefined" && value instanceof FormData;
@@ -10,11 +11,11 @@ const request = async (url, options = {}) => {
   const response = await fetch(`${API_BASE_URL}${url}`, {
     credentials: "include",
     headers: useFormData
-      ? headers
-      : {
+      ? getAuthHeaders(headers)
+      : getAuthHeaders({
           "Content-Type": "application/json",
           ...headers,
-        },
+        }),
     body: useFormData ? body : body ? JSON.stringify(body) : undefined,
     ...rest,
   });
@@ -26,6 +27,10 @@ const request = async (url, options = {}) => {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthSession();
+    }
+
     throw new Error(data.message || "Something went wrong");
   }
 

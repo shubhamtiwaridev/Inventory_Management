@@ -58,7 +58,9 @@ const Login = () => {
       navigate("/dashboard");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Password or email are not match",
+        err.response?.data?.message ||
+          err.message ||
+          "Password or email are not match",
       );
     }
   };
@@ -87,29 +89,29 @@ const Login = () => {
   };
 
   return (
-   <Box
-  sx={{
-    position: "fixed",
-    inset: 0,
-    width: "100%",
-    height: "100dvh",
-    background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    px: 2,
-    py: 1.25,
-    boxSizing: "border-box",
-    overflow: "hidden",
-  }}
->
-  <Box
-    sx={{
-      width: "100%",
-      maxWidth: 520,
-      mx: "auto",
-    }}
-  >
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        width: "100%",
+        height: "100dvh",
+        background: "linear-gradient(180deg, #F7FCFC 0%, #EEF9F8 100%)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        px: 2,
+        py: 1.25,
+        boxSizing: "border-box",
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 520,
+          mx: "auto",
+        }}
+      >
         <Paper
           elevation={0}
           sx={{

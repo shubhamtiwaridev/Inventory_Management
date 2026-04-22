@@ -17,7 +17,7 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/change-password", changePassword);
 router.post("/forgot-password-notification", forgotPasswordNotification);
-router.get("/me", protect, getMe);
+router.get("/me", getMe);
 router.post("/logout", logout);
 router.get("/users", protect, getAllUsers);
 router.delete("/users/:id", protect, deleteUser);

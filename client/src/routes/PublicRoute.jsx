@@ -2,11 +2,17 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../store/AuthContext";
 
 const PublicRoute = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, authLoading } = useAuth();
 
-  if (loading) return <div>Loading...</div>;
+  if (authLoading) {
+    return null;
+  }
 
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Outlet />;
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default PublicRoute;

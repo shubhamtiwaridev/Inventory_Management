@@ -17,6 +17,7 @@ import {
   textFieldStyles,
 } from "./machineMaintenanceUi.jsx";
 import { API_BASE_URL } from "../../../api/config";
+import { authFetch } from "../../../api/authFetch";
 
 const createInitialState = (fields = []) =>
   fields.reduce((accumulator, field) => {
@@ -301,9 +302,8 @@ const MachineMaintenanceFormView = ({
 
       const requestHasFile = hasFileFieldValue(formData, fields);
 
-      const response = await fetch(`${apiBaseUrl}${apiEndpoint}`, {
+      const response = await authFetch(`${apiBaseUrl}${apiEndpoint}`, {
         method: requestMethod,
-        credentials: "include",
         headers: requestHasFile
           ? undefined
           : {

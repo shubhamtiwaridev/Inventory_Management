@@ -110,6 +110,8 @@ const assetSchema = new mongoose.Schema(
   },
 );
 
+assetSchema.index({ createdAt: -1 });
+
 const Asset = mongoose.model("MachineMaintenanceAsset", assetSchema);
 
 export default Asset;

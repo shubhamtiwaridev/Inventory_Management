@@ -85,6 +85,8 @@ const userAllocationSchema = new mongoose.Schema(
   },
 );
 
+userAllocationSchema.index({ createdAt: -1 });
+
 const UserAllocation = mongoose.model(
   "MachineMaintenanceUserAllocation",
   userAllocationSchema,

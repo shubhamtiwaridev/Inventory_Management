@@ -15,8 +15,10 @@ const staffTypeSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
+
+staffTypeSchema.index({ createdAt: -1 });
 
 const StaffType = mongoose.model("StaffType", staffTypeSchema);
 

@@ -44,7 +44,7 @@ const buildAssetPayload = (req) => ({
 
 export const getAssets = async (req, res) => {
   try {
-    const assets = await Asset.find().sort({ createdAt: -1 });
+    const assets = await Asset.find().sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -60,7 +60,7 @@ export const getAssets = async (req, res) => {
 
 export const getAssetById = async (req, res) => {
   try {
-    const asset = await Asset.findById(req.params.id);
+    const asset = await Asset.findById(req.params.id).lean();
 
     if (!asset) {
       return res.status(404).json({
@@ -101,7 +101,9 @@ export const createAsset = async (req, res) => {
       });
     }
 
-    const existingAsset = await Asset.findOne({ assetCode: payload.assetCode });
+    const existingAsset = await Asset.findOne({ assetCode: payload.assetCode })
+      .select("_id")
+      .lean();
 
     if (existingAsset) {
       return res.status(400).json({
@@ -127,7 +129,9 @@ export const createAsset = async (req, res) => {
 
 export const updateAsset = async (req, res) => {
   try {
-    const asset = await Asset.findById(req.params.id);
+    const asset = await Asset.findById(req.params.id)
+      .select("createdBy operatingManual machineImage")
+      .lean();
 
     if (!asset) {
       return res.status(404).json({
@@ -157,7 +161,9 @@ export const updateAsset = async (req, res) => {
     const duplicateAsset = await Asset.findOne({
       assetCode: payload.assetCode,
       _id: { $ne: req.params.id },
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (duplicateAsset) {
       return res.status(400).json({

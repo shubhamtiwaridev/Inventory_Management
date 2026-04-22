@@ -35,7 +35,7 @@ const buildTaskPayload = (req) => ({
 
 export const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const tasks = await Task.find().sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -51,7 +51,7 @@ export const getTasks = async (req, res) => {
 
 export const getTaskById = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findById(req.params.id).lean();
 
     if (!task) {
       return res.status(404).json({
@@ -93,7 +93,9 @@ export const createTask = async (req, res) => {
       });
     }
 
-    const existingTask = await Task.findOne({ taskCode: payload.taskCode });
+    const existingTask = await Task.findOne({ taskCode: payload.taskCode })
+      .select("_id")
+      .lean();
 
     if (existingTask) {
       return res.status(400).json({
@@ -119,7 +121,7 @@ export const createTask = async (req, res) => {
 
 export const updateTask = async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id);
+    const task = await Task.findById(req.params.id).select("createdBy").lean();
 
     if (!task) {
       return res.status(404).json({
@@ -150,7 +152,9 @@ export const updateTask = async (req, res) => {
     const duplicateTask = await Task.findOne({
       taskCode: payload.taskCode,
       _id: { $ne: req.params.id },
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (duplicateTask) {
       return res.status(400).json({

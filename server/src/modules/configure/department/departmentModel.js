@@ -19,6 +19,8 @@ const departmentSchema = new mongoose.Schema(
   },
 );
 
+departmentSchema.index({ createdAt: -1 });
+
 const Department = mongoose.model("Department", departmentSchema);
 
 export default Department;

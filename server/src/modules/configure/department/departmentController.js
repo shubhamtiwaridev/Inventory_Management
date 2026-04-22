@@ -5,7 +5,7 @@ const getUserName = (req) =>
 
 export const getDepartments = async (req, res) => {
   try {
-    const departments = await Department.find().sort({ createdAt: -1 });
+    const departments = await Department.find().sort({ createdAt: -1 }).lean();
     res.status(200).json({ data: departments });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch departments" });
@@ -14,7 +14,7 @@ export const getDepartments = async (req, res) => {
 
 export const getDepartmentById = async (req, res) => {
   try {
-    const department = await Department.findById(req.params.id);
+    const department = await Department.findById(req.params.id).lean();
 
     if (!department) {
       return res.status(404).json({ message: "Department not found" });
@@ -36,7 +36,9 @@ export const createDepartment = async (req, res) => {
 
     const existingDepartment = await Department.findOne({
       department: new RegExp(`^${departmentValue}$`, "i"),
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingDepartment) {
       return res.status(400).json({ message: "Department already exists" });
@@ -67,7 +69,9 @@ export const updateDepartment = async (req, res) => {
     const existingDepartment = await Department.findOne({
       _id: { $ne: req.params.id },
       department: new RegExp(`^${departmentValue}$`, "i"),
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingDepartment) {
       return res.status(400).json({ message: "Department already exists" });

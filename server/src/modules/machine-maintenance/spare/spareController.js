@@ -34,7 +34,7 @@ const buildSparePayload = (req) => ({
 
 export const getSpares = async (req, res) => {
   try {
-    const spares = await Spare.find().sort({ createdAt: -1 });
+    const spares = await Spare.find().sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -50,7 +50,7 @@ export const getSpares = async (req, res) => {
 
 export const getSpareById = async (req, res) => {
   try {
-    const spare = await Spare.findById(req.params.id);
+    const spare = await Spare.findById(req.params.id).lean();
 
     if (!spare) {
       return res.status(404).json({
@@ -89,7 +89,9 @@ export const createSpare = async (req, res) => {
       });
     }
 
-    const existingSpare = await Spare.findOne({ spareCode: payload.spareCode });
+    const existingSpare = await Spare.findOne({ spareCode: payload.spareCode })
+      .select("_id")
+      .lean();
 
     if (existingSpare) {
       return res.status(400).json({
@@ -115,7 +117,7 @@ export const createSpare = async (req, res) => {
 
 export const updateSpare = async (req, res) => {
   try {
-    const spare = await Spare.findById(req.params.id);
+    const spare = await Spare.findById(req.params.id).select("createdBy").lean();
 
     if (!spare) {
       return res.status(404).json({
@@ -143,7 +145,9 @@ export const updateSpare = async (req, res) => {
     const duplicateSpare = await Spare.findOne({
       spareCode: payload.spareCode,
       _id: { $ne: req.params.id },
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (duplicateSpare) {
       return res.status(400).json({

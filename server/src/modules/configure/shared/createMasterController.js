@@ -7,7 +7,7 @@ const getUserName = (req) =>
 const createMasterController = (Model, fieldName, label) => {
   const getItems = async (req, res) => {
     try {
-      const items = await Model.find().sort({ createdAt: -1 });
+      const items = await Model.find().sort({ createdAt: -1 }).lean();
       res.status(200).json({ data: items });
     } catch (error) {
       res
@@ -18,7 +18,7 @@ const createMasterController = (Model, fieldName, label) => {
 
   const getItemById = async (req, res) => {
     try {
-      const item = await Model.findById(req.params.id);
+      const item = await Model.findById(req.params.id).lean();
 
       if (!item) {
         return res.status(404).json({ message: `${label} not found` });
@@ -42,7 +42,9 @@ const createMasterController = (Model, fieldName, label) => {
 
       const existingItem = await Model.findOne({
         [fieldName]: new RegExp(`^${escapeRegex(fieldValue)}$`, "i"),
-      });
+      })
+        .select("_id")
+        .lean();
 
       if (existingItem) {
         return res.status(400).json({ message: `${label} already exists` });
@@ -75,7 +77,9 @@ const createMasterController = (Model, fieldName, label) => {
       const existingItem = await Model.findOne({
         _id: { $ne: req.params.id },
         [fieldName]: new RegExp(`^${escapeRegex(fieldValue)}$`, "i"),
-      });
+      })
+        .select("_id")
+        .lean();
 
       if (existingItem) {
         return res.status(400).json({ message: `${label} already exists` });

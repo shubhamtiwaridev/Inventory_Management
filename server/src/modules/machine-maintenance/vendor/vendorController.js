@@ -29,7 +29,7 @@ const buildVendorPayload = (req) => ({
 
 export const getVendors = async (req, res) => {
   try {
-    const vendors = await Vendor.find().sort({ createdAt: -1 });
+    const vendors = await Vendor.find().sort({ createdAt: -1 }).lean();
 
     res.status(200).json({
       success: true,
@@ -45,7 +45,7 @@ export const getVendors = async (req, res) => {
 
 export const getVendorById = async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Vendor.findById(req.params.id).lean();
 
     if (!vendor) {
       return res.status(404).json({
@@ -87,7 +87,9 @@ export const createVendor = async (req, res) => {
 
     const existingVendor = await Vendor.findOne({
       vendorCode: payload.vendorCode,
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingVendor) {
       return res.status(400).json({
@@ -113,7 +115,7 @@ export const createVendor = async (req, res) => {
 
 export const updateVendor = async (req, res) => {
   try {
-    const vendor = await Vendor.findById(req.params.id);
+    const vendor = await Vendor.findById(req.params.id).select("createdBy").lean();
 
     if (!vendor) {
       return res.status(404).json({
@@ -142,7 +144,9 @@ export const updateVendor = async (req, res) => {
     const duplicateVendor = await Vendor.findOne({
       vendorCode: payload.vendorCode,
       _id: { $ne: req.params.id },
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (duplicateVendor) {
       return res.status(400).json({

@@ -105,6 +105,8 @@ const spareSchema = new mongoose.Schema(
   },
 );
 
+spareSchema.index({ createdAt: -1 });
+
 const Spare = mongoose.model("MachineMaintenanceSpare", spareSchema);
 
 export default Spare;

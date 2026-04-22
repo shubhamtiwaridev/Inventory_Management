@@ -1,8 +1,42 @@
 import { API_BASE_URL } from "../../../api/config";
 import { clearAuthSession, getAuthHeaders } from "../../../api/authStorage";
 
+const GET_CACHE_TTL_MS = 60 * 1000;
+const responseCache = new Map();
+
+const cloneCachedValue = (value) => JSON.parse(JSON.stringify(value));
+
+const getCachedResponse = (key) => {
+  const entry = responseCache.get(key);
+  if (!entry) return null;
+
+  if (entry.expiresAt <= Date.now()) {
+    responseCache.delete(key);
+    return null;
+  }
+
+  return cloneCachedValue(entry.value);
+};
+
+const setCachedResponse = (key, value) => {
+  responseCache.set(key, {
+    value: cloneCachedValue(value),
+    expiresAt: Date.now() + GET_CACHE_TTL_MS,
+  });
+};
+
 const request = async (url, options = {}) => {
   const { body, headers = {}, ...rest } = options;
+  const method = String(rest.method || "GET").toUpperCase();
+  const shouldUseCache = method === "GET";
+  const cacheKey = `${method}:${url}`;
+
+  if (shouldUseCache) {
+    const cached = getCachedResponse(cacheKey);
+    if (cached) {
+      return cached;
+    }
+  }
 
   const response = await fetch(`${API_BASE_URL}${url}`, {
     credentials: "include",
@@ -26,6 +60,10 @@ const request = async (url, options = {}) => {
     }
 
     throw new Error(data.message || "Something went wrong");
+  }
+
+  if (shouldUseCache) {
+    setCachedResponse(cacheKey, data);
   }
 
   return data;

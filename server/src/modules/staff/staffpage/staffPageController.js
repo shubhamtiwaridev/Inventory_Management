@@ -18,7 +18,10 @@ const buildUserResponse = (user) => ({
 
 export const getStaffUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    const users = await User.find()
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -45,7 +48,9 @@ export const createStaffUser = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const existingUser = await User.findOne({ email: normalizedEmail })
+      .select("_id")
+      .lean();
 
     if (existingUser) {
       return res.status(400).json({
@@ -103,7 +108,9 @@ export const updateStaffUser = async (req, res) => {
     const existingUser = await User.findOne({
       email: normalizedEmail,
       _id: { $ne: req.params.id },
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingUser) {
       return res.status(400).json({

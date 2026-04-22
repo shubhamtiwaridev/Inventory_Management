@@ -19,6 +19,8 @@ const plantSiteSchema = new mongoose.Schema(
   },
 );
 
+plantSiteSchema.index({ createdAt: -1 });
+
 const PlantSite = mongoose.model("PlantSite", plantSiteSchema);
 
 export default PlantSite;

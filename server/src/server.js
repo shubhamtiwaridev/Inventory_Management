@@ -31,6 +31,7 @@ connectDB();
 const app = express();
 
 app.set("trust proxy", 1);
+app.set("etag", false);
 
 const defaultAllowedOrigins = [
   "http://localhost:5173",

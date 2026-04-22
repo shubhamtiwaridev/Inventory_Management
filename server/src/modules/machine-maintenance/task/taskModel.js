@@ -112,6 +112,8 @@ const taskSchema = new mongoose.Schema(
   },
 );
 
+taskSchema.index({ createdAt: -1 });
+
 const Task = mongoose.model("MachineMaintenanceTask", taskSchema);
 
 export default Task;

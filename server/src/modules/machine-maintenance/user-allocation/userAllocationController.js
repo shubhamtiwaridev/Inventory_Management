@@ -23,7 +23,9 @@ const buildUserAllocationPayload = (req) => ({
 
 export const getUserAllocations = async (req, res) => {
   try {
-    const userAllocations = await UserAllocation.find().sort({ createdAt: -1 });
+    const userAllocations = await UserAllocation.find()
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -39,7 +41,7 @@ export const getUserAllocations = async (req, res) => {
 
 export const getUserAllocationById = async (req, res) => {
   try {
-    const userAllocation = await UserAllocation.findById(req.params.id);
+    const userAllocation = await UserAllocation.findById(req.params.id).lean();
 
     if (!userAllocation) {
       return res.status(404).json({
@@ -73,7 +75,9 @@ export const createUserAllocation = async (req, res) => {
 
     const existingUserAllocation = await UserAllocation.findOne({
       employeeId: payload.employeeId,
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingUserAllocation) {
       return res.status(400).json({
@@ -99,7 +103,9 @@ export const createUserAllocation = async (req, res) => {
 
 export const updateUserAllocation = async (req, res) => {
   try {
-    const userAllocation = await UserAllocation.findById(req.params.id);
+    const userAllocation = await UserAllocation.findById(req.params.id)
+      .select("createdBy")
+      .lean();
 
     if (!userAllocation) {
       return res.status(404).json({
@@ -120,7 +126,9 @@ export const updateUserAllocation = async (req, res) => {
     const duplicateUserAllocation = await UserAllocation.findOne({
       employeeId: payload.employeeId,
       _id: { $ne: req.params.id },
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (duplicateUserAllocation) {
       return res.status(400).json({

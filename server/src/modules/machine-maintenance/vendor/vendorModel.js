@@ -83,6 +83,8 @@ const vendorSchema = new mongoose.Schema(
   },
 );
 
+vendorSchema.index({ createdAt: -1 });
+
 const Vendor = mongoose.model("MachineMaintenanceVendor", vendorSchema);
 
 export default Vendor;

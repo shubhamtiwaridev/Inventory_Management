@@ -30,7 +30,7 @@ const resolveShiftTimingPayload = (body = {}) => {
 
 export const getShiftTimings = async (req, res) => {
   try {
-    const items = await ShiftTiming.find().sort({ createdAt: -1 });
+    const items = await ShiftTiming.find().sort({ createdAt: -1 }).lean();
     res.status(200).json({ data: items });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch shift timing records" });
@@ -39,7 +39,7 @@ export const getShiftTimings = async (req, res) => {
 
 export const getShiftTimingById = async (req, res) => {
   try {
-    const item = await ShiftTiming.findById(req.params.id);
+    const item = await ShiftTiming.findById(req.params.id).lean();
 
     if (!item) {
       return res.status(404).json({ message: "Shift Timing not found" });
@@ -61,7 +61,9 @@ export const createShiftTiming = async (req, res) => {
 
     const existingItem = await ShiftTiming.findOne({
       shiftTiming: new RegExp(`^${escapeRegex(payload.shiftTiming)}$`, "i"),
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingItem) {
       return res.status(400).json({ message: "Shift Timing already exists" });
@@ -83,7 +85,9 @@ export const createShiftTiming = async (req, res) => {
 
 export const updateShiftTiming = async (req, res) => {
   try {
-    const existingRecord = await ShiftTiming.findById(req.params.id);
+    const existingRecord = await ShiftTiming.findById(req.params.id)
+      .select("createdBy")
+      .lean();
 
     if (!existingRecord) {
       return res.status(404).json({ message: "Shift Timing not found" });
@@ -98,7 +102,9 @@ export const updateShiftTiming = async (req, res) => {
     const duplicateItem = await ShiftTiming.findOne({
       _id: { $ne: req.params.id },
       shiftTiming: new RegExp(`^${escapeRegex(payload.shiftTiming)}$`, "i"),
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (duplicateItem) {
       return res.status(400).json({ message: "Shift Timing already exists" });

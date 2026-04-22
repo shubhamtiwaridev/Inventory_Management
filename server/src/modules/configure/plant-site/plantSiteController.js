@@ -5,7 +5,7 @@ const getUserName = (req) =>
 
 export const getPlantSites = async (req, res) => {
   try {
-    const plantSites = await PlantSite.find().sort({ createdAt: -1 });
+    const plantSites = await PlantSite.find().sort({ createdAt: -1 }).lean();
     res.status(200).json({ data: plantSites });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch plant sites" });
@@ -14,7 +14,7 @@ export const getPlantSites = async (req, res) => {
 
 export const getPlantSiteById = async (req, res) => {
   try {
-    const plantSite = await PlantSite.findById(req.params.id);
+    const plantSite = await PlantSite.findById(req.params.id).lean();
 
     if (!plantSite) {
       return res.status(404).json({ message: "Plant site not found" });
@@ -36,7 +36,9 @@ export const createPlantSite = async (req, res) => {
 
     const existingPlantSite = await PlantSite.findOne({
       plantSite: new RegExp(`^${plantSiteValue}$`, "i"),
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingPlantSite) {
       return res.status(400).json({ message: "Plant site already exists" });
@@ -67,7 +69,9 @@ export const updatePlantSite = async (req, res) => {
     const existingPlantSite = await PlantSite.findOne({
       _id: { $ne: req.params.id },
       plantSite: new RegExp(`^${plantSiteValue}$`, "i"),
-    });
+    })
+      .select("_id")
+      .lean();
 
     if (existingPlantSite) {
       return res.status(400).json({ message: "Plant site already exists" });

@@ -40,6 +40,8 @@ const shiftTimingSchema = new mongoose.Schema(
   },
 );
 
+shiftTimingSchema.index({ createdAt: -1 });
+
 const ShiftTiming =
   mongoose.models.ConfigureShiftTiming ||
   mongoose.model("ConfigureShiftTiming", shiftTimingSchema);

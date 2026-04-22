@@ -87,7 +87,7 @@ const getUserFromToken = async (token) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id).select("-password").lean();
     return user || null;
   } catch {
     return null;
@@ -107,7 +107,9 @@ export const register = async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const existingUser = await User.findOne({ email: normalizedEmail })
+      .select("_id")
+      .lean();
 
     if (existingUser) {
       return res.status(400).json({
@@ -279,6 +281,13 @@ export const forgotPasswordNotification = async (req, res) => {
 
 export const getMe = async (req, res) => {
   try {
+    res.set({
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+      "Surrogate-Control": "no-store",
+    });
+
     const { bearerToken, cookieToken } = getTokensFromRequest(req);
 
     const user =
@@ -310,7 +319,10 @@ export const getMe = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    const users = await User.find()
+      .select("-password")
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,

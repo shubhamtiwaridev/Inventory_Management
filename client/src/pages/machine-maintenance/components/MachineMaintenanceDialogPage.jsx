@@ -51,7 +51,6 @@ const MachineMaintenanceDialogPage = ({
   buildSubmitPayload = defaultBuildSubmitPayload,
   createSuccessMessage,
   updateSuccessMessage,
-  deleteConfirmMessage,
   fetchErrorMessage,
   deleteErrorMessage,
   primaryButtonLabel,
@@ -204,11 +203,6 @@ const MachineMaintenanceDialogPage = ({
   };
 
   const handleDelete = async (row) => {
-    const confirmed = window.confirm(
-      deleteConfirmMessage || "Are you sure you want to delete this record?",
-    );
-    if (!confirmed) return;
-
     try {
       await deleteItem(row.id);
       setRows((prev) => prev.filter((item) => item.id !== row.id));

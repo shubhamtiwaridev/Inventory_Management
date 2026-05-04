@@ -28,6 +28,14 @@ const setCachedResponse = (key, value) => {
 const isFormDataPayload = (value) =>
   typeof FormData !== "undefined" && value instanceof FormData;
 
+const clearGetCache = () => {
+  for (const key of responseCache.keys()) {
+    if (key.startsWith("GET:")) {
+      responseCache.delete(key);
+    }
+  }
+};
+
 const request = async (url, options = {}) => {
   const { body, headers = {}, ...rest } = options;
   const useFormData = isFormDataPayload(body);
@@ -55,6 +63,9 @@ const request = async (url, options = {}) => {
   });
 
   if (response.status === 204) {
+    if (method !== "GET") {
+      clearGetCache();
+    }
     return { success: true };
   }
 
@@ -66,6 +77,10 @@ const request = async (url, options = {}) => {
     }
 
     throw new Error(data.message || "Something went wrong");
+  }
+
+  if (method !== "GET") {
+    clearGetCache();
   }
 
   if (shouldUseCache) {

@@ -282,12 +282,6 @@ const ConfigureMasterPage = ({
   };
 
   const handleDelete = async (row) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${row[config.deleteLabelKey] || row.id}"?`,
-    );
-
-    if (!confirmed) return;
-
     try {
       setErrorMessage("");
       await deleteItem(row.id);

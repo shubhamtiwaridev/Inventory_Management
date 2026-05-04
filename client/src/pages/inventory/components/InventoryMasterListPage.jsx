@@ -124,11 +124,6 @@ const InventoryMasterListPage = () => {
   };
 
   const handleDelete = (row) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete this ${config.title.toLowerCase()} record?`,
-    );
-    if (!confirmed) return;
-
     setMasterRows((prev) => ({
       ...prev,
       [configKey]: (prev[configKey] || []).filter((item) => item.id !== row.id),

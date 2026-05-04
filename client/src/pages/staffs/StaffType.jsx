@@ -375,12 +375,6 @@ const StaffType = () => {
   };
 
   const handleDelete = async (row) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${row.name}"?`,
-    );
-
-    if (!confirmed) return;
-
     try {
       setErrorMessage("");
       await deleteStaffType(row._id);
@@ -581,6 +575,7 @@ const StaffType = () => {
                 <DialogContent sx={{ pt: 1 }}>
                   <Stack spacing={2}>
                     <TextField
+                      autoFocus
                       label="Staff Type"
                       value={formData.name}
                       onChange={(e) =>

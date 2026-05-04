@@ -542,11 +542,6 @@ const StaffPage = () => {
   };
 
   const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this user?",
-    );
-    if (!confirmed) return;
-
     try {
       const response = await authFetch(`${API_BASE_URL}/staff-page/${id}`, {
         method: "DELETE",
@@ -587,11 +582,6 @@ const StaffPage = () => {
   };
 
   const handleCancelPasswordRequest = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to cancel this password request?",
-    );
-    if (!confirmed) return;
-
     try {
       const response = await authFetch(
         `${API_BASE_URL}/staff-page/${id}/clear-password-request`,

@@ -17,6 +17,34 @@ import {
   updateAsset,
 } from "../components/machineMaintenanceApi.js";
 
+const toOption = (value) => {
+  const cleanValue = String(value || "").trim();
+  if (!cleanValue) return null;
+
+  return {
+    label: cleanValue,
+    value: cleanValue,
+  };
+};
+
+const mergeOptionsWithExistingValue = (options = [], value = "") => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) return options;
+
+  const exists = options.some((option) => {
+    const optionValue =
+      typeof option === "string" ? option : String(option?.value || "").trim();
+
+    return optionValue === cleanValue;
+  });
+
+  if (exists) return options;
+
+  const currentValueOption = toOption(cleanValue);
+  return currentValueOption ? [currentValueOption, ...options] : options;
+};
+
 const buildAssetPayload = (payload) => {
   const formData = new FormData();
 
@@ -29,33 +57,48 @@ const buildAssetPayload = (payload) => {
 };
 
 const loadAssetDropdownData = async () => {
-  const [departments, plants, criticalLevels, statuses] = await Promise.all([
+  const [departmentsResult, plantsResult, criticalLevelsResult, statusesResult] =
+    await Promise.allSettled([
     getConfiguredDepartments(),
     getConfiguredPlantSites(),
     getConfiguredCriticalLevels(),
     getConfiguredStatuses(),
-  ]);
+    ]);
 
   return {
-    departments,
-    plants,
-    criticalLevels,
-    statuses,
+    departments:
+      departmentsResult.status === "fulfilled" ? departmentsResult.value : [],
+    plants: plantsResult.status === "fulfilled" ? plantsResult.value : [],
+    criticalLevels:
+      criticalLevelsResult.status === "fulfilled"
+        ? criticalLevelsResult.value
+        : [],
+    statuses: statusesResult.status === "fulfilled" ? statusesResult.value : [],
   };
 };
 
-const buildAssetFormConfig = ({ baseConfig, dropdownData }) => ({
+const buildAssetFormConfig = ({ baseConfig, dropdownData, initialValues }) => ({
   ...baseConfig,
   fields: baseConfig.fields.map((field) => {
     if (field.name === "plant") {
-      return { ...field, select: true, options: dropdownData.plants || [] };
+      return {
+        ...field,
+        select: true,
+        options: mergeOptionsWithExistingValue(
+          dropdownData.plants || [],
+          initialValues?.plant,
+        ),
+      };
     }
 
     if (field.name === "department") {
       return {
         ...field,
         select: true,
-        options: dropdownData.departments || [],
+        options: mergeOptionsWithExistingValue(
+          dropdownData.departments || [],
+          initialValues?.department,
+        ),
       };
     }
 
@@ -63,12 +106,22 @@ const buildAssetFormConfig = ({ baseConfig, dropdownData }) => ({
       return {
         ...field,
         select: true,
-        options: dropdownData.criticalLevels || [],
+        options: mergeOptionsWithExistingValue(
+          dropdownData.criticalLevels || [],
+          initialValues?.criticality,
+        ),
       };
     }
 
     if (field.name === "status") {
-      return { ...field, select: true, options: dropdownData.statuses || [] };
+      return {
+        ...field,
+        select: true,
+        options: mergeOptionsWithExistingValue(
+          dropdownData.statuses || [],
+          initialValues?.status,
+        ),
+      };
     }
 
     return field;

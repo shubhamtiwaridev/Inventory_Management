@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "./authModel.js";
+import StaffType from "../staff/stafftype/staffTypeModel.js";
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -11,6 +12,9 @@ const buildUserResponse = (user) => ({
   name: user.name,
   email: user.email,
   roles: user.roles,
+  staffType: user.staffType || null,
+  assignedCards: user.staffType?.assignedCards || [],
+  permissions: user.permissions || {},
   isVerified: user.isVerified,
   verifiedBy: user.verifiedBy,
   verifiedAt: user.verifiedAt,
@@ -19,6 +23,44 @@ const buildUserResponse = (user) => ({
   passwordChangeRequestAt: user.passwordChangeRequestAt,
   passwordChangeRequestMessage: user.passwordChangeRequestMessage,
 });
+
+const isSuperadminRole = (roles = "") =>
+  String(roles).trim().toLowerCase() === "superadmin";
+
+const staffTypePopulateOptions = {
+  path: "staffType",
+  populate: {
+    path: "assignedCards",
+    select: "name title path icon iconBg iconColor subtitle subtitleTone",
+  },
+};
+
+const validateStaffTypeForRole = async (roles, staffType) => {
+  if (isSuperadminRole(roles)) {
+    return null;
+  }
+
+  if (!staffType) {
+    throw new Error("Staff type is required");
+  }
+
+  const existingStaffType = await StaffType.findById(staffType)
+    .select("_id assignedCards")
+    .lean();
+
+  if (!existingStaffType) {
+    throw new Error("Selected staff type does not exist");
+  }
+
+  if (
+    !Array.isArray(existingStaffType.assignedCards) ||
+    existingStaffType.assignedCards.length === 0
+  ) {
+    throw new Error("Selected staff type has no assigned cards");
+  }
+
+  return staffType;
+};
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -58,12 +100,7 @@ const sendTokenResponse = (user, statusCode, res, message) => {
     success: true,
     message,
     token,
-    user: {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      roles: user.roles,
-    },
+    user: buildUserResponse(user),
   });
 };
 
@@ -87,7 +124,12 @@ const getUserFromToken = async (token) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password").lean();
+
+    const user = await User.findById(decoded.id)
+      .select("-password")
+      .populate(staffTypePopulateOptions)
+      .lean();
+
     return user || null;
   } catch {
     return null;
@@ -96,12 +138,23 @@ const getUserFromToken = async (token) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, roles, password } = req.body;
+    const { name, email, roles, staffType, password } = req.body;
 
     if (!name || !email || !roles || !password) {
       return res.status(400).json({
         success: false,
         message: "Name, email, roles and password are required",
+      });
+    }
+
+    let finalStaffType = null;
+
+    try {
+      finalStaffType = await validateStaffTypeForRole(roles, staffType);
+    } catch (validationError) {
+      return res.status(400).json({
+        success: false,
+        message: validationError.message,
       });
     }
 
@@ -122,10 +175,13 @@ export const register = async (req, res) => {
       name: name.trim(),
       email: normalizedEmail,
       roles: roles.trim(),
+      staffType: finalStaffType,
       password,
       isVerified: false,
       createdFrom: "public",
     });
+
+    await user.populate(staffTypePopulateOptions);
 
     res.status(201).json({
       success: true,
@@ -155,7 +211,9 @@ export const login = async (req, res) => {
 
     const user = await User.findOne({
       email: email.trim().toLowerCase(),
-    }).select("+password");
+    })
+      .select("+password")
+      .populate(staffTypePopulateOptions);
 
     if (!user) {
       return res.status(401).json({

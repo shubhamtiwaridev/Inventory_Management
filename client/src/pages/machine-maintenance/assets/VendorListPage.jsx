@@ -16,28 +16,63 @@ import {
   updateVendor,
 } from "../components/machineMaintenanceApi.js";
 
-const loadVendorDropdownData = async () => {
-  const [contractTypes, statuses, machines] = await Promise.all([
-    getConfiguredContractTypes(),
-    getConfiguredStatuses(),
-    getRegisteredMachineOptions(),
-  ]);
+const toOption = (value) => {
+  const cleanValue = String(value || "").trim();
+  if (!cleanValue) return null;
 
   return {
-    contractTypes,
-    statuses,
-    machines,
+    label: cleanValue,
+    value: cleanValue,
   };
 };
 
-const buildVendorFormConfig = ({ baseConfig, dropdownData }) => ({
+const mergeOptionsWithExistingValue = (options = [], value = "") => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) return options;
+
+  const exists = options.some((option) => {
+    const optionValue =
+      typeof option === "string" ? option : String(option?.value || "").trim();
+
+    return optionValue === cleanValue;
+  });
+
+  if (exists) return options;
+
+  const currentValueOption = toOption(cleanValue);
+  return currentValueOption ? [currentValueOption, ...options] : options;
+};
+
+const loadVendorDropdownData = async () => {
+  const [contractTypesResult, statusesResult, machinesResult] =
+    await Promise.allSettled([
+    getConfiguredContractTypes(),
+    getConfiguredStatuses(),
+    getRegisteredMachineOptions(),
+    ]);
+
+  return {
+    contractTypes:
+      contractTypesResult.status === "fulfilled"
+        ? contractTypesResult.value
+        : [],
+    statuses: statusesResult.status === "fulfilled" ? statusesResult.value : [],
+    machines: machinesResult.status === "fulfilled" ? machinesResult.value : [],
+  };
+};
+
+const buildVendorFormConfig = ({ baseConfig, dropdownData, initialValues }) => ({
   ...baseConfig,
   fields: baseConfig.fields.map((field) => {
     if (field.name === "contractType") {
       return {
         ...field,
         select: true,
-        options: dropdownData.contractTypes || [],
+        options: mergeOptionsWithExistingValue(
+          dropdownData.contractTypes || [],
+          initialValues?.contractType,
+        ),
       };
     }
 
@@ -46,7 +81,10 @@ const buildVendorFormConfig = ({ baseConfig, dropdownData }) => ({
         ...field,
         label: "Machines Covered",
         select: true,
-        options: dropdownData.machines || [],
+        options: mergeOptionsWithExistingValue(
+          dropdownData.machines || [],
+          initialValues?.machinesCovered,
+        ),
       };
     }
 
@@ -54,7 +92,10 @@ const buildVendorFormConfig = ({ baseConfig, dropdownData }) => ({
       return {
         ...field,
         select: true,
-        options: dropdownData.statuses || [],
+        options: mergeOptionsWithExistingValue(
+          dropdownData.statuses || [],
+          initialValues?.status,
+        ),
       };
     }
 

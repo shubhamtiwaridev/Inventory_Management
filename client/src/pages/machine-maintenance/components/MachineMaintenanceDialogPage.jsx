@@ -103,6 +103,10 @@ const MachineMaintenanceDialogPage = ({
       return undefined;
     }
 
+    if (!dialogOpen) {
+      return undefined;
+    }
+
     const loadOptions = async () => {
       try {
         setLoadingDropdownOptions(true);
@@ -127,7 +131,7 @@ const MachineMaintenanceDialogPage = ({
     return () => {
       isMounted = false;
     };
-  }, [loadDropdownData]);
+  }, [dialogOpen, loadDropdownData]);
 
   useEffect(() => {
     const isNonListRoute = location.pathname !== listPath;

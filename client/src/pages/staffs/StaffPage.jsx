@@ -4,11 +4,13 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -41,8 +43,28 @@ import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettin
 import TaskAltRoundedIcon from "@mui/icons-material/TaskAltRounded";
 import HighlightOffRoundedIcon from "@mui/icons-material/HighlightOffRounded";
 import { useAuth } from "../../store/AuthContext.jsx";
-import { API_BASE_URL } from "../../api/config";
-import { authFetch } from "../../api/authFetch";
+import {
+  getStaffUsers,
+  createStaffUser,
+  updateStaffUser,
+  deleteStaffUser,
+  verifyStaffUser,
+  clearPasswordRequest,
+  getStaffTypes,
+  getUserPermissions,
+  updateUserPermissions,
+} from "./staffApi";
+import {
+  ACTIONS,
+  ACTION_LABELS,
+  buildPermissionKey,
+  filterUserPermissionsForCards,
+  getCardSections,
+  getDefaultPermissionRecord,
+  getPermissionCardsForStaffType,
+  getSectionFeatures,
+  initializeUserPermissions,
+} from "../../utils/permissions.js";
 
 const brand = {
   primary: "#106C6B",
@@ -162,6 +184,16 @@ const textFieldStyles = {
   },
 };
 
+const hiddenScrollbarSx = {
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
+  "&::-webkit-scrollbar": {
+    display: "none",
+    width: 0,
+    height: 0,
+  },
+};
+
 const pad = (value) => String(value).padStart(2, "0");
 
 const formatDateTime = (value) => {
@@ -218,31 +250,97 @@ const StaffPage = () => {
     requestPending: false,
   });
 
+  const [userPermissions, setUserPermissions] = useState({});
+  const [loadingPermissions, setLoadingPermissions] = useState(false);
+  const [expandedPermissionSections, setExpandedPermissionSections] = useState(
+    {},
+  );
+
   const isSuperadmin = useMemo(
     () => String(user?.roles || "").toLowerCase() === "superadmin",
     [user?.roles],
   );
+
+  const isSuperadminRole = (role) =>
+    String(role || "")
+      .trim()
+      .toLowerCase() === "superadmin";
+
+  const isRegisterSuperadmin = isSuperadminRole(formData.roles);
+  const isEditSuperadmin = isSuperadminRole(editFormData.roles);
+
+  const selectedEditStaffType = useMemo(() => {
+    if (!editFormData.roles) return null;
+
+    const roleName = String(editFormData.roles || "")
+      .trim()
+      .toLowerCase();
+
+    return (
+      staffTypes.find(
+        (type) =>
+          String(type.name || "")
+            .trim()
+            .toLowerCase() === roleName,
+      ) || null
+    );
+  }, [staffTypes, editFormData.roles]);
+
+  const selectedPermissionCards = useMemo(
+    () => getPermissionCardsForStaffType(selectedEditStaffType),
+    [selectedEditStaffType],
+  );
+
+  const buildSectionKey = (cardName, sectionLabel) =>
+    `${cardName}::${sectionLabel}`;
+
+  const getInitialExpandedSections = (
+    permissionCards,
+    permissions,
+    fallbackExpanded = false,
+  ) =>
+    permissionCards.reduce((acc, card) => {
+      getCardSections(card).forEach((section) => {
+        const features = getSectionFeatures(section);
+        const isExpanded =
+          features.some((feature) =>
+            Boolean(
+              permissions?.[buildPermissionKey(card.name, feature.label)]
+                ?.enabled,
+            ),
+          ) || fallbackExpanded;
+
+        if (isExpanded) {
+          acc[buildSectionKey(card.name, section.label)] = true;
+        }
+      });
+
+      return acc;
+    }, {});
+
+  const roleOptions = useMemo(() => {
+    const names = staffTypes
+      .map((item) => item.name)
+      .filter(Boolean)
+      .filter((name) => !isSuperadminRole(name));
+
+    return ["superadmin", ...names];
+  }, [staffTypes]);
 
   const fetchStaff = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await authFetch(`${API_BASE_URL}/staff-page`, {
-        method: "GET",
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch staff");
-      }
+      const data = await getStaffUsers();
 
       const users = Array.isArray(data?.users)
         ? data.users
         : Array.isArray(data?.data)
           ? data.data
-          : [];
+          : Array.isArray(data)
+            ? data
+            : [];
 
       setStaffList(users);
     } catch (err) {
@@ -257,15 +355,7 @@ const StaffPage = () => {
       setLoadingRoles(true);
       setRegisterError("");
 
-      const response = await authFetch(`${API_BASE_URL}/staff-types`, {
-        credentials: "include",
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to load staff types");
-      }
+      const data = await getStaffTypes();
 
       const list = Array.isArray(data?.data)
         ? data.data
@@ -282,7 +372,6 @@ const StaffPage = () => {
       setLoadingRoles(false);
     }
   };
-
   useEffect(() => {
     fetchStaff();
   }, []);
@@ -362,6 +451,53 @@ const StaffPage = () => {
       requestPending: !!row.passwordChangeRequest,
     });
 
+    if (isSuperadmin) {
+      try {
+        setLoadingPermissions(true);
+        const response = await getUserPermissions(row._id);
+        const permissions = response.permissions || {};
+        const normalizedPermissions = filterUserPermissionsForCards(
+          row.staffType?.assignedCards || [],
+          permissions,
+        );
+
+        // If user has no custom permissions, initialize based on staff type
+        if (
+          Object.keys(normalizedPermissions).length === 0 &&
+          row.staffType?.assignedCards
+        ) {
+          const initializedPermissions = initializeUserPermissions(
+            row.staffType.assignedCards,
+          );
+          setUserPermissions(initializedPermissions);
+          setExpandedPermissionSections(
+            getInitialExpandedSections(
+              getPermissionCardsForStaffType(row.staffType),
+              initializedPermissions,
+              true,
+            ),
+          );
+        } else {
+          setUserPermissions(normalizedPermissions);
+          setExpandedPermissionSections(
+            getInitialExpandedSections(
+              getPermissionCardsForStaffType(row.staffType),
+              normalizedPermissions,
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to load user permissions:", error);
+        setUserPermissions({});
+        setExpandedPermissionSections({});
+      } finally {
+        setLoadingPermissions(false);
+      }
+    } else {
+      setUserPermissions({});
+      setExpandedPermissionSections({});
+    }
+
     setEditError("");
     setOpenEditDialog(true);
   };
@@ -369,13 +505,152 @@ const StaffPage = () => {
   const handleCloseEdit = () => {
     setOpenEditDialog(false);
     resetEditForm();
+    setUserPermissions({});
+    setExpandedPermissionSections({});
+  };
+
+  const handlePermissionEnabledChange = (
+    cardName,
+    feature,
+    featureKey,
+    enabled,
+  ) => {
+    setUserPermissions((prev) => ({
+      ...prev,
+      [featureKey]: {
+        ...getDefaultPermissionRecord(cardName, feature),
+        ...prev[featureKey],
+        enabled,
+        actions: enabled
+          ? prev[featureKey]?.actions ||
+            ACTIONS.reduce((acc, action) => {
+              acc[action] = true;
+              return acc;
+            }, {})
+          : ACTIONS.reduce((acc, action) => {
+              acc[action] = false;
+              return acc;
+            }, {}),
+      },
+    }));
+  };
+  const handlePermissionActionChange = (
+    cardName,
+    feature,
+    featureKey,
+    action,
+    checked,
+  ) => {
+    setUserPermissions((prev) => ({
+      ...prev,
+      [featureKey]: {
+        ...getDefaultPermissionRecord(cardName, feature),
+        ...prev[featureKey],
+        enabled: prev[featureKey]?.enabled ?? true,
+        actions: {
+          ...getDefaultPermissionRecord(cardName, feature).actions,
+          ...prev[featureKey]?.actions,
+          [action]: checked,
+        },
+      },
+    }));
+  };
+
+  const handleSectionEnabledChange = (card, section, enabled) => {
+    const sectionKey = buildSectionKey(card.name, section.label);
+
+    setExpandedPermissionSections((prev) => ({
+      ...prev,
+      [sectionKey]: enabled,
+    }));
+
+    setUserPermissions((prev) => {
+      const nextPermissions = { ...prev };
+
+      getSectionFeatures(section).forEach((feature) => {
+        const featureKey = buildPermissionKey(card.name, feature.label);
+        const defaultPermission = getDefaultPermissionRecord(card.name, feature);
+
+        nextPermissions[featureKey] = {
+          ...defaultPermission,
+          ...nextPermissions[featureKey],
+          enabled,
+          actions: enabled
+            ? nextPermissions[featureKey]?.actions || defaultPermission.actions
+            : ACTIONS.reduce((acc, action) => {
+                acc[action] = false;
+                return acc;
+              }, {}),
+        };
+      });
+
+      return nextPermissions;
+    });
   };
 
   const handleEditChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "roles") {
+      if (isSuperadminRole(value)) {
+        setUserPermissions({});
+        setExpandedPermissionSections({});
+      } else {
+        const selectedStaffType = staffTypes.find(
+          (type) =>
+            String(type.name || "")
+              .trim()
+              .toLowerCase() ===
+            String(value || "")
+              .trim()
+              .toLowerCase(),
+        );
+
+        const initializedPermissions = initializeUserPermissions(
+          selectedStaffType?.assignedCards || [],
+          true,
+          true,
+        );
+
+        setUserPermissions(initializedPermissions);
+        setExpandedPermissionSections(
+          getInitialExpandedSections(
+            getPermissionCardsForStaffType(selectedStaffType),
+            initializedPermissions,
+            true,
+          ),
+        );
+      }
+    }
+
     setEditFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+  };
+
+  const handleSavePermissions = async () => {
+    if (!isSuperadmin) {
+      return;
+    }
+
+    try {
+      setLoadingPermissions(true);
+      const sanitizedPermissions = isEditSuperadmin
+        ? {}
+        : filterUserPermissionsForCards(
+            selectedEditStaffType?.assignedCards || [],
+            userPermissions,
+          );
+
+      await updateUserPermissions(editFormData.id, sanitizedPermissions);
+      // Optionally show success message
+    } catch (error) {
+      console.error("Failed to save permissions:", error);
+      setEditError("Failed to save permissions");
+    } finally {
+      setLoadingPermissions(false);
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -397,6 +672,21 @@ const StaffPage = () => {
       return;
     }
 
+    const selectedStaffType = staffTypes.find(
+      (type) =>
+        String(type.name || "")
+          .trim()
+          .toLowerCase() ===
+        String(editFormData.roles || "")
+          .trim()
+          .toLowerCase(),
+    );
+
+    if (!isEditSuperadmin && !selectedStaffType) {
+      setEditError("Role must match a staff type");
+      return;
+    }
+
     if (editFormData.requestPending && !editFormData.password.trim()) {
       setEditError("Please enter new password");
       return;
@@ -410,30 +700,19 @@ const StaffPage = () => {
     try {
       setSavingEdit(true);
 
-      const response = await authFetch(
-        `${API_BASE_URL}/staff-page/${editFormData.id}`,
-        {
-          method: "PATCH",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: `${editFormData.firstName} ${editFormData.lastName}`.trim(),
-            email: editFormData.email.trim().toLowerCase(),
-            roles: editFormData.roles.trim(),
-            password: editFormData.password.trim(),
-          }),
-        },
-      );
+      const response = await updateStaffUser(editFormData.id, {
+        name: `${editFormData.firstName} ${editFormData.lastName}`.trim(),
+        email: editFormData.email.trim().toLowerCase(),
+        roles: editFormData.roles.trim(),
+        staffType: isEditSuperadmin ? null : selectedStaffType._id,
+        password: editFormData.password.trim(),
+      });
 
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Update failed");
+      if (isSuperadmin) {
+        await handleSavePermissions();
       }
 
-      const updatedUser = data.user || data.data;
+      const updatedUser = response.user || response.data || response;
 
       setStaffList((prev) =>
         prev.map((item) => (item._id === editFormData.id ? updatedUser : item)),
@@ -469,9 +748,11 @@ const StaffPage = () => {
   };
 
   const handleRegisterChange = (e) => {
+    const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
@@ -493,6 +774,20 @@ const StaffPage = () => {
       setRegisterError("Role is required");
       return;
     }
+    const selectedStaffType = staffTypes.find(
+      (type) =>
+        String(type.name || "")
+          .trim()
+          .toLowerCase() ===
+        String(formData.roles || "")
+          .trim()
+          .toLowerCase(),
+    );
+
+    if (!isRegisterSuperadmin && !selectedStaffType) {
+      setRegisterError("Role must match a staff type");
+      return;
+    }
 
     if (formData.password.length < 8) {
       setRegisterError("Password must be at least 8 characters");
@@ -507,25 +802,13 @@ const StaffPage = () => {
     try {
       setSavingRegister(true);
 
-      const response = await authFetch(`${API_BASE_URL}/staff-page`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email.trim().toLowerCase(),
-          roles: formData.roles.trim(),
-          password: formData.password,
-        }),
+      await createStaffUser({
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email.trim().toLowerCase(),
+        roles: formData.roles.trim(),
+        staffType: isRegisterSuperadmin ? null : selectedStaffType._id,
+        password: formData.password,
       });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
 
       handleCloseRegister();
       await fetchStaff();
@@ -543,15 +826,7 @@ const StaffPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      const response = await authFetch(`${API_BASE_URL}/staff-page/${id}`, {
-        method: "DELETE",
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Delete failed");
-      }
+      await deleteStaffUser(id);
 
       setStaffList((prev) => prev.filter((item) => item._id !== id));
     } catch (err) {
@@ -561,17 +836,8 @@ const StaffPage = () => {
 
   const handleVerify = async (id) => {
     try {
-      const response = await authFetch(`${API_BASE_URL}/staff-page/${id}/verify`, {
-        method: "PATCH",
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Verification failed");
-      }
-
-      const updatedUser = data.user || data.data;
+      const data = await verifyStaffUser(id);
+      const updatedUser = data.user || data.data || data;
 
       setStaffList((prev) =>
         prev.map((item) => (item._id === id ? updatedUser : item)),
@@ -583,20 +849,8 @@ const StaffPage = () => {
 
   const handleCancelPasswordRequest = async (id) => {
     try {
-      const response = await authFetch(
-        `${API_BASE_URL}/staff-page/${id}/clear-password-request`,
-        {
-          method: "PATCH",
-        },
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to cancel password request");
-      }
-
-      const updatedUser = data.user || data.data;
+      const data = await clearPasswordRequest(id);
+      const updatedUser = data.user || data.data || data;
 
       setStaffList((prev) =>
         prev.map((item) => (item._id === id ? updatedUser : item)),
@@ -861,9 +1115,9 @@ const StaffPage = () => {
                       sx={textFieldStyles}
                     >
                       <MenuItem value="">Select role</MenuItem>
-                      {staffTypes.map((item) => (
-                        <MenuItem key={item._id} value={item.name}>
-                          {item.name}
+                      {roleOptions.map((role) => (
+                        <MenuItem key={role} value={role}>
+                          {role}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -1004,12 +1258,19 @@ const StaffPage = () => {
               fullWidth
               maxWidth="sm"
               disableRestoreFocus
+              scroll="paper"
               PaperProps={{
                 sx: {
                   borderRadius: 4,
                   border: `1px solid ${brand.border}`,
                   boxShadow: brand.shadowStrong,
                   overflow: "hidden",
+                  width: "100%",
+                  maxWidth: { xs: "calc(100% - 24px)", sm: "640px" },
+                  height: { xs: "92vh", sm: "86vh" },
+                  maxHeight: { xs: "92vh", sm: "86vh" },
+                  display: "flex",
+                  flexDirection: "column",
                 },
               }}
             >
@@ -1023,8 +1284,27 @@ const StaffPage = () => {
                 Update Staff
               </DialogTitle>
 
-              <Box component="form" onSubmit={handleEditSubmit}>
-                <DialogContent sx={{ pt: 1 }}>
+              <Box
+                component="form"
+                onSubmit={handleEditSubmit}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                  flex: 1,
+                  overflow: "hidden",
+                }}
+              >
+                <DialogContent
+                  sx={{
+                    pt: 1,
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    ...hiddenScrollbarSx,
+                  }}
+                >
                   <Stack spacing={2}>
                     {editError ? (
                       <Alert severity="error" sx={{ borderRadius: 2 }}>
@@ -1110,9 +1390,9 @@ const StaffPage = () => {
                       sx={textFieldStyles}
                     >
                       <MenuItem value="">Select role</MenuItem>
-                      {staffTypes.map((item) => (
-                        <MenuItem key={item._id} value={item.name}>
-                          {item.name}
+                      {roleOptions.map((role) => (
+                        <MenuItem key={role} value={role}>
+                          {role}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -1160,6 +1440,291 @@ const StaffPage = () => {
                       }}
                       sx={textFieldStyles}
                     />
+
+                    {isSuperadmin && !isEditSuperadmin && (
+                      <Box
+                        sx={{
+                          border: `1px solid ${brand.border}`,
+                          borderRadius: 3,
+                          p: 2,
+                          backgroundColor: brand.soft,
+                          mt: 1,
+                        }}
+                      >
+                        <Typography
+                          sx={{ fontWeight: 800, mb: 1, color: brand.text }}
+                        >
+                          Staff Permissions
+                        </Typography>
+                        {loadingPermissions ? (
+                          <Typography color={brand.textSoft}>
+                            Loading permissions...
+                          </Typography>
+                        ) : !selectedEditStaffType ? (
+                          <Typography color={brand.textSoft}>
+                            Select a role to configure card permissions.
+                          </Typography>
+                        ) : selectedPermissionCards.length === 0 ? (
+                          <Typography color={brand.textSoft}>
+                            No cards found for the selected staff type.
+                          </Typography>
+                        ) : (
+                          selectedPermissionCards.map((card) => (
+                            <Box
+                              key={card.name}
+                              sx={{
+                                mb: 2,
+                                p: 2,
+                                borderRadius: 2,
+                                border: `1px solid ${brand.border}`,
+                                backgroundColor: "#FFFFFF",
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  mb: 1,
+                                  color: brand.primaryDark,
+                                }}
+                              >
+                                {card.label}
+                              </Typography>
+
+                              {getCardSections(card).map((section) => {
+                                const sectionKey = buildSectionKey(
+                                  card.name,
+                                  section.label,
+                                );
+                                const sectionFeatures =
+                                  getSectionFeatures(section);
+                                const isSectionEnabled = sectionFeatures.some(
+                                  (feature) =>
+                                    Boolean(
+                                      userPermissions[
+                                        buildPermissionKey(
+                                          card.name,
+                                          feature.label,
+                                        )
+                                      ]?.enabled,
+                                    ),
+                                );
+                                const showSectionChildren =
+                                  expandedPermissionSections[sectionKey] ||
+                                  isSectionEnabled;
+
+                                return (
+                                  <Box
+                                    key={sectionKey}
+                                    sx={{
+                                      mb: 1.25,
+                                      p: 1.25,
+                                      borderRadius: 2,
+                                      border: `1px solid ${brand.border}`,
+                                      backgroundColor: brand.softAlt,
+                                    }}
+                                  >
+                                    <FormControlLabel
+                                      control={
+                                        <Checkbox
+                                          size="small"
+                                          checked={isSectionEnabled}
+                                          onChange={(event) =>
+                                            handleSectionEnabledChange(
+                                              card,
+                                              section,
+                                              event.target.checked,
+                                            )
+                                          }
+                                        />
+                                      }
+                                      label={section.label}
+                                      sx={{
+                                        mb: showSectionChildren ? 1 : 0,
+                                        width: "100%",
+                                        color: brand.text,
+                                      }}
+                                    />
+
+                                    {showSectionChildren && (
+                                      <Stack spacing={1}>
+                                        {section.children?.length > 0 ? (
+                                          sectionFeatures.map((feature) => {
+                                            const keyBase = buildPermissionKey(
+                                              card.name,
+                                              feature.label,
+                                            );
+                                            const permission =
+                                              userPermissions[keyBase] ||
+                                              getDefaultPermissionRecord(
+                                                card.name,
+                                                feature,
+                                              );
+
+                                            return (
+                                              <Box
+                                                key={feature.label}
+                                                sx={{
+                                                  p: 1,
+                                                  borderRadius: 2,
+                                                  border: `1px solid ${brand.border}`,
+                                                  backgroundColor: "#FFFFFF",
+                                                }}
+                                              >
+                                                <FormControlLabel
+                                                  control={
+                                                    <Checkbox
+                                                      size="small"
+                                                      checked={
+                                                        permission.enabled
+                                                      }
+                                                      onChange={(event) =>
+                                                        handlePermissionEnabledChange(
+                                                          card.name,
+                                                          feature,
+                                                          keyBase,
+                                                          event.target.checked,
+                                                        )
+                                                      }
+                                                    />
+                                                  }
+                                                  label={feature.label}
+                                                  sx={{
+                                                    mb: permission.enabled
+                                                      ? 1
+                                                      : 0,
+                                                    width: "100%",
+                                                    color: brand.text,
+                                                  }}
+                                                />
+
+                                                {permission.enabled && (
+                                                  <Stack
+                                                    direction="row"
+                                                    flexWrap="wrap"
+                                                    gap={1}
+                                                  >
+                                                    {Object.entries(
+                                                      permission.actions,
+                                                    ).map(
+                                                      ([action, checked]) => (
+                                                        <FormControlLabel
+                                                          key={`${keyBase}_${action}`}
+                                                          control={
+                                                            <Checkbox
+                                                              size="small"
+                                                              checked={checked}
+                                                              onChange={(
+                                                                event,
+                                                              ) =>
+                                                                handlePermissionActionChange(
+                                                                  card.name,
+                                                                  feature,
+                                                                  keyBase,
+                                                                  action,
+                                                                  event.target
+                                                                    .checked,
+                                                                )
+                                                              }
+                                                            />
+                                                          }
+                                                          label={
+                                                            ACTION_LABELS[
+                                                              action
+                                                            ] || action
+                                                          }
+                                                          sx={{
+                                                            mr: 0,
+                                                            ml: 0,
+                                                            color:
+                                                              brand.textSoft,
+                                                          }}
+                                                        />
+                                                      ),
+                                                    )}
+                                                  </Stack>
+                                                )}
+                                              </Box>
+                                            );
+                                          })
+                                        ) : (
+                                          (() => {
+                                            const feature = sectionFeatures[0];
+                                            const keyBase = buildPermissionKey(
+                                              card.name,
+                                              feature.label,
+                                            );
+                                            const permission =
+                                              userPermissions[keyBase] ||
+                                              getDefaultPermissionRecord(
+                                                card.name,
+                                                feature,
+                                              );
+
+                                            return permission.enabled ? (
+                                              <Stack
+                                                direction="row"
+                                                flexWrap="wrap"
+                                                gap={1}
+                                              >
+                                                {Object.entries(
+                                                  permission.actions,
+                                                ).map(([action, checked]) => (
+                                                  <FormControlLabel
+                                                    key={`${keyBase}_${action}`}
+                                                    control={
+                                                      <Checkbox
+                                                        size="small"
+                                                        checked={checked}
+                                                        onChange={(event) =>
+                                                          handlePermissionActionChange(
+                                                            card.name,
+                                                            feature,
+                                                            keyBase,
+                                                            action,
+                                                            event.target
+                                                              .checked,
+                                                          )
+                                                        }
+                                                      />
+                                                    }
+                                                    label={
+                                                      ACTION_LABELS[action] ||
+                                                      action
+                                                    }
+                                                    sx={{
+                                                      mr: 0,
+                                                      ml: 0,
+                                                      color: brand.textSoft,
+                                                    }}
+                                                  />
+                                                ))}
+                                              </Stack>
+                                            ) : null;
+                                          })()
+                                        )}
+                                      </Stack>
+                                    )}
+                                  </Box>
+                                );
+                              })}
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    )}
+
+                    {!isSuperadmin && !isEditSuperadmin && (
+                      <Alert
+                        severity="info"
+                        sx={{
+                          mt: 1,
+                          borderRadius: 3,
+                        }}
+                      >
+                        Only Super Admin can configure card, sidebar, and action
+                        permissions for a user.
+                      </Alert>
+                    )}
                   </Stack>
                 </DialogContent>
 

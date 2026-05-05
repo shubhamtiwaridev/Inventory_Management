@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
+import PermissionRoute from "./routes/PermissionRoute.jsx";
 import PublicRoute from "./routes/PublicRoute.jsx";
 
 import Register from "./pages/auth/Register.jsx";
@@ -16,6 +17,9 @@ import StaffType from "./pages/staffs/StaffType.jsx";
 import MachineMaintenancePage from "./pages/machine-maintenance/MachineMaintenancePage.jsx";
 import SparesPage from "./pages/spares/SparesPage.jsx";
 import InventoryPage from "./pages/inventory/InventoryPage.jsx";
+import { inventorySidebarItems } from "./components/sidebars/inventorySidebarItems.jsx";
+import { machineMaintenanceSidebarItems } from "./components/sidebars/machineMaintenanceSidebarItems.jsx";
+import { sparesSidebarItems } from "./components/sidebars/sparesSidebarItems.jsx";
 
 import AssetListPage from "./pages/machine-maintenance/assets/AssetListPage.jsx";
 import SpareListPage from "./pages/machine-maintenance/assets/SpareListPage.jsx";
@@ -36,6 +40,21 @@ import FrequencyListPage from "./pages/machine-maintenance/configure/FrequencyLi
 import ContractTypeListPage from "./pages/machine-maintenance/configure/ContractTypeListPage.jsx";
 
 import InventoryMasterListPage from "./pages/inventory/components/InventoryMasterListPage.jsx";
+
+const withPermissionRoute = (
+  element,
+  sidebarItems,
+  featurePath,
+  featureLabel = "",
+) => (
+  <PermissionRoute
+    sidebarItems={sidebarItems}
+    featurePath={featurePath}
+    featureLabel={featureLabel}
+  >
+    {element}
+  </PermissionRoute>
+);
 
 function App() {
   return (
@@ -60,40 +79,180 @@ function App() {
         <Route path="/staff-list" element={<StaffList />} />
         <Route path="/staff-type" element={<StaffType />} />
 
-        <Route path="/machine-maintenance" element={<MachineMaintenancePage />}>
+        <Route
+          path="/machine-maintenance"
+          element={
+            <PermissionRoute
+              sidebarItems={machineMaintenanceSidebarItems}
+              requireModuleAccess
+            >
+              <MachineMaintenancePage />
+            </PermissionRoute>
+          }
+        >
           <Route
             index
             element={<Navigate to="/machine-maintenance/assets/list" replace />}
           />
 
-          <Route path="assets/list" element={<AssetListPage />} />
-          <Route path="assets/register" element={<AssetListPage />} />
-          <Route path="assets/register/:id" element={<AssetListPage />} />
-
-          <Route path="spare-master/list" element={<SpareListPage />} />
-          <Route path="spare-master/register" element={<SpareListPage />} />
-          <Route path="spare-master/register/:id" element={<SpareListPage />} />
-
-          <Route path="tasks/list" element={<TaskListPage />} />
-          <Route path="tasks/schedule" element={<TaskListPage />} />
-          <Route path="tasks/schedule/:id" element={<TaskListPage />} />
-
-          <Route path="user-allocation/list" element={<UserListPage />} />
-          <Route path="user-allocation/allocation" element={<UserListPage />} />
           <Route
-            path="user-allocation/allocation/:id"
-            element={<UserListPage />}
+            path="assets/list"
+            element={withPermissionRoute(
+              <AssetListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/assets/list",
+              "List of Assets",
+            )}
+          />
+          <Route
+            path="assets/register"
+            element={withPermissionRoute(
+              <AssetListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/assets/register",
+              "Machine Registration",
+            )}
+          />
+          <Route
+            path="assets/register/:id"
+            element={withPermissionRoute(
+              <AssetListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/assets/register",
+              "Machine Registration",
+            )}
           />
 
-          <Route path="vendors/list" element={<VendorListPage />} />
-          <Route path="vendors/register" element={<VendorListPage />} />
-          <Route path="vendors/register/:id" element={<VendorListPage />} />
+          <Route
+            path="spare-master/list"
+            element={withPermissionRoute(
+              <SpareListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/spare-master/list",
+              "List of Spares",
+            )}
+          />
+          <Route
+            path="spare-master/register"
+            element={withPermissionRoute(
+              <SpareListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/spare-master/register",
+              "Spare Registration",
+            )}
+          />
+          <Route
+            path="spare-master/register/:id"
+            element={withPermissionRoute(
+              <SpareListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/spare-master/register",
+              "Spare Registration",
+            )}
+          />
+
+          <Route
+            path="tasks/list"
+            element={withPermissionRoute(
+              <TaskListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/tasks/list",
+              "List of Tasks",
+            )}
+          />
+          <Route
+            path="tasks/schedule"
+            element={withPermissionRoute(
+              <TaskListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/tasks/schedule",
+              "Schedule",
+            )}
+          />
+          <Route
+            path="tasks/schedule/:id"
+            element={withPermissionRoute(
+              <TaskListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/tasks/schedule",
+              "Schedule",
+            )}
+          />
+
+          <Route
+            path="user-allocation/list"
+            element={withPermissionRoute(
+              <UserListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/user-allocation/list",
+              "List of Users",
+            )}
+          />
+          <Route
+            path="user-allocation/allocation"
+            element={withPermissionRoute(
+              <UserListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/user-allocation/allocation",
+              "Allocation",
+            )}
+          />
+          <Route
+            path="user-allocation/allocation/:id"
+            element={withPermissionRoute(
+              <UserListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/user-allocation/allocation",
+              "Allocation",
+            )}
+          />
+
+          <Route
+            path="vendors/list"
+            element={withPermissionRoute(
+              <VendorListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/vendors/list",
+              "List of Vendors",
+            )}
+          />
+          <Route
+            path="vendors/register"
+            element={withPermissionRoute(
+              <VendorListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/vendors/register",
+              "Vendor Registration",
+            )}
+          />
+          <Route
+            path="vendors/register/:id"
+            element={withPermissionRoute(
+              <VendorListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/vendors/register",
+              "Vendor Registration",
+            )}
+          />
 
           <Route
             path="consume/breakdown-list"
-            element={<BreakdownListPage />}
+            element={withPermissionRoute(
+              <BreakdownListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/consume/breakdown-list",
+              "Breakdown List",
+            )}
           />
-          <Route path="consume/entry" element={<ConsumeEntryPage />} />
+          <Route
+            path="consume/entry"
+            element={withPermissionRoute(
+              <ConsumeEntryPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/consume/entry",
+              "Consume Entry",
+            )}
+          />
 
           <Route
             path="configure"
@@ -104,38 +263,119 @@ function App() {
               />
             }
           />
-          <Route path="configure/department" element={<DepartmentListPage />} />
+          <Route
+            path="configure/department"
+            element={withPermissionRoute(
+              <DepartmentListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/department",
+              "Department",
+            )}
+          />
           <Route
             path="configure/shift-timing"
-            element={<ShiftTimingListPage />}
+            element={withPermissionRoute(
+              <ShiftTimingListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/shift-timing",
+              "Shift Timing",
+            )}
           />
-          <Route path="configure/plant-site" element={<PlantSiteListPage />} />
-          <Route path="configure/status" element={<StatusListPage />} />
+          <Route
+            path="configure/plant-site"
+            element={withPermissionRoute(
+              <PlantSiteListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/plant-site",
+              "Plant Site",
+            )}
+          />
+          <Route
+            path="configure/status"
+            element={withPermissionRoute(
+              <StatusListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/status",
+              "Status",
+            )}
+          />
           <Route
             path="configure/critical-level"
-            element={<CriticalLevelListPage />}
+            element={withPermissionRoute(
+              <CriticalLevelListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/critical-level",
+              "Critical Level",
+            )}
           />
           <Route
             path="configure/unit-of-measure"
-            element={<UnitOfMeasureListPage />}
+            element={withPermissionRoute(
+              <UnitOfMeasureListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/unit-of-measure",
+              "Units of Measure",
+            )}
           />
           <Route
             path="configure/task-category"
-            element={<TaskCategoryListPage />}
+            element={withPermissionRoute(
+              <TaskCategoryListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/task-category",
+              "Task Category",
+            )}
           />
-          <Route path="configure/frequency" element={<FrequencyListPage />} />
+          <Route
+            path="configure/frequency"
+            element={withPermissionRoute(
+              <FrequencyListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/frequency",
+              "Frequency",
+            )}
+          />
           <Route
             path="configure/contract-type"
-            element={<ContractTypeListPage />}
+            element={withPermissionRoute(
+              <ContractTypeListPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/configure/contract-type",
+              "Contract Type",
+            )}
           />
         </Route>
 
-        <Route path="/spares" element={<SparesPage />} />
+        <Route
+          path="/spares"
+          element={
+            <PermissionRoute
+              sidebarItems={sparesSidebarItems}
+              requireModuleAccess
+            >
+              <SparesPage />
+            </PermissionRoute>
+          }
+        />
 
-        <Route path="/inventory/*" element={<InventoryPage />}>
+        <Route
+          path="/inventory/*"
+          element={
+            <PermissionRoute
+              sidebarItems={inventorySidebarItems}
+              requireModuleAccess
+            >
+              <InventoryPage />
+            </PermissionRoute>
+          }
+        >
           <Route
             path="goodslist/:tabKey"
-            element={<InventoryMasterListPage />}
+            element={
+              <PermissionRoute sidebarItems={inventorySidebarItems} requireModuleAccess>
+                <InventoryMasterListPage />
+              </PermissionRoute>
+            }
           />
         </Route>
       </Route>

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -31,49 +32,13 @@ import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useAuth } from "../../store/AuthContext.jsx";
-import { API_BASE_URL } from "../../api/config";
-import { authFetch } from "../../api/authFetch";
-
-const request = async (url, options = {}) => {
-  const response = await authFetch(`${API_BASE_URL}${url}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
-  }
-
-  return data;
-};
-const getStaffTypes = async () => {
-  return request("/staff-types");
-};
-
-const createStaffType = async (payload) => {
-  return request("/staff-types", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-};
-
-const updateStaffType = async (id, payload) => {
-  return request(`/staff-types/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
-};
-
-const deleteStaffType = async (id) => {
-  return request(`/staff-types/${id}`, {
-    method: "DELETE",
-  });
-};
+import {
+  getStaffTypes,
+  createStaffType,
+  updateStaffType,
+  deleteStaffType,
+  getCards,
+} from "./staffApi";
 
 const brand = {
   primary: "#106C6B",
@@ -197,21 +162,42 @@ const StaffType = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [availableCards, setAvailableCards] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
+    assignedCards: [],
     createdBy: "",
   });
 
   const rowsPerPage = 10;
 
+  const isSuperadminStaffType = useMemo(
+    () =>
+      String(formData.name || "")
+        .trim()
+        .toLowerCase() === "superadmin",
+    [formData.name],
+  );
+
   const resetForm = useCallback(() => {
     setFormData({
       name: "",
+      assignedCards: [],
       createdBy: user?.name || "",
     });
     setEditingId("");
     setShowForm(false);
   }, [user?.name]);
+
+  const loadCards = useCallback(async () => {
+    try {
+      const response = await getCards();
+      const cards = Array.isArray(response?.data) ? response.data : [];
+      setAvailableCards(cards);
+    } catch (error) {
+      console.error("Failed to load cards:", error);
+    }
+  }, []);
 
   const loadStaffTypes = useCallback(async () => {
     try {
@@ -237,7 +223,8 @@ const StaffType = () => {
 
   useEffect(() => {
     loadStaffTypes();
-  }, [loadStaffTypes]);
+    loadCards();
+  }, [loadStaffTypes, loadCards]);
 
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -312,6 +299,7 @@ const StaffType = () => {
   const handleOpenCreate = () => {
     setFormData({
       name: "",
+      assignedCards: [],
       createdBy: user?.name || "",
     });
     setEditingId("");
@@ -322,6 +310,7 @@ const StaffType = () => {
   const handleEdit = (row) => {
     setFormData({
       name: row.name || "",
+      assignedCards: (row.assignedCards || []).map((card) => card._id || card),
       createdBy: row.createdBy || "",
     });
     setEditingId(row._id);
@@ -334,17 +323,39 @@ const StaffType = () => {
     setErrorMessage("");
   };
 
+  const toggleAssignedCard = (cardId) => {
+    setFormData((prev) => ({
+      ...prev,
+      assignedCards: prev.assignedCards.includes(cardId)
+        ? prev.assignedCards.filter((id) => id !== cardId)
+        : [...prev.assignedCards, cardId],
+    }));
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const payload = {
       name: formData.name.trim(),
+      assignedCards: formData.assignedCards,
       createdBy: formData.createdBy.trim(),
     };
 
     if (!payload.name || !payload.createdBy) {
       setErrorMessage("Please fill Staff Type and Creater Person");
       return;
+    }
+
+    if (
+      !isSuperadminStaffType &&
+      (!payload.assignedCards || payload.assignedCards.length === 0)
+    ) {
+      setErrorMessage("Please select at least one card for this staff type");
+      return;
+    }
+
+    if (isSuperadminStaffType) {
+      payload.assignedCards = [];
     }
 
     try {
@@ -598,6 +609,82 @@ const StaffType = () => {
                       }
                       fullWidth
                     />
+
+                    <Box>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ mb: 1, fontWeight: 600 }}
+                      >
+                        {isSuperadminStaffType
+                          ? "Assign Cards"
+                          : "Assign Cards *"}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2 }}
+                      >
+                        {isSuperadminStaffType
+                          ? "Superadmin does not require card selection. Superadmin will see all cards automatically."
+                          : "Select which cards this staff type can access. At least one card must be selected."}
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {availableCards.map((card) => (
+                          <Box
+                            key={card._id}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              p: 1,
+                              border: `1px solid ${formData.assignedCards.includes(card._id) ? brand.primary : brand.border}`,
+                              borderRadius: 1,
+                              backgroundColor: formData.assignedCards.includes(
+                                card._id,
+                              )
+                                ? brand.soft
+                                : "transparent",
+                              cursor: "pointer",
+                              transition: "all 0.2s ease",
+                              "&:hover": {
+                                borderColor: brand.primary,
+                                backgroundColor: brand.soft,
+                              },
+                            }}
+                            onClick={() => {
+                              if (!isSuperadminStaffType) {
+                                toggleAssignedCard(card._id);
+                              }
+                            }}
+                          >
+                            <Checkbox
+                              checked={formData.assignedCards.includes(
+                                card._id,
+                              )}
+                              sx={{ p: 0, mr: 1 }}
+                              disabled={isSuperadminStaffType}
+                              onChange={(e) => {
+                                e.stopPropagation();
+
+                                if (!isSuperadminStaffType) {
+                                  toggleAssignedCard(card._id);
+                                }
+                              }}
+                            />
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 500 }}
+                            >
+                              {card.title}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                      {availableCards.length === 0 && (
+                        <Typography variant="body2" color="text.secondary">
+                          No cards available. Please contact administrator.
+                        </Typography>
+                      )}
+                    </Box>
                   </Stack>
                 </DialogContent>
 

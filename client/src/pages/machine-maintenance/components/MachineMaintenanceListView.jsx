@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -18,6 +19,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
@@ -25,7 +27,6 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
-import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 
 import {
@@ -36,6 +37,8 @@ import {
   outlinedActionButtonSx,
   searchFieldSx,
 } from "./machineMaintenanceUi.jsx";
+import { useAuth } from "../../../store/AuthContext.jsx";
+import { hasActionPermission } from "../../../utils/permissions.js";
 
 const getPlainValue = (value) => {
   if (value === undefined || value === null) return "";
@@ -211,7 +214,16 @@ const MachineMaintenanceListView = ({
   loading = false,
   error = "",
 }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+
   const [search, setSearch] = useState("");
+
+  const canCreate = hasActionPermission(user, location.pathname, "create");
+  const canUpdate = hasActionPermission(user, location.pathname, "update");
+  const canDelete = hasActionPermission(user, location.pathname, "delete");
+
+  const canShowActionColumn = showActions && (canUpdate || canDelete);
   const keyword = search.trim().toLowerCase();
 
   const filteredRows = useMemo(
@@ -221,7 +233,7 @@ const MachineMaintenanceListView = ({
 
   const tableMinWidth = Math.max(
     980,
-    (columns.length + (showActions ? 1 : 0)) * 180,
+    (columns.length + (canShowActionColumn ? 1 : 0)) * 180,
   );
 
   const handleRefresh = () => {
@@ -244,6 +256,7 @@ const MachineMaintenanceListView = ({
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
+
     link.href = url;
     link.setAttribute(
       "download",
@@ -253,6 +266,21 @@ const MachineMaintenanceListView = ({
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
+  };
+
+  const handlePrimaryAction = () => {
+    if (!canCreate) return;
+    onPrimaryAction?.();
+  };
+
+  const handleEdit = (row) => {
+    if (!canUpdate) return;
+    onEdit?.(row);
+  };
+
+  const handleDelete = (row) => {
+    if (!canDelete) return;
+    onDelete?.(row);
   };
 
   return (
@@ -298,12 +326,12 @@ const MachineMaintenanceListView = ({
               flexWrap="wrap"
               useFlexGap
             >
-              {showPrimaryAction ? (
+              {showPrimaryAction && canCreate ? (
                 <Button
                   variant="contained"
                   startIcon={<AddRoundedIcon />}
                   sx={filledActionButtonSx}
-                  onClick={onPrimaryAction}
+                  onClick={handlePrimaryAction}
                 >
                   {primaryButtonLabel}
                 </Button>
@@ -396,7 +424,9 @@ const MachineMaintenanceListView = ({
                       key={column.key}
                       sx={{
                         ...getCellSx({
-                          isLast: !showActions && index === columns.length - 1,
+                          isLast:
+                            !canShowActionColumn &&
+                            index === columns.length - 1,
                         }),
                         fontWeight: 800,
                         color: brand.text,
@@ -412,7 +442,7 @@ const MachineMaintenanceListView = ({
                     </TableCell>
                   ))}
 
-                  {showActions ? (
+                  {canShowActionColumn ? (
                     <TableCell
                       align="center"
                       sx={{
@@ -437,7 +467,7 @@ const MachineMaintenanceListView = ({
                 {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={columns.length + (showActions ? 1 : 0)}
+                      colSpan={columns.length + (canShowActionColumn ? 1 : 0)}
                       align="center"
                       sx={getCellSx({ isLast: true, align: "center" })}
                     >
@@ -457,7 +487,7 @@ const MachineMaintenanceListView = ({
                 ) : filteredRows.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={columns.length + (showActions ? 1 : 0)}
+                      colSpan={columns.length + (canShowActionColumn ? 1 : 0)}
                       align="center"
                       sx={getCellSx({ isLast: true, align: "center" })}
                     >
@@ -486,7 +516,8 @@ const MachineMaintenanceListView = ({
                             sx={{
                               ...getCellSx({
                                 isLast:
-                                  !showActions && index === columns.length - 1,
+                                  !canShowActionColumn &&
+                                  index === columns.length - 1,
                               }),
                               color: isStatus ? brand.text : brand.textSoft,
                               fontWeight: index === 0 ? 700 : 500,
@@ -505,7 +536,7 @@ const MachineMaintenanceListView = ({
                         );
                       })}
 
-                      {showActions ? (
+                      {canShowActionColumn ? (
                         <TableCell
                           align="center"
                           sx={getCellSx({ isLast: true, align: "center" })}
@@ -515,24 +546,29 @@ const MachineMaintenanceListView = ({
                             spacing={1}
                             justifyContent="center"
                           >
-                            <IconButton
-                              sx={actionIconButtonSx}
-                              onClick={() => onEdit?.(row)}
-                              disabled={!onEdit}
-                            >
-                              <EditRoundedIcon
-                                sx={{ fontSize: 18, color: brand.text }}
-                              />
-                            </IconButton>
-                            <IconButton
-                              sx={actionIconButtonSx}
-                              onClick={() => onDelete?.(row)}
-                              disabled={!onDelete}
-                            >
-                              <DeleteOutlineRoundedIcon
-                                sx={{ fontSize: 18, color: brand.danger }}
-                              />
-                            </IconButton>
+                            {canUpdate ? (
+                              <IconButton
+                                sx={actionIconButtonSx}
+                                onClick={() => handleEdit(row)}
+                                disabled={!onEdit}
+                              >
+                                <EditRoundedIcon
+                                  sx={{ fontSize: 18, color: brand.text }}
+                                />
+                              </IconButton>
+                            ) : null}
+
+                            {canDelete ? (
+                              <IconButton
+                                sx={actionIconButtonSx}
+                                onClick={() => handleDelete(row)}
+                                disabled={!onDelete}
+                              >
+                                <DeleteOutlineRoundedIcon
+                                  sx={{ fontSize: 18, color: brand.danger }}
+                                />
+                              </IconButton>
+                            ) : null}
                           </Stack>
                         </TableCell>
                       ) : null}

@@ -1,5 +1,16 @@
 import logo from "../../assets/decostyle-logo.png";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
+import ChevronLeftRoundedIcon from "@mui/icons-material/ChevronLeftRounded";
+import ChevronRightRoundedIcon from "@mui/icons-material/ChevronRightRounded";
+import {
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { useAuth } from "../../store/AuthContext.jsx";
+import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
 
 const brand = {
   primary: "#106C6B",
@@ -30,16 +41,27 @@ const getSidebarItemState = (item, pathname) => {
   };
 };
 
-const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
-  const visibleSidebarItems = sidebarItems.filter((item) => {
-    if (item.path === "/team" && !canViewTeam) return false;
-    return true;
-  });
+const SideBar = ({
+  canViewTeam,
+  location,
+  navigate,
+  sidebarItems = [],
+  collapsed = false,
+  onToggleCollapse,
+}) => {
+  const { user } = useAuth();
+  const rawSidebarItems = sidebarItems.filter(
+    (item) => !(item.path === "/team" && !canViewTeam),
+  );
 
+  const visibleSidebarItems = getVisibleSidebarItemsForUser(
+    rawSidebarItems,
+    user,
+  );
   return (
     <Box
       sx={{
-        width: { xs: "100%", md: 228 },
+        width: { xs: "100%", md: collapsed ? 45 : 228 },
         flexShrink: 0,
         height: { xs: "auto", md: "100vh" },
         position: { xs: "relative", md: "sticky" },
@@ -51,48 +73,75 @@ const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
         borderBottom: { xs: `1px solid ${brand.border}`, md: "none" },
         backgroundColor: "rgba(255,255,255,0.82)",
         backdropFilter: "blur(12px)",
-        px: 2,
+        px: collapsed ? 1.25 : 2,
         py: 2.5,
         display: "flex",
         flexDirection: "column",
+        transition: "width 180ms ease, padding 180ms ease",
       }}
     >
       <Box
         sx={{
-          mb: 4,
+          mb: collapsed ? 2.5 : 4,
           display: "flex",
           alignItems: "center",
-          justifyContent: "flex-start",
+          justifyContent: collapsed ? "center" : "space-between",
           px: 0.5,
           flexShrink: 0,
+          gap: 1,
         }}
       >
-        <Box
-          component="img"
-          src={logo}
-          alt="Decostyle"
+        {!collapsed ? (
+          <Box
+            component="img"
+            src={logo}
+            alt="Decostyle"
+            sx={{
+              width: 170,
+              height: "auto",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        ) : null}
+
+        <IconButton
+          onClick={onToggleCollapse}
+          size="small"
           sx={{
-            width: 170,
-            height: "auto",
-            objectFit: "contain",
-            display: "block",
+            width: 34,
+            height: 34,
+            border: `1px solid ${brand.border}`,
+            color: brand.text,
+            backgroundColor: "#FFFFFF",
+            "&:hover": {
+              backgroundColor: brand.soft,
+            },
           }}
-        />
+        >
+          {collapsed ? (
+            <ChevronRightRoundedIcon fontSize="small" />
+          ) : (
+            <ChevronLeftRoundedIcon fontSize="small" />
+          )}
+        </IconButton>
       </Box>
 
-      <Typography
-        variant="caption"
-        sx={{
-          color: brand.textSoft,
-          fontWeight: 700,
-          letterSpacing: 1,
-          mb: 1.5,
-          px: 1,
-          flexShrink: 0,
-        }}
-      >
-        MAIN MENU
-      </Typography>
+      {!collapsed ? (
+        <Typography
+          variant="caption"
+          sx={{
+            color: brand.textSoft,
+            fontWeight: 700,
+            letterSpacing: 1,
+            mb: 1.5,
+            px: 1,
+            flexShrink: 0,
+          }}
+        >
+          MAIN MENU
+        </Typography>
+      ) : null}
 
       <Stack spacing={0.75} sx={{ pb: 1 }}>
         {visibleSidebarItems.map((item) => {
@@ -106,9 +155,10 @@ const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
               disableRipple
               onClick={() => navigate(item.path)}
               sx={{
-                justifyContent: "flex-start",
+                justifyContent: collapsed ? "center" : "flex-start",
                 borderRadius: 3,
-                px: 1.5,
+                minWidth: 0,
+                px: collapsed ? 1 : 1.5,
                 py: 1.2,
                 color: isActive ? brand.primary : brand.text,
                 backgroundColor: isActive ? brand.soft : "transparent",
@@ -143,12 +193,12 @@ const SideBar = ({ canViewTeam, location, navigate, sidebarItems = [] }) => {
                   display: "flex",
                   alignItems: "center",
                   width: "100%",
-                  justifyContent: "space-between",
+                  justifyContent: collapsed ? "center" : "space-between",
                 }}
               >
-                <span>{item.label}</span>
+                {!collapsed ? <span>{item.label}</span> : null}
 
-                {item.badge ? (
+                {!collapsed && item.badge ? (
                   <Chip
                     label={item.badge}
                     size="small"

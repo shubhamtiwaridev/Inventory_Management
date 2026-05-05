@@ -20,6 +20,21 @@ const authSchema = new mongoose.Schema(
       required: [true, "Role is required"],
       trim: true,
     },
+    staffType: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StaffType",
+      required: [
+        function () {
+          return (
+            String(this.roles || "")
+              .trim()
+              .toLowerCase() !== "superadmin"
+          );
+        },
+        "Staff type is required",
+      ],
+      default: null,
+    },
     isVerified: {
       type: Boolean,
       default: false,
@@ -50,6 +65,10 @@ const authSchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: "",
+    },
+    permissions: {
+      type: Object,
+      default: {},
     },
     password: {
       type: String,

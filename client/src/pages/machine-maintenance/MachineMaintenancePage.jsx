@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useAuth } from "../../store/AuthContext.jsx";
+import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
 import { Box, Button, Paper, Stack } from "@mui/material";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ModuleLayout from "../../components/ModuleLayout";
@@ -6,14 +9,14 @@ import { machineMaintenanceSidebarItems } from "../../components/sidebars/machin
 const matchesPath = (pathname, targetPath) =>
   pathname === targetPath || pathname.startsWith(`${targetPath}/`);
 
-const findCurrentParent = (pathname) => {
-  const childMatchedParent = machineMaintenanceSidebarItems.find((item) =>
+const findCurrentParent = (pathname, sidebarItems = []) => {
+  const childMatchedParent = sidebarItems.find((item) =>
     item.children?.some((child) => matchesPath(pathname, child.path)),
   );
 
   if (childMatchedParent) return childMatchedParent;
 
-  return machineMaintenanceSidebarItems.find((item) => {
+  return sidebarItems.find((item) => {
     if (item.path === "/dashboard") return false;
     return matchesPath(pathname, item.path);
   });
@@ -70,15 +73,24 @@ const isConfigureRoute = (pathname) =>
 const MachineMaintenancePage = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const currentParent = findCurrentParent(location.pathname);
+  const allowedSidebarItems = useMemo(
+    () => getVisibleSidebarItemsForUser(machineMaintenanceSidebarItems, user),
+    [user],
+  );
+
+  const currentParent = findCurrentParent(
+    location.pathname,
+    allowedSidebarItems,
+  );
   const headerActions = isConfigureRoute(location.pathname)
     ? currentParent?.children || []
     : [];
   const content = children ?? <Outlet />;
 
   return (
-    <ModuleLayout sidebarItems={machineMaintenanceSidebarItems} lockPageScroll>
+    <ModuleLayout sidebarItems={allowedSidebarItems} lockPageScroll>
       <Stack
         spacing={0}
         sx={{

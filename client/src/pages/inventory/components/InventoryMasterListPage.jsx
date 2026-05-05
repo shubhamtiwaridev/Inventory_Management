@@ -9,14 +9,20 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import MachineMaintenanceListView from "../../machine-maintenance/components/MachineMaintenanceListView.jsx";
+import { inventorySidebarItems } from "../../../components/sidebars/inventorySidebarItems.jsx";
+import { useAuth } from "../../../store/AuthContext.jsx";
 import {
   brand,
   filledActionButtonSx,
   outlinedActionButtonSx,
   textFieldStyles,
 } from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
+import {
+  getFirstAccessibleSidebarPath,
+  isSidebarFeatureVisible,
+} from "../../../utils/permissions.js";
 import {
   cloneInventoryMasterRows,
   inventoryMasterConfigs,
@@ -30,6 +36,37 @@ const configKeyMap = {
   brand: "brand",
   specs: "specs",
   origin: "origin",
+};
+
+const permissionConfigMap = {
+  list: {
+    path: "/inventory/goodslist/list",
+    label: "Goods List",
+  },
+  units: {
+    path: "/inventory/goodslist/units",
+    label: "Unit",
+  },
+  class: {
+    path: "/inventory/goodslist/class",
+    label: "Class",
+  },
+  color: {
+    path: "/inventory/goodslist/color",
+    label: "Color",
+  },
+  brand: {
+    path: "/inventory/goodslist/brand",
+    label: "Brand",
+  },
+  specs: {
+    path: "/inventory/goodslist/specs",
+    label: "Specs",
+  },
+  origin: {
+    path: "/inventory/goodslist/origin",
+    label: "Origin",
+  },
 };
 
 const getNowStamp = () => {
@@ -58,8 +95,11 @@ const hiddenScrollbarSx = {
 };
 
 const InventoryMasterListPage = () => {
+  const { user } = useAuth();
   const { tabKey } = useParams();
   const configKey = configKeyMap[tabKey] || "goodsList";
+  const permissionConfig =
+    permissionConfigMap[tabKey] || permissionConfigMap.list;
   const config = inventoryMasterConfigs[configKey];
 
   const [masterRows, setMasterRows] = useState(() =>
@@ -69,6 +109,11 @@ const InventoryMasterListPage = () => {
   const [editingRow, setEditingRow] = useState(null);
   const [formValues, setFormValues] = useState(() => getDefaultValues(config));
   const [formErrors, setFormErrors] = useState({});
+  const canAccessFeature = isSidebarFeatureVisible(
+    user,
+    permissionConfig.path,
+    permissionConfig.label,
+  );
 
   const rows = masterRows[configKey] || [];
 
@@ -90,6 +135,15 @@ const InventoryMasterListPage = () => {
 
     return options;
   }, [config.fields, masterRows]);
+
+  if (!canAccessFeature) {
+    return (
+      <Navigate
+        to={getFirstAccessibleSidebarPath(inventorySidebarItems, user)}
+        replace
+      />
+    );
+  }
 
   const openAddDialog = () => {
     setEditingRow(null);

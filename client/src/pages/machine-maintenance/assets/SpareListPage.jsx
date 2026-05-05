@@ -17,6 +17,34 @@ import {
   updateSpare,
 } from "../components/machineMaintenanceApi.js";
 
+const toOption = (value) => {
+  const cleanValue = String(value || "").trim();
+  if (!cleanValue) return null;
+
+  return {
+    label: cleanValue,
+    value: cleanValue,
+  };
+};
+
+const mergeOptionsWithExistingValue = (options = [], value = "") => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) return options;
+
+  const exists = options.some((option) => {
+    const optionValue =
+      typeof option === "string" ? option : String(option?.value || "").trim();
+
+    return optionValue === cleanValue;
+  });
+
+  if (exists) return options;
+
+  const currentValueOption = toOption(cleanValue);
+  return currentValueOption ? [currentValueOption, ...options] : options;
+};
+
 const getVendorOptions = (response) => {
   const records = Array.isArray(response?.data)
     ? response.data
@@ -40,26 +68,39 @@ const getVendorOptions = (response) => {
 };
 
 const loadSpareDropdownData = async () => {
-  const [machines, units, statuses, vendorsResponse] = await Promise.all([
+  const [machinesResult, unitsResult, statusesResult, vendorsResult] =
+    await Promise.allSettled([
     getRegisteredMachineOptions(),
     getConfiguredUnitsOfMeasure(),
     getConfiguredStatuses(),
-    getVendors(),
-  ]);
+    getVendors({ skipCache: true }),
+    ]);
 
   return {
-    machines,
-    units,
-    statuses,
-    vendors: getVendorOptions(vendorsResponse),
+    machines:
+      machinesResult.status === "fulfilled" ? machinesResult.value : [],
+    units: unitsResult.status === "fulfilled" ? unitsResult.value : [],
+    statuses:
+      statusesResult.status === "fulfilled" ? statusesResult.value : [],
+    vendors:
+      vendorsResult.status === "fulfilled"
+        ? getVendorOptions(vendorsResult.value)
+        : [],
   };
 };
 
-const buildSpareFormConfig = ({ baseConfig, dropdownData }) => ({
+const buildSpareFormConfig = ({ baseConfig, dropdownData, initialValues }) => ({
   ...baseConfig,
   fields: baseConfig.fields.map((field) => {
     if (field.name === "linkedMachine") {
-      return { ...field, select: true, options: dropdownData.machines || [] };
+      return {
+        ...field,
+        select: true,
+        options: mergeOptionsWithExistingValue(
+          dropdownData.machines || [],
+          initialValues?.linkedMachine,
+        ),
+      };
     }
 
     if (field.name === "vendor") {
@@ -67,16 +108,33 @@ const buildSpareFormConfig = ({ baseConfig, dropdownData }) => ({
         ...field,
         label: "Supplier",
         select: true,
-        options: dropdownData.vendors || [],
+        options: mergeOptionsWithExistingValue(
+          dropdownData.vendors || [],
+          initialValues?.vendor,
+        ),
       };
     }
 
     if (field.name === "unit") {
-      return { ...field, select: true, options: dropdownData.units || [] };
+      return {
+        ...field,
+        select: true,
+        options: mergeOptionsWithExistingValue(
+          dropdownData.units || [],
+          initialValues?.unit,
+        ),
+      };
     }
 
     if (field.name === "status") {
-      return { ...field, select: true, options: dropdownData.statuses || [] };
+      return {
+        ...field,
+        select: true,
+        options: mergeOptionsWithExistingValue(
+          dropdownData.statuses || [],
+          initialValues?.status,
+        ),
+      };
     }
 
     return field;

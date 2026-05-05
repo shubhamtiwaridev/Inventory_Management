@@ -8,6 +8,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./modules/auth/authRoute.js";
 import staffPageRoutes from "./modules/staff/staffpage/staffPageRoute.js";
 import staffTypeRoutes from "./modules/staff/stafftype/staffTypeRoute.js";
+import cardRoutes from "./modules/staff/card/cardRoute.js";
 
 import assetRoutes from "./modules/machine-maintenance/asset/assetRoute.js";
 import spareRoutes from "./modules/machine-maintenance/spare/spareRoute.js";
@@ -79,6 +80,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/staff-types", staffTypeRoutes);
 app.use("/api/staff-page", staffPageRoutes);
+app.use("/api/cards", cardRoutes);
 
 app.use("/api/machine-maintenance/assets", assetRoutes);
 app.use("/api/machine-maintenance/spares", spareRoutes);

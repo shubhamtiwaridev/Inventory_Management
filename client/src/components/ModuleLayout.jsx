@@ -1,4 +1,5 @@
 import { Box } from "@mui/material";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../store/AuthContext.jsx";
 import SideBar from "../pages/mainpages/SideBar.jsx";
@@ -15,6 +16,7 @@ const ModuleLayout = ({
   const { canViewTeam } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <Box
@@ -41,6 +43,8 @@ const ModuleLayout = ({
           location={location}
           navigate={navigate}
           sidebarItems={sidebarItems}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
         />
 
         <Box

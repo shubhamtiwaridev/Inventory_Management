@@ -1,23 +1,26 @@
+import { useMemo } from "react";
 import { Box, Button, Paper, Stack, Typography } from "@mui/material";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import ModuleLayout from "../../components/ModuleLayout";
 import { inventorySidebarItems } from "../../components/sidebars/inventorySidebarItems";
+import { useAuth } from "../../store/AuthContext.jsx";
+import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
 
 const matchesPath = (pathname, targetPath) =>
   pathname === targetPath || pathname.startsWith(`${targetPath}/`);
 
-const findCurrentParent = (pathname) => {
-  const childMatchedParent = inventorySidebarItems.find((item) =>
+const findCurrentParent = (pathname, sidebarItems = []) => {
+  const childMatchedParent = sidebarItems.find((item) =>
     item.children?.some((child) => matchesPath(pathname, child.path)),
   );
 
   if (childMatchedParent) return childMatchedParent;
 
   return (
-    inventorySidebarItems.find((item) => {
+    sidebarItems.find((item) => {
       if (item.path === "/dashboard") return false;
       return matchesPath(pathname, item.path);
-    }) || inventorySidebarItems[1]
+    }) || sidebarItems[1]
   );
 };
 
@@ -99,8 +102,17 @@ const InventoryOverview = () => {
 const InventoryPage = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const currentParent = findCurrentParent(location.pathname);
+  const allowedSidebarItems = useMemo(
+    () => getVisibleSidebarItemsForUser(inventorySidebarItems, user),
+    [user],
+  );
+
+  const currentParent = findCurrentParent(
+    location.pathname,
+    allowedSidebarItems,
+  );
   const headerActions = currentParent?.children || [];
   const isGoodsListRoute = location.pathname.startsWith(
     "/inventory/goodslist/",
@@ -118,7 +130,7 @@ const InventoryPage = ({ children }) => {
 
   return (
     <ModuleLayout
-      sidebarItems={inventorySidebarItems}
+      sidebarItems={allowedSidebarItems}
       lockPageScroll={shouldLockPageScroll}
     >
       <Stack

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   Box,
   Button,
@@ -20,17 +21,21 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+
 import {
   filledActionButtonSx,
   outlinedActionButtonSx,
   textFieldStyles,
 } from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
+import { useAuth } from "../../../store/AuthContext.jsx";
+import { hasActionPermission } from "../../../utils/permissions.js";
 
 const brand = {
   primary: "#106C6B",
@@ -96,6 +101,9 @@ const ConfigureMasterPage = ({
   mapListRow,
   mapFormValues,
 }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -107,6 +115,11 @@ const ConfigureMasterPage = ({
   const [formData, setFormData] = useState(buildInitialFormData(config.fields));
 
   const rowsPerPage = 10;
+
+  const canCreate = hasActionPermission(user, location.pathname, "create");
+  const canUpdate = hasActionPermission(user, location.pathname, "update");
+  const canDelete = hasActionPermission(user, location.pathname, "delete");
+  const canShowActionColumn = canUpdate || canDelete;
 
   const resetForm = useCallback(() => {
     setFormData(buildInitialFormData(config.fields));
@@ -199,6 +212,8 @@ const ConfigureMasterPage = ({
   };
 
   const handleOpenCreate = () => {
+    if (!canCreate) return;
+
     setFormData(buildInitialFormData(config.fields));
     setEditingId("");
     setShowForm(true);
@@ -206,6 +221,8 @@ const ConfigureMasterPage = ({
   };
 
   const handleEdit = async (row) => {
+    if (!canUpdate) return;
+
     try {
       setErrorMessage("");
 
@@ -266,8 +283,18 @@ const ConfigureMasterPage = ({
       setErrorMessage("");
 
       if (editingId) {
+        if (!canUpdate) {
+          setErrorMessage("You do not have permission to update this record");
+          return;
+        }
+
         await updateItem(editingId, payload);
       } else {
+        if (!canCreate) {
+          setErrorMessage("You do not have permission to create this record");
+          return;
+        }
+
         await createItem(payload);
         setPage(1);
       }
@@ -282,6 +309,8 @@ const ConfigureMasterPage = ({
   };
 
   const handleDelete = async (row) => {
+    if (!canDelete) return;
+
     try {
       setErrorMessage("");
       await deleteItem(row.id);
@@ -306,25 +335,27 @@ const ConfigureMasterPage = ({
             flexWrap="wrap"
             useFlexGap
           >
-            <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
-              onClick={handleOpenCreate}
-              sx={{
-                borderRadius: 3,
-                px: 2,
-                py: 1.15,
-                textTransform: "none",
-                fontWeight: 700,
-                background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
-                boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
-                "&:hover": {
-                  background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
-                },
-              }}
-            >
-              New
-            </Button>
+            {canCreate ? (
+              <Button
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                onClick={handleOpenCreate}
+                sx={{
+                  borderRadius: 3,
+                  px: 2,
+                  py: 1.15,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+                  boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
+                  "&:hover": {
+                    background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
+                  },
+                }}
+              >
+                New
+              </Button>
+            ) : null}
 
             <Button
               variant="outlined"
@@ -535,11 +566,16 @@ const ConfigureMasterPage = ({
                   backgroundColor: brand.softAlt,
                 }}
               >
-                {config.columns.map((column) => (
+                {config.columns.map((column, index) => (
                   <TableCell
                     key={column.key}
                     sx={{
-                      ...getCellSx({ align: column.align || "center" }),
+                      ...getCellSx({
+                        align: column.align || "center",
+                        isLast:
+                          !canShowActionColumn &&
+                          index === config.columns.length - 1,
+                      }),
                       fontWeight: 800,
                       color: brand.text,
                       width: column.width,
@@ -550,17 +586,19 @@ const ConfigureMasterPage = ({
                   </TableCell>
                 ))}
 
-                <TableCell
-                  align="center"
-                  sx={{
-                    ...getCellSx({ isLast: true, align: "center" }),
-                    fontWeight: 800,
-                    color: brand.text,
-                    width: "12%",
-                  }}
-                >
-                  Action
-                </TableCell>
+                {canShowActionColumn ? (
+                  <TableCell
+                    align="center"
+                    sx={{
+                      ...getCellSx({ isLast: true, align: "center" }),
+                      fontWeight: 800,
+                      color: brand.text,
+                      width: "12%",
+                    }}
+                  >
+                    Action
+                  </TableCell>
+                ) : null}
               </TableRow>
             </TableHead>
 
@@ -568,7 +606,9 @@ const ConfigureMasterPage = ({
               {loading ? (
                 <TableRow>
                   <TableCell
-                    colSpan={config.columns.length + 1}
+                    colSpan={
+                      config.columns.length + (canShowActionColumn ? 1 : 0)
+                    }
                     align="center"
                     sx={getCellSx({ isLast: true, align: "center" })}
                   >
@@ -578,7 +618,9 @@ const ConfigureMasterPage = ({
               ) : visibleRows.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={config.columns.length + 1}
+                    colSpan={
+                      config.columns.length + (canShowActionColumn ? 1 : 0)
+                    }
                     align="center"
                     sx={getCellSx({ isLast: true, align: "center" })}
                   >
@@ -597,11 +639,14 @@ const ConfigureMasterPage = ({
                       },
                     }}
                   >
-                    {config.columns.map((column) => (
+                    {config.columns.map((column, index) => (
                       <TableCell
                         key={column.key}
                         sx={getCellSx({
                           align: column.align || "center",
+                          isLast:
+                            !canShowActionColumn &&
+                            index === config.columns.length - 1,
                         })}
                       >
                         {column.chip ? (
@@ -644,42 +689,48 @@ const ConfigureMasterPage = ({
                       </TableCell>
                     ))}
 
-                    <TableCell
-                      align="center"
-                      sx={getCellSx({ isLast: true, align: "center" })}
-                    >
-                      <Stack
-                        direction="row"
-                        justifyContent="center"
-                        spacing={1}
+                    {canShowActionColumn ? (
+                      <TableCell
+                        align="center"
+                        sx={getCellSx({ isLast: true, align: "center" })}
                       >
-                        <IconButton
-                          onClick={() => handleEdit(row)}
-                          sx={actionButtonSx}
+                        <Stack
+                          direction="row"
+                          justifyContent="center"
+                          spacing={1}
                         >
-                          <EditRoundedIcon
-                            sx={{
-                              fontSize: 18,
-                              color: brand.primaryDark,
-                            }}
-                          />
-                        </IconButton>
+                          {canUpdate ? (
+                            <IconButton
+                              onClick={() => handleEdit(row)}
+                              sx={actionButtonSx}
+                            >
+                              <EditRoundedIcon
+                                sx={{
+                                  fontSize: 18,
+                                  color: brand.primaryDark,
+                                }}
+                              />
+                            </IconButton>
+                          ) : null}
 
-                        <IconButton
-                          onClick={() => handleDelete(row)}
-                          sx={{
-                            ...actionButtonSx,
-                            "&:hover": {
-                              backgroundColor: brand.dangerSoft,
-                            },
-                          }}
-                        >
-                          <DeleteOutlineRoundedIcon
-                            sx={{ fontSize: 18, color: brand.danger }}
-                          />
-                        </IconButton>
-                      </Stack>
-                    </TableCell>
+                          {canDelete ? (
+                            <IconButton
+                              onClick={() => handleDelete(row)}
+                              sx={{
+                                ...actionButtonSx,
+                                "&:hover": {
+                                  backgroundColor: brand.dangerSoft,
+                                },
+                              }}
+                            >
+                              <DeleteOutlineRoundedIcon
+                                sx={{ fontSize: 18, color: brand.danger }}
+                              />
+                            </IconButton>
+                          ) : null}
+                        </Stack>
+                      </TableCell>
+                    ) : null}
                   </TableRow>
                 ))
               )}

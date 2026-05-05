@@ -53,7 +53,13 @@ const mergeOptionsWithExistingValue = (options = [], value = "") => {
 };
 
 const loadUserAllocationDropdownData = async () => {
-  const [staffs, departments, shifts, machines, statuses] = await Promise.all([
+  const [
+    staffsResult,
+    departmentsResult,
+    shiftsResult,
+    machinesResult,
+    statusesResult,
+  ] = await Promise.allSettled([
     getStaffMemberOptions(),
     getConfiguredDepartments(),
     getConfiguredShiftTimings(),
@@ -62,11 +68,14 @@ const loadUserAllocationDropdownData = async () => {
   ]);
 
   return {
-    staffs,
-    departments,
-    shifts,
-    machines,
-    statuses,
+    staffs: staffsResult.status === "fulfilled" ? staffsResult.value : [],
+    departments:
+      departmentsResult.status === "fulfilled"
+        ? departmentsResult.value
+        : [],
+    shifts: shiftsResult.status === "fulfilled" ? shiftsResult.value : [],
+    machines: machinesResult.status === "fulfilled" ? machinesResult.value : [],
+    statuses: statusesResult.status === "fulfilled" ? statusesResult.value : [],
   };
 };
 

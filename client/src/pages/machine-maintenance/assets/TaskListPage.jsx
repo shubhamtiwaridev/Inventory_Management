@@ -49,13 +49,13 @@ const mergeOptionsWithExistingValue = (options = [], value = "") => {
 
 const loadTaskDropdownData = async () => {
   const [
-    taskCategories,
-    machines,
-    frequencies,
-    assignedUsers,
-    shifts,
-    statuses,
-  ] = await Promise.all([
+    taskCategoriesResult,
+    machinesResult,
+    frequenciesResult,
+    assignedUsersResult,
+    shiftsResult,
+    statusesResult,
+  ] = await Promise.allSettled([
     getConfiguredTaskCategories(),
     getRegisteredMachineOptions(),
     getConfiguredFrequencies(),
@@ -65,12 +65,21 @@ const loadTaskDropdownData = async () => {
   ]);
 
   return {
-    taskCategories,
-    machines,
-    frequencies,
-    assignedUsers,
-    shifts,
-    statuses,
+    taskCategories:
+      taskCategoriesResult.status === "fulfilled"
+        ? taskCategoriesResult.value
+        : [],
+    machines: machinesResult.status === "fulfilled" ? machinesResult.value : [],
+    frequencies:
+      frequenciesResult.status === "fulfilled"
+        ? frequenciesResult.value
+        : [],
+    assignedUsers:
+      assignedUsersResult.status === "fulfilled"
+        ? assignedUsersResult.value
+        : [],
+    shifts: shiftsResult.status === "fulfilled" ? shiftsResult.value : [],
+    statuses: statusesResult.status === "fulfilled" ? statusesResult.value : [],
   };
 };
 

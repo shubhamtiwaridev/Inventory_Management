@@ -37,10 +37,10 @@ const clearGetCache = () => {
 };
 
 const request = async (url, options = {}) => {
-  const { body, headers = {}, ...rest } = options;
+  const { body, headers = {}, skipCache = false, ...rest } = options;
   const useFormData = isFormDataPayload(body);
   const method = String(rest.method || "GET").toUpperCase();
-  const shouldUseCache = method === "GET" && !useFormData;
+  const shouldUseCache = method === "GET" && !useFormData && !skipCache;
   const cacheKey = `${method}:${url}`;
 
   if (shouldUseCache) {
@@ -467,7 +467,7 @@ const getShiftTimingOptionFromItem = (item) => {
 };
 
 const getConfiguredOptions = async (url, mapOption) => {
-  const response = await request(url);
+  const response = await request(url, { skipCache: true });
   const records = getResponseList(response);
 
   return uniqueOptions(records.map(mapOption).filter(Boolean));
@@ -530,7 +530,7 @@ const getStaffOptionFromItem = (item) => {
 };
 
 const getStaffDirectory = async () => {
-  const response = await request("/staff-page");
+  const response = await request("/staff-page", { skipCache: true });
   return getStaffResponseList(response);
 };
 
@@ -587,10 +587,11 @@ export const getStaffMemberOptions = async () => {
   return uniqueOptions(records.map(getStaffOptionFromItem).filter(Boolean));
 };
 
-export const getAssets = async () => request("/machine-maintenance/assets");
+export const getAssets = async (options = {}) =>
+  request("/machine-maintenance/assets", options);
 
 export const getRegisteredMachineOptions = async () => {
-  const response = await getAssets();
+  const response = await getAssets({ skipCache: true });
 
   const machineNames = Array.from(
     new Set(
@@ -660,7 +661,8 @@ export const deleteUserAllocation = async (id) =>
     method: "DELETE",
   });
 
-export const getVendors = async () => request("/machine-maintenance/vendors");
+export const getVendors = async (options = {}) =>
+  request("/machine-maintenance/vendors", options);
 export const getVendorById = async (id) =>
   request(`/machine-maintenance/vendors/${id}`);
 export const createVendor = async (payload) =>

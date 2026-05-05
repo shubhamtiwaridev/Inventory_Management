@@ -7,6 +7,8 @@ import {
   verifyStaffUser,
   clearPasswordRequest,
   deleteStaffUser,
+  getUserPermissions,
+  updateUserPermissions,
 } from "./staffPageController.js";
 
 const router = express.Router();
@@ -16,6 +18,8 @@ router.post("/", protect, createStaffUser);
 router.patch("/:id", protect, updateStaffUser);
 router.patch("/:id/clear-password-request", protect, clearPasswordRequest);
 router.patch("/:id/verify", protect, verifyStaffUser);
+router.get("/:id/permissions", protect, getUserPermissions);
+router.put("/:id/permissions", protect, updateUserPermissions);
 router.delete("/:id", protect, deleteStaffUser);
 
 export default router;

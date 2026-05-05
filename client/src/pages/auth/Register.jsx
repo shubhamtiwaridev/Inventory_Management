@@ -44,6 +44,7 @@ const Register = () => {
     lastName: "",
     email: "",
     roles: "",
+    staffType: "",
     password: "",
     confirmPassword: "",
   });
@@ -98,9 +99,23 @@ const Register = () => {
   }, []);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "staffType") {
+      const selectedStaffType = staffTypes.find((item) => item._id === value);
+
+      setFormData((prev) => ({
+        ...prev,
+        staffType: value,
+        roles: selectedStaffType?.name || "",
+      }));
+
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
   };
 
@@ -119,8 +134,8 @@ const Register = () => {
       return;
     }
 
-    if (!formData.roles.trim()) {
-      setError("Role is required");
+    if (!formData.staffType.trim()) {
+      setError("Staff type is required");
       return;
     }
 
@@ -137,11 +152,11 @@ const Register = () => {
     try {
       const response = await register({
         name: `${formData.firstName} ${formData.lastName}`.trim(),
-        email: formData.email.trim(),
+        email: formData.email.trim().toLowerCase(),
         roles: formData.roles.trim(),
+        staffType: formData.staffType.trim(),
         password: formData.password,
       });
-
       setSuccessMessage(
         response.message ||
           "Registration completed successfully. Your account is pending verification by superadmin. Please login after approval.",
@@ -152,10 +167,10 @@ const Register = () => {
         lastName: "",
         email: "",
         roles: "",
+        staffType: "",
         password: "",
         confirmPassword: "",
       });
-
       setShowPassword(false);
       setShowConfirmPassword(false);
     } catch (err) {
@@ -334,8 +349,8 @@ const Register = () => {
               select
               fullWidth
               label="Roles"
-              name="roles"
-              value={formData.roles}
+              name="staffType"
+              value={formData.staffType}
               onChange={handleChange}
               disabled={loadingRoles}
               helperText={loadingRoles ? "Loading roles..." : "Select a role"}
@@ -355,7 +370,7 @@ const Register = () => {
             >
               <MenuItem value="">Select role</MenuItem>
               {staffTypes.map((item) => (
-                <MenuItem key={item._id} value={item.name}>
+                <MenuItem key={item._id} value={item._id}>
                   {item.name}
                 </MenuItem>
               ))}

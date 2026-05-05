@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserMenu from "../../components/UserMenu.jsx";
 import {
@@ -28,8 +28,10 @@ import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import HandymanRoundedIcon from "@mui/icons-material/HandymanRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
+
 import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
+import { getCards } from "../../pages/staffs/staffApi";
 
 const brand = {
   primary: "#106C6B",
@@ -46,49 +48,6 @@ const brand = {
   shadowStrong:
     "0 0 0 1px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.10)",
 };
-
-const stats = [
-  {
-    title: "Machine Maintenance",
-    value: "12",
-    subtitle: "Open schedules",
-    subtitleTone: "success",
-    icon: <BuildCircleRoundedIcon />,
-    iconBg: "#EEF8F7",
-    iconColor: "#106C6B",
-    path: "/machine-maintenance",
-  },
-  {
-    title: "Spares",
-    value: "142",
-    subtitle: "Available items",
-    subtitleTone: "error",
-    icon: <HandymanRoundedIcon />,
-    iconBg: "#FFF3E8",
-    iconColor: "#D97706",
-    path: "/spares",
-  },
-  {
-    title: "Inventory",
-    value: "$2.4M",
-    subtitle: "Current stock",
-    subtitleTone: "success",
-    icon: <Inventory2RoundedIcon />,
-    iconBg: "#EEF8F7",
-    iconColor: "#0C5A58",
-    path: "/inventory",
-  },
-  {
-    title: "Staff",
-    value: "384",
-    subtitle: "Active members",
-    subtitleTone: "success",
-    icon: <BadgeRoundedIcon />,
-    iconBg: "#EEF8F7",
-    iconColor: "#12807B",
-    path: "/staff",
-  },
-];
 
 const orders = [
   {
@@ -218,21 +177,25 @@ const getStatusStyles = (status) => {
         bg: "#F4F6F8",
         color: "#0C5A58",
       };
+
     case "In Transit":
       return {
         bg: "#F5F7FA",
         color: "#12807B",
       };
+
     case "Processing":
       return {
         bg: "#FFF3E8",
         color: "#D97706",
       };
+
     case "Low Stock":
       return {
         bg: "#FFF1EE",
         color: "#C2410C",
       };
+
     default:
       return {
         bg: "#F3F5F7",
@@ -248,9 +211,148 @@ const softCardSx = {
   boxShadow: brand.shadow,
 };
 
+const isSuperadminRole = (role) =>
+  String(role || "")
+    .trim()
+    .toLowerCase() === "superadmin";
+
+const getIconComponent = (iconName) => {
+  const icons = {
+    BuildCircleRoundedIcon: <BuildCircleRoundedIcon />,
+    HandymanRoundedIcon: <HandymanRoundedIcon />,
+    Inventory2RoundedIcon: <Inventory2RoundedIcon />,
+    BadgeRoundedIcon: <BadgeRoundedIcon />,
+  };
+
+  return icons[iconName] || <BadgeRoundedIcon />;
+};
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const [availableCards, setAvailableCards] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [dashboardSearch, setDashboardSearch] = useState("");
+
+  useEffect(() => {
+    const loadCards = async () => {
+      try {
+        const response = await getCards();
+        const cards = Array.isArray(response?.data) ? response.data : [];
+
+        setAvailableCards(cards);
+      } catch (error) {
+        console.error("Failed to load cards:", error);
+        setAvailableCards([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCards();
+  }, []);
+
+  const isSuperadmin = useMemo(
+    () => isSuperadminRole(user?.roles),
+    [user?.roles],
+  );
+
+  const searchKeyword = useMemo(
+    () => dashboardSearch.trim().toLowerCase(),
+    [dashboardSearch],
+  );
+
+  const matchesDashboardSearch = useCallback(
+    (...values) => {
+      if (!searchKeyword) return true;
+
+      return values.some((value) =>
+        String(value || "")
+          .toLowerCase()
+          .includes(searchKeyword),
+      );
+    },
+    [searchKeyword],
+  );
+
+  const userAssignedCards = useMemo(() => {
+    if (isSuperadmin) {
+      return availableCards.map((card) => card.name);
+    }
+
+    if (!user?.staffType?.assignedCards) return [];
+
+    return user.staffType.assignedCards.map((card) => card.name);
+  }, [availableCards, isSuperadmin, user?.staffType?.assignedCards]);
+
+  const visibleStats = useMemo(() => {
+    return availableCards
+      .filter((card) => isSuperadmin || userAssignedCards.includes(card.name))
+      .filter((card) =>
+        matchesDashboardSearch(card.name, card.title, card.subtitle, card.path),
+      )
+      .map((card) => ({
+        title: card.title,
+        value: "12",
+        subtitle: card.subtitle,
+        subtitleTone: card.subtitleTone,
+        icon: getIconComponent(card.icon),
+        iconBg: card.iconBg,
+        iconColor: card.iconColor,
+        path: card.path,
+      }));
+  }, [availableCards, isSuperadmin, userAssignedCards, matchesDashboardSearch]);
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) =>
+      matchesDashboardSearch(
+        order.id,
+        order.product,
+        order.category,
+        order.qty,
+        order.status,
+        order.value,
+      ),
+    );
+  }, [matchesDashboardSearch]);
+
+  const filteredCategories = useMemo(() => {
+    return categories.filter((category) =>
+      matchesDashboardSearch(category.name, category.units, category.progress),
+    );
+  }, [matchesDashboardSearch]);
+
+  const filteredQuickActions = useMemo(() => {
+    return quickActions.filter((action) =>
+      matchesDashboardSearch(action.title),
+    );
+  }, [matchesDashboardSearch]);
+
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter((alert) =>
+      matchesDashboardSearch(alert.title, alert.message),
+    );
+  }, [matchesDashboardSearch]);
+
+  const filteredTopProducts = useMemo(() => {
+    return topProducts.filter((product) =>
+      matchesDashboardSearch(
+        product.rank,
+        product.name,
+        product.sold,
+        product.change,
+      ),
+    );
+  }, [matchesDashboardSearch]);
+
+  const hasDashboardSearchResults =
+    visibleStats.length > 0 ||
+    filteredOrders.length > 0 ||
+    filteredCategories.length > 0 ||
+    filteredQuickActions.length > 0 ||
+    filteredAlerts.length > 0 ||
+    filteredTopProducts.length > 0;
 
   const initials = useMemo(() => {
     const name = user && user.name ? user.name.trim() : "";
@@ -319,6 +421,7 @@ const Dashboard = () => {
                   mb: 1,
                 }}
               />
+
               <Typography sx={{ color: brand.textSoft }}>
                 {currentDate}
               </Typography>
@@ -332,7 +435,9 @@ const Dashboard = () => {
               useFlexGap
             >
               <TextField
-                placeholder="Search products..."
+                value={dashboardSearch}
+                onChange={(event) => setDashboardSearch(event.target.value)}
+                placeholder="Search dashboard..."
                 size="small"
                 sx={{
                   minWidth: { xs: "100%", sm: 280 },
@@ -399,6 +504,31 @@ const Dashboard = () => {
             </Stack>
           </Stack>
 
+          {searchKeyword && !hasDashboardSearchResults ? (
+            <Paper
+              elevation={0}
+              sx={{
+                ...softCardSx,
+                p: 2.25,
+                mb: 2.5,
+                boxShadow: brand.shadowStrong,
+                textAlign: "center",
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, color: brand.text }}>
+                No results found
+              </Typography>
+
+              <Typography
+                variant="body2"
+                sx={{ color: brand.textSoft, mt: 0.5 }}
+              >
+                Try searching card name, order id, product, category, alert, or
+                action.
+              </Typography>
+            </Paper>
+          ) : null}
+
           <Box
             sx={{
               display: "grid",
@@ -411,69 +541,137 @@ const Dashboard = () => {
               mb: 2.5,
             }}
           >
-            {stats.map((item) => (
+            {loading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <Paper
+                  key={index}
+                  elevation={0}
+                  sx={{
+                    ...softCardSx,
+                    p: 2.25,
+                    boxShadow: brand.shadowStrong,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 120,
+                  }}
+                >
+                  <LinearProgress sx={{ width: "60%" }} />
+                </Paper>
+              ))
+            ) : visibleStats.length === 0 ? (
               <Paper
-                key={item.title}
                 elevation={0}
-                onClick={() => navigate(item.path)}
                 sx={{
                   ...softCardSx,
                   p: 2.25,
                   boxShadow: brand.shadowStrong,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow:
-                      "0 0 0 1px rgba(15, 23, 42, 0.04), 0 18px 44px rgba(15, 23, 42, 0.12)",
-                  },
+                  gridColumn: "1 / -1",
+                  textAlign: "center",
                 }}
               >
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                >
-                  <Box
-                    sx={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 3,
-                      display: "grid",
-                      placeItems: "center",
-                      bgcolor: item.iconBg,
-                      color: item.iconColor,
-                    }}
-                  >
-                    {item.icon}
-                  </Box>
-
-                  <Chip
-                    label={item.subtitle}
-                    size="small"
-                    sx={{
-                      borderRadius: 3,
-                      fontWeight: 700,
-                      backgroundColor:
-                        item.subtitleTone === "error" ? "#FFF1EE" : "#F4F6F8",
-                      color:
-                        item.subtitleTone === "error" ? "#C2410C" : "#0C5A58",
-                    }}
-                  />
-                </Stack>
-
-                <Typography
-                  variant="h4"
-                  fontWeight={800}
-                  sx={{ mt: 2, color: brand.text }}
-                >
-                  {item.value}
+                <Typography variant="h6" color="text.secondary">
+                  {searchKeyword
+                    ? "No matching cards found"
+                    : "No cards assigned to your staff type"}
                 </Typography>
-                <Typography sx={{ color: brand.textSoft, fontWeight: 500 }}>
-                  {item.title}
+
+                <Typography variant="body2" color="text.secondary">
+                  {searchKeyword
+                    ? "Try searching another module, card, order, product, or alert."
+                    : "Please contact your administrator"}
                 </Typography>
               </Paper>
-            ))}
+            ) : (
+              visibleStats.map((item) => (
+                <Paper
+                  key={item.title}
+                  elevation={0}
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    ...softCardSx,
+                    p: 2.25,
+                    boxShadow: brand.shadowStrong,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow:
+                        "0 0 0 1px rgba(15, 23, 42, 0.04), 0 18px 44px rgba(15, 23, 42, 0.12)",
+                    },
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                  >
+                    <Box
+                      sx={{
+                        width: 46,
+                        height: 46,
+                        borderRadius: 2.5,
+                        backgroundColor: item.iconBg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Box sx={{ color: item.iconColor, fontSize: 24 }}>
+                        {item.icon}
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ flex: 1, ml: 1.5 }}>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          color: brand.text,
+                          fontWeight: 700,
+                          lineHeight: 1.2,
+                          mb: 0.5,
+                        }}
+                      >
+                        {item.value}
+                      </Typography>
+
+                      <Typography
+                        sx={{ color: brand.textSoft, fontWeight: 500 }}
+                      >
+                        {item.title}
+                      </Typography>
+
+                      <Chip
+                        label={item.subtitle}
+                        size="small"
+                        sx={{
+                          mt: 0.75,
+                          height: 20,
+                          fontSize: "0.75rem",
+                          fontWeight: 500,
+                          backgroundColor:
+                            item.subtitleTone === "success"
+                              ? "#DCFCE7"
+                              : item.subtitleTone === "error"
+                                ? "#FEF2F2"
+                                : item.subtitleTone === "warning"
+                                  ? "#FFFBEB"
+                                  : "#F3F4F6",
+                          color:
+                            item.subtitleTone === "success"
+                              ? "#166534"
+                              : item.subtitleTone === "error"
+                                ? "#DC2626"
+                                : item.subtitleTone === "warning"
+                                  ? "#D97706"
+                                  : "#374151",
+                        }}
+                      />
+                    </Box>
+                  </Stack>
+                </Paper>
+              ))
+            )}
           </Box>
 
           <Box
@@ -501,6 +699,7 @@ const Dashboard = () => {
                 <Typography fontWeight={800} sx={{ color: brand.text }}>
                   Recent Orders
                 </Typography>
+
                 <Button
                   size="small"
                   sx={{
@@ -555,78 +754,104 @@ const Dashboard = () => {
                     ))}
                   </Box>
 
-                  {orders.map((order, index) => {
-                    const status = getStatusStyles(order.status);
-
-                    return (
-                      <Box
-                        key={order.id}
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "1.1fr 1.6fr 1fr 0.6fr 1fr 0.8fr",
-                          gap: 2,
-                          px: 2.25,
-                          py: 1.75,
-                          borderBottom:
-                            index !== orders.length - 1
-                              ? `1px solid ${brand.border}`
-                              : "none",
-                          alignItems: "center",
-                          backgroundColor: "#FFFFFF",
-                          "&:hover": {
-                            backgroundColor: "#FAFBFC",
-                          },
-                        }}
+                  {filteredOrders.length === 0 ? (
+                    <Box
+                      sx={{
+                        px: 2.25,
+                        py: 3,
+                        textAlign: "center",
+                        backgroundColor: "#FFFFFF",
+                      }}
+                    >
+                      <Typography
+                        sx={{ color: brand.textSoft, fontWeight: 700 }}
                       >
-                        <Typography
+                        No orders found
+                      </Typography>
+                    </Box>
+                  ) : (
+                    filteredOrders.map((order, index) => {
+                      const status = getStatusStyles(order.status);
+
+                      return (
+                        <Box
+                          key={order.id}
                           sx={{
-                            color: brand.primary,
-                            fontWeight: 700,
-                            fontSize: "0.92rem",
+                            display: "grid",
+                            gridTemplateColumns:
+                              "1.1fr 1.6fr 1fr 0.6fr 1fr 0.8fr",
+                            gap: 2,
+                            px: 2.25,
+                            py: 1.75,
+                            borderBottom:
+                              index !== filteredOrders.length - 1
+                                ? `1px solid ${brand.border}`
+                                : "none",
+                            alignItems: "center",
+                            backgroundColor: "#FFFFFF",
+                            "&:hover": {
+                              backgroundColor: "#FAFBFC",
+                            },
                           }}
                         >
-                          {order.id}
-                        </Typography>
+                          <Typography
+                            sx={{
+                              color: brand.primary,
+                              fontWeight: 700,
+                              fontSize: "0.92rem",
+                            }}
+                          >
+                            {order.id}
+                          </Typography>
 
-                        <Typography fontWeight={600} sx={{ color: brand.text }}>
-                          {order.product}
-                        </Typography>
+                          <Typography
+                            fontWeight={600}
+                            sx={{ color: brand.text }}
+                          >
+                            {order.product}
+                          </Typography>
 
-                        <Chip
-                          label={order.category}
-                          size="small"
-                          sx={{
-                            width: "fit-content",
-                            borderRadius: 2,
-                            bgcolor: "#F4F6F8",
-                            color: brand.textSoft,
-                            fontWeight: 600,
-                          }}
-                        />
+                          <Chip
+                            label={order.category}
+                            size="small"
+                            sx={{
+                              width: "fit-content",
+                              borderRadius: 2,
+                              bgcolor: "#F4F6F8",
+                              color: brand.textSoft,
+                              fontWeight: 600,
+                            }}
+                          />
 
-                        <Typography fontWeight={600} sx={{ color: brand.text }}>
-                          {order.qty}
-                        </Typography>
+                          <Typography
+                            fontWeight={600}
+                            sx={{ color: brand.text }}
+                          >
+                            {order.qty}
+                          </Typography>
 
-                        <Chip
-                          label={order.status}
-                          size="small"
-                          sx={{
-                            width: "fit-content",
-                            borderRadius: 2,
-                            bgcolor: status.bg,
-                            color: status.color,
-                            fontWeight: 700,
-                          }}
-                        />
+                          <Chip
+                            label={order.status}
+                            size="small"
+                            sx={{
+                              width: "fit-content",
+                              borderRadius: 2,
+                              bgcolor: status.bg,
+                              color: status.color,
+                              fontWeight: 700,
+                            }}
+                          />
 
-                        <Typography fontWeight={700} sx={{ color: brand.text }}>
-                          {order.value}
-                        </Typography>
-                      </Box>
-                    );
-                  })}
+                          <Typography
+                            fontWeight={700}
+                            sx={{ color: brand.text }}
+                          >
+                            {order.value}
+                          </Typography>
+                        </Box>
+                      );
+                    })
+                  )}
                 </Box>
               </Box>
             </Paper>
@@ -644,6 +869,7 @@ const Dashboard = () => {
                 <Typography fontWeight={800} sx={{ color: brand.text }}>
                   Stock by Category
                 </Typography>
+
                 <IconButton
                   size="small"
                   sx={{
@@ -657,44 +883,51 @@ const Dashboard = () => {
               </Stack>
 
               <Stack spacing={2}>
-                {categories.map((item) => (
-                  <Box key={item.name}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 0.8 }}
-                    >
-                      <Typography
-                        fontWeight={700}
-                        fontSize="0.92rem"
-                        sx={{ color: brand.text }}
+                {filteredCategories.length === 0 ? (
+                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
+                    No categories found
+                  </Typography>
+                ) : (
+                  filteredCategories.map((item) => (
+                    <Box key={item.name}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        sx={{ mb: 0.8 }}
                       >
-                        {item.name}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: brand.textSoft }}
-                      >
-                        {item.units} · {item.progress}%
-                      </Typography>
-                    </Stack>
+                        <Typography
+                          fontWeight={700}
+                          fontSize="0.92rem"
+                          sx={{ color: brand.text }}
+                        >
+                          {item.name}
+                        </Typography>
 
-                    <LinearProgress
-                      variant="determinate"
-                      value={item.progress}
-                      sx={{
-                        height: 7,
-                        borderRadius: 999,
-                        backgroundColor: "#E9EEF2",
-                        "& .MuiLinearProgress-bar": {
+                        <Typography
+                          variant="body2"
+                          sx={{ color: brand.textSoft }}
+                        >
+                          {item.units} · {item.progress}%
+                        </Typography>
+                      </Stack>
+
+                      <LinearProgress
+                        variant="determinate"
+                        value={item.progress}
+                        sx={{
+                          height: 7,
                           borderRadius: 999,
-                          backgroundColor: item.color,
-                        },
-                      }}
-                    />
-                  </Box>
-                ))}
+                          backgroundColor: "#E9EEF2",
+                          "& .MuiLinearProgress-bar": {
+                            borderRadius: 999,
+                            backgroundColor: item.color,
+                          },
+                        }}
+                      />
+                    </Box>
+                  ))
+                )}
               </Stack>
             </Paper>
           </Box>
@@ -718,42 +951,49 @@ const Dashboard = () => {
               </Typography>
 
               <Stack spacing={1.4}>
-                {quickActions.map((item) => (
-                  <Button
-                    key={item.title}
-                    fullWidth
-                    sx={{
-                      justifyContent: "flex-start",
-                      p: 1.4,
-                      borderRadius: 3,
-                      border: `1px solid ${brand.border}`,
-                      backgroundColor: "#FFFFFF",
-                      color: brand.text,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      boxShadow: brand.shadow,
-                      "&:hover": {
-                        backgroundColor: "#F8FAFC",
-                      },
-                    }}
-                  >
-                    <Box
+                {filteredQuickActions.length === 0 ? (
+                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
+                    No actions found
+                  </Typography>
+                ) : (
+                  filteredQuickActions.map((item) => (
+                    <Button
+                      key={item.title}
+                      fullWidth
                       sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 2.5,
-                        bgcolor: item.iconBg,
-                        color: item.iconColor,
-                        display: "grid",
-                        placeItems: "center",
-                        mr: 1.5,
+                        justifyContent: "flex-start",
+                        p: 1.4,
+                        borderRadius: 3,
+                        border: `1px solid ${brand.border}`,
+                        backgroundColor: "#FFFFFF",
+                        color: brand.text,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        boxShadow: brand.shadow,
+                        "&:hover": {
+                          backgroundColor: "#F8FAFC",
+                        },
                       }}
                     >
-                      {item.icon}
-                    </Box>
-                    {item.title}
-                  </Button>
-                ))}
+                      <Box
+                        sx={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 2.5,
+                          bgcolor: item.iconBg,
+                          color: item.iconColor,
+                          display: "grid",
+                          placeItems: "center",
+                          mr: 1.5,
+                        }}
+                      >
+                        {item.icon}
+                      </Box>
+
+                      {item.title}
+                    </Button>
+                  ))
+                )}
               </Stack>
             </Paper>
 
@@ -770,48 +1010,61 @@ const Dashboard = () => {
                 <Typography fontWeight={800} sx={{ color: brand.text }}>
                   Stock Alerts
                 </Typography>
-                <Badge badgeContent={4} color="error">
+
+                <Badge badgeContent={filteredAlerts.length} color="error">
                   <WarningAmberRoundedIcon sx={{ color: brand.textSoft }} />
                 </Badge>
               </Stack>
 
               <Stack spacing={1.25}>
-                {alerts.map((alert) => (
-                  <Box
-                    key={alert.title}
-                    sx={{
-                      p: 1.6,
-                      borderRadius: 3,
-                      backgroundColor: alert.bg,
-                      border: `1px solid ${alert.border}`,
-                    }}
-                  >
-                    <Stack
-                      direction="row"
-                      spacing={1.2}
-                      alignItems="flex-start"
+                {filteredAlerts.length === 0 ? (
+                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
+                    No alerts found
+                  </Typography>
+                ) : (
+                  filteredAlerts.map((alert) => (
+                    <Box
+                      key={alert.title}
+                      sx={{
+                        p: 1.6,
+                        borderRadius: 3,
+                        backgroundColor: alert.bg,
+                        border: `1px solid ${alert.border}`,
+                      }}
                     >
-                      <WarningAmberRoundedIcon
-                        sx={{ color: alert.iconColor, mt: 0.15, fontSize: 18 }}
-                      />
-                      <Box>
-                        <Typography
-                          fontWeight={700}
-                          fontSize="0.95rem"
-                          sx={{ color: brand.text }}
-                        >
-                          {alert.title}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ color: brand.textSoft }}
-                        >
-                          {alert.message}
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </Box>
-                ))}
+                      <Stack
+                        direction="row"
+                        spacing={1.2}
+                        alignItems="flex-start"
+                      >
+                        <WarningAmberRoundedIcon
+                          sx={{
+                            color: alert.iconColor,
+                            mt: 0.15,
+                            fontSize: 18,
+                          }}
+                        />
+
+                        <Box>
+                          <Typography
+                            fontWeight={700}
+                            fontSize="0.95rem"
+                            sx={{ color: brand.text }}
+                          >
+                            {alert.title}
+                          </Typography>
+
+                          <Typography
+                            variant="body2"
+                            sx={{ color: brand.textSoft }}
+                          >
+                            {alert.message}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Box>
+                  ))
+                )}
               </Stack>
             </Paper>
 
@@ -824,60 +1077,72 @@ const Dashboard = () => {
               </Typography>
 
               <Stack spacing={1.4}>
-                {topProducts.map((item, index) => (
-                  <Box key={item.name}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Stack direction="row" spacing={1.3} alignItems="center">
-                        <Box
-                          sx={{
-                            minWidth: 36,
-                            height: 36,
-                            px: 1,
-                            borderRadius: 2.5,
-                            backgroundColor:
-                              index === 0 ? "#FFF3E8" : "#F4F6F8",
-                            color: index === 0 ? "#D97706" : brand.primary,
-                            display: "grid",
-                            placeItems: "center",
-                            fontWeight: 800,
-                            fontSize: "0.85rem",
-                          }}
+                {filteredTopProducts.length === 0 ? (
+                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
+                    No products found
+                  </Typography>
+                ) : (
+                  filteredTopProducts.map((item, index) => (
+                    <Box key={item.name}>
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
+                        <Stack
+                          direction="row"
+                          spacing={1.3}
+                          alignItems="center"
                         >
-                          {item.rank}
-                        </Box>
-                        <Box>
-                          <Typography
-                            fontWeight={700}
-                            sx={{ color: brand.text }}
+                          <Box
+                            sx={{
+                              minWidth: 36,
+                              height: 36,
+                              px: 1,
+                              borderRadius: 2.5,
+                              backgroundColor:
+                                index === 0 ? "#FFF3E8" : "#F4F6F8",
+                              color: index === 0 ? "#D97706" : brand.primary,
+                              display: "grid",
+                              placeItems: "center",
+                              fontWeight: 800,
+                              fontSize: "0.85rem",
+                            }}
                           >
-                            {item.name}
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: brand.textSoft }}
-                          >
-                            {item.sold}
-                          </Typography>
-                        </Box>
+                            {item.rank}
+                          </Box>
+
+                          <Box>
+                            <Typography
+                              fontWeight={700}
+                              sx={{ color: brand.text }}
+                            >
+                              {item.name}
+                            </Typography>
+
+                            <Typography
+                              variant="body2"
+                              sx={{ color: brand.textSoft }}
+                            >
+                              {item.sold}
+                            </Typography>
+                          </Box>
+                        </Stack>
+
+                        <Typography
+                          fontWeight={800}
+                          sx={{ color: brand.primary, fontSize: "0.92rem" }}
+                        >
+                          {item.change}
+                        </Typography>
                       </Stack>
 
-                      <Typography
-                        fontWeight={800}
-                        sx={{ color: brand.primary, fontSize: "0.92rem" }}
-                      >
-                        {item.change}
-                      </Typography>
-                    </Stack>
-
-                    {index !== topProducts.length - 1 && (
-                      <Divider sx={{ mt: 1.4, borderColor: brand.border }} />
-                    )}
-                  </Box>
-                ))}
+                      {index !== filteredTopProducts.length - 1 ? (
+                        <Divider sx={{ mt: 1.4, borderColor: brand.border }} />
+                      ) : null}
+                    </Box>
+                  ))
+                )}
               </Stack>
             </Paper>
           </Box>

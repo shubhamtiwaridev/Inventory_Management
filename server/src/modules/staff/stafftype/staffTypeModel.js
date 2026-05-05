@@ -7,6 +7,11 @@ const staffTypeSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    assignedCards: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Card",
+      required: true,
+    }],
     createdBy: {
       type: String,
       required: true,

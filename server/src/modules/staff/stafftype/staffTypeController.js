@@ -1,8 +1,18 @@
 import StaffType from "./staffTypeModel.js";
+import Card from "../card/cardModel.js";
+
+const isSuperadminName = (name = "") =>
+  String(name).trim().toLowerCase() === "superadmin";
+
+const cardSelectFields =
+  "name title path icon iconBg iconColor subtitle subtitleTone";
 
 export const getStaffTypes = async (req, res) => {
   try {
-    const staffTypes = await StaffType.find().sort({ createdAt: -1 }).lean();
+    const staffTypes = await StaffType.find()
+      .populate("assignedCards", cardSelectFields)
+      .sort({ createdAt: -1 })
+      .lean();
 
     res.status(200).json({
       success: true,
@@ -18,19 +28,46 @@ export const getStaffTypes = async (req, res) => {
 
 export const createStaffType = async (req, res) => {
   try {
-    const { name, createdBy } = req.body;
+    const { name, assignedCards, createdBy } = req.body;
 
     if (!name || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: "Staff Type and Creater Person are required",
+        message: "Staff Type name and creator are required",
       });
     }
 
+    const normalizedName = name.trim();
+    const selectedCards = isSuperadminName(normalizedName) ? [] : assignedCards;
+
+    if (!isSuperadminName(normalizedName)) {
+      if (!Array.isArray(selectedCards) || selectedCards.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "At least one card must be assigned to the staff type",
+        });
+      }
+
+      const existingCards = await Card.find({
+        _id: { $in: selectedCards },
+        isActive: true,
+      });
+
+      if (existingCards.length !== selectedCards.length) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more assigned cards do not exist or are inactive",
+        });
+      }
+    }
+
     const staffType = await StaffType.create({
-      name: name.trim(),
+      name: normalizedName,
+      assignedCards: selectedCards,
       createdBy: createdBy.trim(),
     });
+    // Populate the assigned cards in the response
+    await staffType.populate("assignedCards", cardSelectFields);
 
     res.status(201).json({
       success: true,
@@ -47,23 +84,48 @@ export const createStaffType = async (req, res) => {
 export const updateStaffType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, createdBy } = req.body;
+    const { name, assignedCards, createdBy } = req.body;
 
     if (!name || !createdBy) {
       return res.status(400).json({
         success: false,
-        message: "Staff Type and Creater Person are required",
+        message: "Staff Type name and creator are required",
       });
+    }
+
+    const normalizedName = name.trim();
+    const selectedCards = isSuperadminName(normalizedName) ? [] : assignedCards;
+
+    if (!isSuperadminName(normalizedName)) {
+      if (!Array.isArray(selectedCards) || selectedCards.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "At least one card must be assigned to the staff type",
+        });
+      }
+
+      const existingCards = await Card.find({
+        _id: { $in: selectedCards },
+        isActive: true,
+      });
+
+      if (existingCards.length !== selectedCards.length) {
+        return res.status(400).json({
+          success: false,
+          message: "One or more assigned cards do not exist or are inactive",
+        });
+      }
     }
 
     const staffType = await StaffType.findByIdAndUpdate(
       id,
       {
-        name: name.trim(),
+        name: normalizedName,
+        assignedCards: selectedCards,
         createdBy: createdBy.trim(),
       },
-      { new: true, runValidators: true }
-    );
+      { new: true, runValidators: true },
+    ).populate("assignedCards", cardSelectFields);
 
     if (!staffType) {
       return res.status(404).json({

@@ -227,6 +227,9 @@ const StaffPage = () => {
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registerUserPermissions, setRegisterUserPermissions] = useState({});
+  const [registerExpandedPermissionSections, setRegisterExpandedPermissionSections] =
+    useState({});
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -269,6 +272,23 @@ const StaffPage = () => {
   const isRegisterSuperadmin = isSuperadminRole(formData.roles);
   const isEditSuperadmin = isSuperadminRole(editFormData.roles);
 
+  const selectedRegisterStaffType = useMemo(() => {
+    if (!formData.roles) return null;
+
+    const roleName = String(formData.roles || "")
+      .trim()
+      .toLowerCase();
+
+    return (
+      staffTypes.find(
+        (type) =>
+          String(type.name || "")
+            .trim()
+            .toLowerCase() === roleName,
+      ) || null
+    );
+  }, [staffTypes, formData.roles]);
+
   const selectedEditStaffType = useMemo(() => {
     if (!editFormData.roles) return null;
 
@@ -289,6 +309,11 @@ const StaffPage = () => {
   const selectedPermissionCards = useMemo(
     () => getPermissionCardsForStaffType(selectedEditStaffType),
     [selectedEditStaffType],
+  );
+
+  const selectedRegisterPermissionCards = useMemo(
+    () => getPermissionCardsForStaffType(selectedRegisterStaffType),
+    [selectedRegisterStaffType],
   );
 
   const buildSectionKey = (cardName, sectionLabel) =>
@@ -418,6 +443,8 @@ const StaffPage = () => {
     setRegisterError("");
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setRegisterUserPermissions({});
+    setRegisterExpandedPermissionSections({});
   };
 
   const resetEditForm = () => {
@@ -629,6 +656,98 @@ const StaffPage = () => {
     }));
   };
 
+  const handleRegisterPermissionEnabledChange = (
+    cardName,
+    feature,
+    featureKey,
+    enabled,
+  ) => {
+    setRegisterUserPermissions((prev) => ({
+      ...prev,
+      [featureKey]: {
+        ...getDefaultPermissionRecord(cardName, feature, false, false),
+        ...prev[featureKey],
+        enabled,
+        actions: enabled
+          ? prev[featureKey]?.actions ||
+            ACTIONS.reduce((acc, action) => {
+              acc[action] = true;
+              return acc;
+            }, {})
+          : ACTIONS.reduce((acc, action) => {
+              acc[action] = false;
+              return acc;
+            }, {}),
+      },
+    }));
+  };
+
+  const handleRegisterPermissionActionChange = (
+    cardName,
+    feature,
+    featureKey,
+    action,
+    checked,
+  ) => {
+    setRegisterUserPermissions((prev) => ({
+      ...prev,
+      [featureKey]: {
+        ...getDefaultPermissionRecord(cardName, feature, false, false),
+        ...prev[featureKey],
+        enabled: prev[featureKey]?.enabled ?? true,
+        actions: {
+          ...getDefaultPermissionRecord(cardName, feature, false, false).actions,
+          ...prev[featureKey]?.actions,
+          [action]: checked,
+        },
+      },
+    }));
+  };
+
+  const handleRegisterSectionEnabledChange = (card, section, enabled) => {
+    const sectionKey = buildSectionKey(card.name, section.label);
+
+    setRegisterExpandedPermissionSections((prev) => ({
+      ...prev,
+      [sectionKey]: enabled,
+    }));
+
+    setRegisterUserPermissions((prev) => {
+      const nextPermissions = { ...prev };
+
+      getSectionFeatures(section).forEach((feature) => {
+        const featureKey = buildPermissionKey(card.name, feature.label);
+        const defaultPermission = getDefaultPermissionRecord(
+          card.name,
+          feature,
+          false,
+          false,
+        );
+
+        nextPermissions[featureKey] = {
+          ...defaultPermission,
+          ...nextPermissions[featureKey],
+          enabled,
+          actions: enabled
+            ? nextPermissions[featureKey]?.actions ||
+              ACTIONS.reduce((acc, action) => {
+                acc[action] = true;
+                return acc;
+              }, {})
+            : ACTIONS.reduce((acc, action) => {
+                acc[action] = false;
+                return acc;
+              }, {}),
+        };
+      });
+
+      return nextPermissions;
+    });
+  };
+
+  const hasEnabledPermissions = (permissions = {}) =>
+    Object.values(permissions).some((permission) => permission?.enabled);
+
   const handleSavePermissions = async () => {
     if (!isSuperadmin) {
       return;
@@ -750,6 +869,38 @@ const StaffPage = () => {
   const handleRegisterChange = (e) => {
     const { name, value } = e.target;
 
+    if (name === "roles") {
+      if (isSuperadminRole(value)) {
+        setRegisterUserPermissions({});
+        setRegisterExpandedPermissionSections({});
+      } else {
+        const selectedStaffType = staffTypes.find(
+          (type) =>
+            String(type.name || "")
+              .trim()
+              .toLowerCase() ===
+            String(value || "")
+              .trim()
+              .toLowerCase(),
+        );
+
+        const initializedPermissions = initializeUserPermissions(
+          selectedStaffType?.assignedCards || [],
+          false,
+          false,
+        );
+
+        setRegisterUserPermissions(initializedPermissions);
+        setRegisterExpandedPermissionSections(
+          getInitialExpandedSections(
+            getPermissionCardsForStaffType(selectedStaffType),
+            initializedPermissions,
+            false,
+          ),
+        );
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -774,18 +925,25 @@ const StaffPage = () => {
       setRegisterError("Role is required");
       return;
     }
-    const selectedStaffType = staffTypes.find(
-      (type) =>
-        String(type.name || "")
-          .trim()
-          .toLowerCase() ===
-        String(formData.roles || "")
-          .trim()
-          .toLowerCase(),
-    );
-
-    if (!isRegisterSuperadmin && !selectedStaffType) {
+    if (!isRegisterSuperadmin && !selectedRegisterStaffType) {
       setRegisterError("Role must match a staff type");
+      return;
+    }
+
+    const sanitizedRegisterPermissions = isRegisterSuperadmin
+      ? {}
+      : filterUserPermissionsForCards(
+          selectedRegisterStaffType?.assignedCards || [],
+          registerUserPermissions,
+        );
+
+    if (
+      !isRegisterSuperadmin &&
+      !hasEnabledPermissions(sanitizedRegisterPermissions)
+    ) {
+      setRegisterError(
+        "Please select at least one staff permission before registering",
+      );
       return;
     }
 
@@ -806,8 +964,9 @@ const StaffPage = () => {
         name: `${formData.firstName} ${formData.lastName}`.trim(),
         email: formData.email.trim().toLowerCase(),
         roles: formData.roles.trim(),
-        staffType: isRegisterSuperadmin ? null : selectedStaffType._id,
+        staffType: isRegisterSuperadmin ? null : selectedRegisterStaffType._id,
         password: formData.password,
+        permissions: sanitizedRegisterPermissions,
       });
 
       handleCloseRegister();
@@ -1006,12 +1165,19 @@ const StaffPage = () => {
               fullWidth
               maxWidth="sm"
               disableRestoreFocus
+              scroll="paper"
               PaperProps={{
                 sx: {
                   borderRadius: 4,
                   border: `1px solid ${brand.border}`,
                   boxShadow: brand.shadowStrong,
                   overflow: "hidden",
+                  width: "100%",
+                  maxWidth: { xs: "calc(100% - 24px)", sm: "640px" },
+                  height: { xs: "92vh", sm: "86vh" },
+                  maxHeight: { xs: "92vh", sm: "86vh" },
+                  display: "flex",
+                  flexDirection: "column",
                 },
               }}
             >
@@ -1025,8 +1191,27 @@ const StaffPage = () => {
                 Add New Staff
               </DialogTitle>
 
-              <Box component="form" onSubmit={handleRegisterSubmit}>
-                <DialogContent sx={{ pt: 1 }}>
+              <Box
+                component="form"
+                onSubmit={handleRegisterSubmit}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  minHeight: 0,
+                  flex: 1,
+                  overflow: "hidden",
+                }}
+              >
+                <DialogContent
+                  sx={{
+                    pt: 1,
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    overflowX: "hidden",
+                    ...hiddenScrollbarSx,
+                  }}
+                >
                   <Stack spacing={2}>
                     {registerError ? (
                       <Alert severity="error" sx={{ borderRadius: 2 }}>
@@ -1121,6 +1306,214 @@ const StaffPage = () => {
                         </MenuItem>
                       ))}
                     </TextField>
+
+                    {!isRegisterSuperadmin && (
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderRadius: 3,
+                          border: `1px solid ${brand.border}`,
+                          backgroundColor: brand.soft,
+                        }}
+                      >
+                        <Typography
+                          sx={{ fontWeight: 800, mb: 1, color: brand.text }}
+                        >
+                          Staff Permissions *
+                        </Typography>
+                        <Typography
+                          sx={{ color: brand.textSoft, mb: 2, fontSize: 14 }}
+                        >
+                          Select at least one permission before creating this
+                          staff account.
+                        </Typography>
+                        {!selectedRegisterStaffType ? (
+                          <Typography color={brand.textSoft}>
+                            Select a role to configure staff permissions.
+                          </Typography>
+                        ) : selectedRegisterPermissionCards.length === 0 ? (
+                          <Typography color={brand.textSoft}>
+                            No cards found for the selected staff type.
+                          </Typography>
+                        ) : (
+                          selectedRegisterPermissionCards.map((card) => (
+                            <Box
+                              key={card.name}
+                              sx={{
+                                mb: 2,
+                                p: 2,
+                                borderRadius: 2,
+                                border: `1px solid ${brand.border}`,
+                                backgroundColor: "#FFFFFF",
+                              }}
+                            >
+                              <Typography
+                                sx={{
+                                  fontWeight: 700,
+                                  mb: 1,
+                                  color: brand.primaryDark,
+                                }}
+                              >
+                                {card.label}
+                              </Typography>
+                              <Stack spacing={1.5}>
+                                {getCardSections(card).map((section) => {
+                                  const sectionKey = buildSectionKey(
+                                    card.name,
+                                    section.label,
+                                  );
+                                  const sectionFeatures =
+                                    getSectionFeatures(section);
+                                  const isSectionEnabled =
+                                    registerExpandedPermissionSections[
+                                      sectionKey
+                                    ] || false;
+
+                                  return (
+                                    <Box
+                                      key={sectionKey}
+                                      sx={{
+                                        border: `1px solid ${brand.border}`,
+                                        borderRadius: 2,
+                                        p: 1.5,
+                                      }}
+                                    >
+                                      <FormControlLabel
+                                        control={
+                                          <Checkbox
+                                            checked={isSectionEnabled}
+                                            onChange={(event) =>
+                                              handleRegisterSectionEnabledChange(
+                                                card,
+                                                section,
+                                                event.target.checked,
+                                              )
+                                            }
+                                          />
+                                        }
+                                        label={
+                                          <Box>
+                                            <Typography
+                                              sx={{
+                                                fontWeight: 700,
+                                                color: brand.text,
+                                              }}
+                                            >
+                                              {section.label}
+                                            </Typography>
+                                            <Typography
+                                              sx={{
+                                                fontSize: 13,
+                                                color: brand.textSoft,
+                                              }}
+                                            >
+                                              Enable this section for the staff
+                                              member.
+                                            </Typography>
+                                          </Box>
+                                        }
+                                        sx={{ alignItems: "flex-start", m: 0 }}
+                                      />
+
+                                      {isSectionEnabled && (
+                                        <Stack spacing={1} sx={{ mt: 1 }}>
+                                          {sectionFeatures.map((feature) => {
+                                            const keyBase = buildPermissionKey(
+                                              card.name,
+                                              feature.label,
+                                            );
+                                            const permission =
+                                              registerUserPermissions[keyBase] ||
+                                              getDefaultPermissionRecord(
+                                                card.name,
+                                                feature,
+                                                false,
+                                                false,
+                                              );
+
+                                            return (
+                                              <Box key={keyBase}>
+                                                <FormControlLabel
+                                                  control={
+                                                    <Checkbox
+                                                      checked={
+                                                        permission.enabled
+                                                      }
+                                                      onChange={(event) =>
+                                                        handleRegisterPermissionEnabledChange(
+                                                          card.name,
+                                                          feature,
+                                                          keyBase,
+                                                          event.target.checked,
+                                                        )
+                                                      }
+                                                    />
+                                                  }
+                                                  label={feature.label}
+                                                  sx={{ m: 0 }}
+                                                />
+
+                                                {permission.enabled && (
+                                                  <Stack
+                                                    direction="row"
+                                                    flexWrap="wrap"
+                                                    gap={1}
+                                                    sx={{ ml: 4, mt: 0.5 }}
+                                                  >
+                                                    {Object.entries(
+                                                      permission.actions,
+                                                    ).map(
+                                                      ([action, checked]) => (
+                                                        <FormControlLabel
+                                                          key={`${keyBase}_${action}`}
+                                                          control={
+                                                            <Checkbox
+                                                              size="small"
+                                                              checked={checked}
+                                                              onChange={(
+                                                                event,
+                                                              ) =>
+                                                                handleRegisterPermissionActionChange(
+                                                                  card.name,
+                                                                  feature,
+                                                                  keyBase,
+                                                                  action,
+                                                                  event.target
+                                                                    .checked,
+                                                                )
+                                                              }
+                                                            />
+                                                          }
+                                                          label={
+                                                            ACTION_LABELS[
+                                                              action
+                                                            ] || action
+                                                          }
+                                                          sx={{
+                                                            mr: 0,
+                                                            ml: 0,
+                                                            color:
+                                                              brand.textSoft,
+                                                          }}
+                                                        />
+                                                      ),
+                                                    )}
+                                                  </Stack>
+                                                )}
+                                              </Box>
+                                            );
+                                          })}
+                                        </Stack>
+                                      )}
+                                    </Box>
+                                  );
+                                })}
+                              </Stack>
+                            </Box>
+                          ))
+                        )}
+                      </Box>
+                    )}
 
                     <TextField
                       fullWidth

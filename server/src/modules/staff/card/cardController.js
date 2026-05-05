@@ -1,14 +1,43 @@
 import Card from "./cardModel.js";
 
+const RESTRICTED_STAFF_TYPE_CARD_NAMES = new Set(["staff"]);
+
+const shouldAllowInStaffTypesByDefault = ({ name = "", path = "" } = {}) => {
+  const normalizedName = String(name || "")
+    .trim()
+    .toLowerCase();
+  const normalizedPath = String(path || "")
+    .trim()
+    .toLowerCase();
+
+  if (RESTRICTED_STAFF_TYPE_CARD_NAMES.has(normalizedName)) {
+    return false;
+  }
+
+  if (normalizedPath === "/staff" || normalizedPath.startsWith("/staff/")) {
+    return false;
+  }
+
+  return true;
+};
+
 export const getCards = async (req, res) => {
   try {
     const cards = await Card.find({ isActive: true })
       .sort({ createdAt: -1 })
       .lean();
 
+    const normalizedCards = cards.map((card) => ({
+      ...card,
+      allowInStaffTypes:
+        typeof card.allowInStaffTypes === "boolean"
+          ? card.allowInStaffTypes
+          : shouldAllowInStaffTypesByDefault(card),
+    }));
+
     res.status(200).json({
       success: true,
-      data: cards,
+      data: normalizedCards,
     });
   } catch (error) {
     res.status(500).json({
@@ -20,7 +49,18 @@ export const getCards = async (req, res) => {
 
 export const createCard = async (req, res) => {
   try {
-    const { name, title, path, icon, iconBg, iconColor, subtitle, subtitleTone, createdBy } = req.body;
+    const {
+      name,
+      title,
+      path,
+      icon,
+      iconBg,
+      iconColor,
+      subtitle,
+      subtitleTone,
+      createdBy,
+      allowInStaffTypes,
+    } = req.body;
 
     if (!name || !title || !path || !icon || !iconBg || !iconColor || !createdBy) {
       return res.status(400).json({
@@ -38,6 +78,13 @@ export const createCard = async (req, res) => {
       iconColor: iconColor.trim(),
       subtitle: subtitle?.trim() || "",
       subtitleTone: subtitleTone || "success",
+      allowInStaffTypes:
+        typeof allowInStaffTypes === "boolean"
+          ? allowInStaffTypes
+          : shouldAllowInStaffTypesByDefault({
+              name: name.trim(),
+              path: path.trim(),
+            }),
       createdBy: createdBy.trim(),
     });
 
@@ -62,7 +109,18 @@ export const createCard = async (req, res) => {
 export const updateCard = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, title, path, icon, iconBg, iconColor, subtitle, subtitleTone, isActive } = req.body;
+    const {
+      name,
+      title,
+      path,
+      icon,
+      iconBg,
+      iconColor,
+      subtitle,
+      subtitleTone,
+      isActive,
+      allowInStaffTypes,
+    } = req.body;
 
     if (!name || !title || !path || !icon || !iconBg || !iconColor) {
       return res.status(400).json({
@@ -83,6 +141,13 @@ export const updateCard = async (req, res) => {
         subtitle: subtitle?.trim() || "",
         subtitleTone: subtitleTone || "success",
         isActive: isActive !== undefined ? isActive : true,
+        allowInStaffTypes:
+          typeof allowInStaffTypes === "boolean"
+            ? allowInStaffTypes
+            : shouldAllowInStaffTypesByDefault({
+                name: name.trim(),
+                path: path.trim(),
+              }),
       },
       { new: true, runValidators: true }
     );

@@ -47,6 +47,10 @@ const cardSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    allowInStaffTypes: {
+      type: Boolean,
+      default: true,
+    },
     createdBy: {
       type: String,
       required: true,

@@ -10,6 +10,10 @@ export const brand = {
   text: "#143736",
   textSoft: "#617776",
   pageBg: "#FFFFFF",
+  shadow:
+    "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
+  shadowStrong:
+    "0 0 0 1px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.10)",
   danger: "#C2410C",
   dangerSoft: "#FFF1EE",
   fieldBg: "#F8FCFC",
@@ -22,11 +26,10 @@ export const filledActionButtonSx = {
   py: 1.15,
   textTransform: "none",
   fontWeight: 700,
-  backgroundColor: brand.primary,
-  boxShadow: "none",
+  background: `linear-gradient(135deg, ${brand.primary} 0%, ${brand.primaryDark} 100%)`,
+  boxShadow: "0 12px 24px rgba(16, 108, 107, 0.20)",
   "&:hover": {
-    backgroundColor: brand.primaryDark,
-    boxShadow: "none",
+    background: `linear-gradient(135deg, ${brand.primaryDark} 0%, ${brand.primaryDark} 100%)`,
   },
 };
 
@@ -57,20 +60,15 @@ export const actionIconButtonSx = {
 
 export const searchFieldSx = {
   width: { xs: "100%", lg: 320 },
-  "& .MuiInputLabel-root": {
-    color: brand.muted,
-  },
-  "& .MuiInputLabel-root.Mui-focused": {
-    color: brand.primaryDark,
-  },
   "& .MuiOutlinedInput-root": {
-    borderRadius: 3,
-    backgroundColor: brand.fieldBg,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    boxShadow: brand.shadow,
     "& fieldset": {
       borderColor: brand.border,
     },
     "&:hover fieldset": {
-      borderColor: brand.primary,
+      borderColor: brand.primaryLight,
     },
     "&.Mui-focused fieldset": {
       borderColor: brand.primary,

@@ -115,6 +115,9 @@ const buildDefaultActions = (enabled = true) =>
     return acc;
   }, {});
 
+const hasEnabledPermissions = (permissions = {}) =>
+  Object.values(permissions || {}).some((permission) => permission?.enabled);
+
 const sanitizePermissionsForAssignedCards = (assignedCards = [], permissions = {}) => {
   const assignedCardNames = new Set(getAssignedCardNames(assignedCards));
   const allowedPathMap = {};
@@ -217,7 +220,7 @@ export const getStaffUsers = async (req, res) => {
 
 export const createStaffUser = async (req, res) => {
   try {
-    const { name, email, roles, staffType, password } = req.body;
+    const { name, email, roles, staffType, password, permissions } = req.body;
 
     if (!name || !email || !roles || !password) {
       return res.status(400).json({
@@ -249,11 +252,34 @@ export const createStaffUser = async (req, res) => {
       });
     }
 
+    let sanitizedPermissions = {};
+
+    if (!isSuperadminRole(roles)) {
+      const selectedStaffType = await StaffType.findById(finalStaffType)
+        .populate(staffTypePopulateOptions.populate)
+        .select("assignedCards")
+        .lean();
+
+      sanitizedPermissions = sanitizePermissionsForAssignedCards(
+        selectedStaffType?.assignedCards || [],
+        permissions,
+      );
+
+      if (!hasEnabledPermissions(sanitizedPermissions)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Please assign at least one staff permission before creating the user",
+        });
+      }
+    }
+
     const user = await User.create({
       name: name.trim(),
       email: normalizedEmail,
       roles: roles.trim(),
       staffType: finalStaffType,
+      permissions: sanitizedPermissions,
       password,
       isVerified: true,
       verifiedBy: req.user?.name || "Internal",
@@ -375,12 +401,26 @@ export const verifyStaffUser = async (req, res) => {
       });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.params.id).populate(
+      staffTypePopulateOptions,
+    );
 
     if (!user) {
       return res.status(404).json({
         success: false,
         message: "User not found",
+      });
+    }
+
+    if (
+      user.createdFrom === "public" &&
+      !isSuperadminRole(user.roles) &&
+      !hasEnabledPermissions(user.permissions)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Please assign staff permissions first, then verify this public user",
       });
     }
 

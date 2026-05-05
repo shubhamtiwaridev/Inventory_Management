@@ -9,6 +9,7 @@ import {
   IconButton,
   InputAdornment,
   Link,
+  Paper,
   Stack,
   Table,
   TableBody,
@@ -284,303 +285,271 @@ const MachineMaintenanceListView = ({
   };
 
   return (
-    <Box
+    <Paper
+      elevation={0}
       sx={{
-        height: "100%",
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
+        borderRadius: 4,
+        border: `1px solid ${brand.border}`,
+        backgroundColor: "#FFFFFF",
+        boxShadow: "none",
         overflow: "hidden",
       }}
     >
       <Box
         sx={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          border: `1px solid ${brand.border}`,
-          borderRadius: 3,
-          overflow: "hidden",
-          backgroundColor: "#FFFFFF",
+          p: { xs: 1.5, sm: 2 },
         }}
       >
-        <Box
-          sx={{
-            px: { xs: 1.5, sm: 2 },
-            py: { xs: 1.5, sm: 2 },
-            borderBottom: `1px solid ${brand.border}`,
-            backgroundColor: "#FFFFFF",
-            flexShrink: 0,
-            zIndex: 5,
-          }}
+        <Stack
+          direction={{ xs: "column", lg: "row" }}
+          justifyContent="space-between"
+          spacing={2}
+          sx={{ mb: 2 }}
         >
           <Stack
-            direction={{ xs: "column", lg: "row" }}
-            justifyContent="space-between"
-            spacing={2}
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.25}
+            flexWrap="wrap"
+            useFlexGap
           >
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1.25}
-              flexWrap="wrap"
-              useFlexGap
+            {showPrimaryAction && canCreate ? (
+              <Button
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                sx={filledActionButtonSx}
+                onClick={handlePrimaryAction}
+              >
+                {primaryButtonLabel}
+              </Button>
+            ) : null}
+
+            <Button
+              variant="outlined"
+              startIcon={<RefreshRoundedIcon />}
+              onClick={handleRefresh}
+              sx={outlinedActionButtonSx}
             >
-              {showPrimaryAction && canCreate ? (
-                <Button
-                  variant="contained"
-                  startIcon={<AddRoundedIcon />}
-                  sx={filledActionButtonSx}
-                  onClick={handlePrimaryAction}
-                >
-                  {primaryButtonLabel}
-                </Button>
-              ) : null}
+              Refresh
+            </Button>
 
-              <Button
-                variant="outlined"
-                startIcon={<RefreshRoundedIcon />}
-                onClick={handleRefresh}
-                sx={outlinedActionButtonSx}
-              >
-                Refresh
-              </Button>
-
-              <Button
-                variant="outlined"
-                startIcon={<DownloadRoundedIcon />}
-                onClick={handleDownload}
-                sx={outlinedActionButtonSx}
-                disabled={loading || filteredRows.length === 0}
-              >
-                Download
-              </Button>
-            </Stack>
-
-            <TextField
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-              }}
-              placeholder={`Search ${title.toLowerCase()}...`}
-              size="small"
-              sx={{
-                width: { xs: "100%", lg: 320 },
-                ...searchFieldSx,
-              }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <SearchRoundedIcon sx={{ color: brand.textSoft }} />
-                  </InputAdornment>
-                ),
-              }}
-            />
+            <Button
+              variant="outlined"
+              startIcon={<DownloadRoundedIcon />}
+              onClick={handleDownload}
+              sx={outlinedActionButtonSx}
+              disabled={loading || filteredRows.length === 0}
+            >
+              Download
+            </Button>
           </Stack>
-        </Box>
+
+          <TextField
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+            }}
+            placeholder="Search Word"
+            size="small"
+            sx={{
+              minWidth: { xs: "100%", sm: 280 },
+              ...searchFieldSx,
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <SearchRoundedIcon sx={{ color: brand.textSoft }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Stack>
 
         {error ? (
-          <Alert severity="error" sx={{ mx: 2, mt: 2, flexShrink: 0 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         ) : null}
 
-        <Box
+        <TableContainer
           sx={{
-            flex: 1,
-            minHeight: 0,
-            overflow: "hidden",
+            borderRadius: 3,
+            border: `1px solid ${brand.border}`,
+            overflowX: "auto",
+            overflowY: "hidden",
             backgroundColor: "#FFFFFF",
           }}
         >
-          <TableContainer
+          <Table
             sx={{
-              height: "100%",
-              maxHeight: "100%",
-              overflowY: "auto",
-              overflowX: "auto",
+              width: "100%",
+              minWidth: tableMinWidth,
               backgroundColor: "#FFFFFF",
+              tableLayout: "fixed",
+              borderCollapse: "collapse",
             }}
           >
-            <Table
-              stickyHeader
-              sx={{
-                width: "100%",
-                minWidth: tableMinWidth,
-                backgroundColor: "#FFFFFF",
-                tableLayout: "auto",
-                borderCollapse: "separate",
-                borderSpacing: 0,
-              }}
-            >
-              <TableHead>
-                <TableRow
-                  sx={{
-                    backgroundColor: brand.softAlt,
-                  }}
-                >
-                  {columns.map((column, index) => (
-                    <TableCell
-                      key={column.key}
-                      sx={{
-                        ...getCellSx({
-                          isLast:
-                            !canShowActionColumn &&
-                            index === columns.length - 1,
-                        }),
-                        fontWeight: 800,
-                        color: brand.text,
-                        minWidth: column.width || "180px",
-                        whiteSpace: "nowrap",
-                        backgroundColor: brand.softAlt,
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 3,
-                      }}
-                    >
-                      {column.label}
-                    </TableCell>
-                  ))}
+            <TableHead>
+              <TableRow
+                sx={{
+                  backgroundColor: brand.softAlt,
+                }}
+              >
+                {columns.map((column, index) => (
+                  <TableCell
+                    key={column.key}
+                    sx={{
+                      ...getCellSx({
+                        isLast:
+                          !canShowActionColumn &&
+                          index === columns.length - 1,
+                      }),
+                      fontWeight: 800,
+                      color: brand.text,
+                      minWidth: column.width || "180px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {column.label}
+                  </TableCell>
+                ))}
 
-                  {canShowActionColumn ? (
-                    <TableCell
-                      align="center"
-                      sx={{
-                        ...getCellSx({ isLast: true, align: "center" }),
-                        fontWeight: 800,
-                        color: brand.text,
-                        minWidth: "150px",
-                        whiteSpace: "nowrap",
-                        backgroundColor: brand.softAlt,
-                        position: "sticky",
-                        top: 0,
-                        zIndex: 3,
-                      }}
+                {canShowActionColumn ? (
+                  <TableCell
+                    align="center"
+                    sx={{
+                      ...getCellSx({ isLast: true, align: "center" }),
+                      fontWeight: 800,
+                      color: brand.text,
+                      minWidth: "150px",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Action
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            </TableHead>
+
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length + (canShowActionColumn ? 1 : 0)}
+                    align="center"
+                    sx={getCellSx({ isLast: true, align: "center" })}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      justifyContent="center"
+                      alignItems="center"
                     >
-                      Action
-                    </TableCell>
-                  ) : null}
+                      <CircularProgress size={18} />
+                      <Typography sx={{ color: brand.textSoft }}>
+                        Loading records...
+                      </Typography>
+                    </Stack>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
+              ) : filteredRows.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length + (canShowActionColumn ? 1 : 0)}
+                    align="center"
+                    sx={getCellSx({ isLast: true, align: "center" })}
+                  >
+                    No records found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredRows.map((row) => (
+                  <TableRow
+                    key={row.id || row._id}
+                    hover
+                    sx={{
+                      backgroundColor: "#FFFFFF",
+                      "&:hover": {
+                        backgroundColor: "#FAFBFC",
+                      },
+                    }}
+                  >
+                    {columns.map((column, index) => {
+                      const value = row[column.key] ?? "-";
+                      const isStatus = column.type === "status";
 
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length + (canShowActionColumn ? 1 : 0)}
-                      align="center"
-                      sx={getCellSx({ isLast: true, align: "center" })}
-                    >
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        justifyContent="center"
-                        alignItems="center"
-                      >
-                        <CircularProgress size={18} />
-                        <Typography sx={{ color: brand.textSoft }}>
-                          Loading records...
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ) : filteredRows.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length + (canShowActionColumn ? 1 : 0)}
-                      align="center"
-                      sx={getCellSx({ isLast: true, align: "center" })}
-                    >
-                      No records found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredRows.map((row) => (
-                    <TableRow
-                      key={row.id || row._id}
-                      hover
-                      sx={{
-                        backgroundColor: "#FFFFFF",
-                        "&:hover": {
-                          backgroundColor: "#FAFBFC",
-                        },
-                      }}
-                    >
-                      {columns.map((column, index) => {
-                        const value = row[column.key] ?? "-";
-                        const isStatus = column.type === "status";
-
-                        return (
-                          <TableCell
-                            key={column.key}
-                            sx={{
-                              ...getCellSx({
-                                isLast:
-                                  !canShowActionColumn &&
-                                  index === columns.length - 1,
-                              }),
-                              color: isStatus ? brand.text : brand.textSoft,
-                              fontWeight: index === 0 ? 700 : 500,
-                              wordBreak: "break-word",
-                              whiteSpace:
-                                column.type === "file"
-                                  ? "normal"
-                                  : column.nowrap
-                                    ? "nowrap"
-                                    : "normal",
-                              minWidth: column.width || "180px",
-                            }}
-                          >
-                            {renderCellContent(column, value)}
-                          </TableCell>
-                        );
-                      })}
-
-                      {canShowActionColumn ? (
+                      return (
                         <TableCell
-                          align="center"
-                          sx={getCellSx({ isLast: true, align: "center" })}
+                          key={column.key}
+                          sx={{
+                            ...getCellSx({
+                              isLast:
+                                !canShowActionColumn &&
+                                index === columns.length - 1,
+                            }),
+                            color: isStatus ? brand.text : brand.textSoft,
+                            fontWeight: index === 0 ? 600 : 500,
+                            wordBreak: "break-word",
+                            whiteSpace:
+                              column.type === "file"
+                                ? "normal"
+                                : column.nowrap
+                                  ? "nowrap"
+                                  : "normal",
+                            minWidth: column.width || "180px",
+                          }}
                         >
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            justifyContent="center"
-                          >
-                            {canUpdate ? (
-                              <IconButton
-                                sx={actionIconButtonSx}
-                                onClick={() => handleEdit(row)}
-                                disabled={!onEdit}
-                              >
-                                <EditRoundedIcon
-                                  sx={{ fontSize: 18, color: brand.text }}
-                                />
-                              </IconButton>
-                            ) : null}
-
-                            {canDelete ? (
-                              <IconButton
-                                sx={actionIconButtonSx}
-                                onClick={() => handleDelete(row)}
-                                disabled={!onDelete}
-                              >
-                                <DeleteOutlineRoundedIcon
-                                  sx={{ fontSize: 18, color: brand.danger }}
-                                />
-                              </IconButton>
-                            ) : null}
-                          </Stack>
+                          {renderCellContent(column, value)}
                         </TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Box>
+                      );
+                    })}
+
+                    {canShowActionColumn ? (
+                      <TableCell
+                        align="center"
+                        sx={getCellSx({ isLast: true, align: "center" })}
+                      >
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          justifyContent="center"
+                        >
+                          {canUpdate ? (
+                            <IconButton
+                              sx={actionIconButtonSx}
+                              onClick={() => handleEdit(row)}
+                              disabled={!onEdit}
+                            >
+                              <EditRoundedIcon
+                                sx={{
+                                  fontSize: 18,
+                                  color: brand.primaryDark,
+                                }}
+                              />
+                            </IconButton>
+                          ) : null}
+
+                          {canDelete ? (
+                            <IconButton
+                              sx={actionIconButtonSx}
+                              onClick={() => handleDelete(row)}
+                              disabled={!onDelete}
+                            >
+                              <DeleteOutlineRoundedIcon
+                                sx={{ fontSize: 18, color: brand.danger }}
+                              />
+                            </IconButton>
+                          ) : null}
+                        </Stack>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
-    </Box>
+    </Paper>
   );
 };
 

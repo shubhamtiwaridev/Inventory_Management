@@ -149,6 +149,29 @@ const formatDateTime = (value) => {
   return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()} ${hours12}:${pad(date.getMinutes())} ${amPm}`;
 };
 
+const canAssignCardToStaffType = (card) => {
+  if (typeof card?.allowInStaffTypes === "boolean") {
+    return card.allowInStaffTypes;
+  }
+
+  const normalizedName = String(card?.name || "")
+    .trim()
+    .toLowerCase();
+  const normalizedPath = String(card?.path || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalizedName === "staff") {
+    return false;
+  }
+
+  if (normalizedPath === "/staff" || normalizedPath.startsWith("/staff/")) {
+    return false;
+  }
+
+  return true;
+};
+
 const StaffType = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -193,7 +216,7 @@ const StaffType = () => {
     try {
       const response = await getCards();
       const cards = Array.isArray(response?.data) ? response.data : [];
-      setAvailableCards(cards);
+      setAvailableCards(cards.filter(canAssignCardToStaffType));
     } catch (error) {
       console.error("Failed to load cards:", error);
     }

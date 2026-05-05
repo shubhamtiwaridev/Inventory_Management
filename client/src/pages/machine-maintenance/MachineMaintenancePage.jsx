@@ -25,9 +25,8 @@ const findCurrentParent = (pathname, sidebarItems = []) => {
 const tabButtonSx = (active) => ({
   borderRadius: 0,
   px: 2.25,
-  py: 1.2,
-  minWidth: 120,
-  minHeight: 74,
+  py: 1.4,
+  minWidth: 108,
   color: active ? "#111111" : "#444444",
   fontWeight: active ? 800 : 700,
   textTransform: "none",
@@ -117,7 +116,7 @@ const MachineMaintenancePage = ({ children }) => {
               spacing={{ xs: 0.5, sm: 1.25 }}
               sx={{
                 minWidth: "max-content",
-                alignItems: "stretch",
+                alignItems: "flex-end",
               }}
             >
               {headerActions.map((action) => {

@@ -69,8 +69,6 @@ const hideScrollbarSx = {
   },
 };
 
-const lockedRoutePrefixes = ["/inventory/goodslist/"];
-
 const InventoryOverview = () => {
   return (
     <Stack spacing={3}>
@@ -120,9 +118,7 @@ const InventoryPage = ({ children }) => {
   const content =
     children ?? (isGoodsListRoute ? <Outlet /> : <InventoryOverview />);
 
-  const shouldLockPageScroll = lockedRoutePrefixes.some((prefix) =>
-    location.pathname.startsWith(prefix),
-  );
+  const shouldLockPageScroll = true;
 
   if (location.pathname === "/inventory/goodslist") {
     return <Navigate to="/inventory/goodslist/list" replace />;
@@ -163,7 +159,7 @@ const InventoryPage = ({ children }) => {
               spacing={{ xs: 0.5, sm: 1.25 }}
               sx={{
                 minWidth: "max-content",
-                alignItems: "stretch",
+                alignItems: "flex-end",
               }}
             >
               {headerActions.map((action) => {

@@ -58,8 +58,15 @@ const softCardSx = {
 
 const ModuleSectionPage = ({ title, sidebarItems, description }) => {
   return (
-    <ModuleLayout sidebarItems={sidebarItems}>
-      <Stack spacing={0}>
+    <ModuleLayout sidebarItems={sidebarItems} lockPageScroll>
+      <Stack
+        spacing={0}
+        sx={{
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
         <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
           <Stack spacing={2} sx={{ p: { xs: 1.5, sm: 2 }, minHeight: 320 }}>
             <Typography

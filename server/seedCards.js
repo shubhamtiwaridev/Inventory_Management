@@ -64,6 +64,17 @@ const seedCards = async () => {
         subtitleTone: "success",
         createdBy: "System",
       },
+      {
+        name: "log-activity",
+        title: "Log Activity",
+        path: "/log-activity",
+        icon: "AssignmentRoundedIcon",
+        iconBg: "#F3F0FF",
+        iconColor: "#5B21B6",
+        subtitle: "Track system actions",
+        subtitleTone: "info",
+        createdBy: "System",
+      },
     ];
 
     await Card.insertMany(cards);

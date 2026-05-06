@@ -4,6 +4,9 @@ import Card from "../card/cardModel.js";
 const isSuperadminName = (name = "") =>
   String(name).trim().toLowerCase() === "superadmin";
 
+const getUserName = (req) =>
+  req.user?.name || req.user?.username || req.user?.email || "System";
+
 const cardSelectFields =
   "name title path icon iconBg iconColor subtitle subtitleTone";
 
@@ -28,12 +31,12 @@ export const getStaffTypes = async (req, res) => {
 
 export const createStaffType = async (req, res) => {
   try {
-    const { name, assignedCards, createdBy } = req.body;
+    const { name, assignedCards } = req.body;
 
-    if (!name || !createdBy) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: "Staff Type name and creator are required",
+        message: "Staff Type name is required",
       });
     }
 
@@ -64,7 +67,7 @@ export const createStaffType = async (req, res) => {
     const staffType = await StaffType.create({
       name: normalizedName,
       assignedCards: selectedCards,
-      createdBy: createdBy.trim(),
+      createdBy: getUserName(req),
     });
     // Populate the assigned cards in the response
     await staffType.populate("assignedCards", cardSelectFields);
@@ -84,12 +87,12 @@ export const createStaffType = async (req, res) => {
 export const updateStaffType = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, assignedCards, createdBy } = req.body;
+    const { name, assignedCards } = req.body;
 
-    if (!name || !createdBy) {
+    if (!name) {
       return res.status(400).json({
         success: false,
-        message: "Staff Type name and creator are required",
+        message: "Staff Type name is required",
       });
     }
 
@@ -122,7 +125,7 @@ export const updateStaffType = async (req, res) => {
       {
         name: normalizedName,
         assignedCards: selectedCards,
-        createdBy: createdBy.trim(),
+        createdBy: getUserName(req),
       },
       { new: true, runValidators: true },
     ).populate("assignedCards", cardSelectFields);

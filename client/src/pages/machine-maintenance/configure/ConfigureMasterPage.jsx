@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -30,31 +31,16 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 
 import {
+  actionIconButtonSx,
+  brand,
   filledActionButtonSx,
+  getCellSx,
   outlinedActionButtonSx,
+  searchFieldSx,
   textFieldStyles,
 } from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
 import { useAuth } from "../../../store/AuthContext.jsx";
 import { hasActionPermission } from "../../../utils/permissions.js";
-
-const brand = {
-  primary: "#106C6B",
-  primaryDark: "#0C5A58",
-  primaryLight: "#17A89F",
-  soft: "#E8F7F6",
-  softAlt: "#FFFFFF",
-  border: "rgba(16, 108, 107, 0.24)",
-  rowBorder: "rgba(16, 108, 107, 0.24)",
-  verticalBorder: "#C7D7D7",
-  text: "#143736",
-  textSoft: "#617776",
-  pageBg: "#FFFFFF",
-  shadow:
-    "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
-  shadowStrong: "none",
-  danger: "#C2410C",
-  dangerSoft: "#FFF1EE",
-};
 
 const softCardSx = {
   borderRadius: 4,
@@ -62,28 +48,6 @@ const softCardSx = {
   backgroundColor: "#FFFFFF",
   boxShadow: "none",
 };
-
-const actionButtonSx = {
-  width: 34,
-  height: 34,
-  borderRadius: 2.5,
-  border: `1px solid ${brand.border}`,
-  backgroundColor: "#FFFFFF",
-  "&:hover": {
-    backgroundColor: brand.soft,
-  },
-};
-
-const getCellSx = ({ isLast = false, align = "center" } = {}) => ({
-  borderBottom: `1px solid ${brand.rowBorder}`,
-  borderRight: isLast ? "none" : `2px solid ${brand.verticalBorder}`,
-  py: 2.1,
-  px: 2,
-  textAlign: align,
-  verticalAlign: "middle",
-  boxSizing: "border-box",
-  backgroundColor: "inherit",
-});
 
 const buildInitialFormData = (fields = []) =>
   fields.reduce((acc, field) => {
@@ -120,6 +84,10 @@ const ConfigureMasterPage = ({
   const canUpdate = hasActionPermission(user, location.pathname, "update");
   const canDelete = hasActionPermission(user, location.pathname, "delete");
   const canShowActionColumn = canUpdate || canDelete;
+  const tableMinWidth = Math.max(
+    config.tableMinWidth || 980,
+    (config.columns.length + (canShowActionColumn ? 1 : 0)) * 180,
+  );
 
   const resetForm = useCallback(() => {
     setFormData(buildInitialFormData(config.fields));
@@ -321,13 +289,31 @@ const ConfigureMasterPage = ({
   };
 
   return (
-    <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
-      <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+    <Paper
+      elevation={0}
+      sx={{
+        ...softCardSx,
+        overflow: "hidden",
+        height: "100%",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Box
+        sx={{
+          p: { xs: 1.5, sm: 2 },
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
         <Stack
           direction={{ xs: "column", lg: "row" }}
           justifyContent="space-between"
           spacing={2}
-          sx={{ mb: 2 }}
+          sx={{ mb: 2, flexShrink: 0 }}
         >
           <Stack
             direction={{ xs: "column", sm: "row" }}
@@ -382,19 +368,8 @@ const ConfigureMasterPage = ({
               variant="outlined"
               startIcon={<DownloadRoundedIcon />}
               onClick={handleDownload}
-              sx={{
-                borderRadius: 3,
-                px: 2,
-                py: 1.15,
-                textTransform: "none",
-                fontWeight: 700,
-                color: brand.text,
-                borderColor: brand.border,
-                "&:hover": {
-                  borderColor: brand.primaryLight,
-                  backgroundColor: brand.soft,
-                },
-              }}
+              sx={outlinedActionButtonSx}
+              disabled={loading || filteredRows.length === 0}
             >
               Download
             </Button>
@@ -410,20 +385,7 @@ const ConfigureMasterPage = ({
             size="small"
             sx={{
               minWidth: { xs: "100%", sm: 280 },
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 999,
-                backgroundColor: "#FFFFFF",
-                boxShadow: brand.shadow,
-                "& fieldset": {
-                  borderColor: brand.border,
-                },
-                "&:hover fieldset": {
-                  borderColor: brand.primaryLight,
-                },
-                "&.Mui-focused fieldset": {
-                  borderColor: brand.primary,
-                },
-              },
+              ...searchFieldSx,
             }}
             InputProps={{
               endAdornment: (
@@ -546,6 +508,8 @@ const ConfigureMasterPage = ({
           sx={{
             borderRadius: 3,
             border: `1px solid ${brand.border}`,
+            flex: 1,
+            minHeight: 0,
             overflowX: "auto",
             overflowY: "hidden",
             backgroundColor: "#FFFFFF",
@@ -554,13 +518,19 @@ const ConfigureMasterPage = ({
           <Table
             sx={{
               width: "100%",
-              minWidth: config.tableMinWidth || 900,
+              minWidth: tableMinWidth,
               backgroundColor: "#FFFFFF",
               tableLayout: "fixed",
               borderCollapse: "collapse",
             }}
           >
-            <TableHead>
+            <TableHead
+              sx={{
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+              }}
+            >
               <TableRow
                 sx={{
                   backgroundColor: brand.softAlt,
@@ -612,7 +582,17 @@ const ConfigureMasterPage = ({
                     align="center"
                     sx={getCellSx({ isLast: true, align: "center" })}
                   >
-                    Loading...
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      <CircularProgress size={18} />
+                      <Typography sx={{ color: brand.textSoft }}>
+                        Loading records...
+                      </Typography>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ) : visibleRows.length === 0 ? (
@@ -702,7 +682,7 @@ const ConfigureMasterPage = ({
                           {canUpdate ? (
                             <IconButton
                               onClick={() => handleEdit(row)}
-                              sx={actionButtonSx}
+                              sx={actionIconButtonSx}
                             >
                               <EditRoundedIcon
                                 sx={{
@@ -717,7 +697,7 @@ const ConfigureMasterPage = ({
                             <IconButton
                               onClick={() => handleDelete(row)}
                               sx={{
-                                ...actionButtonSx,
+                                ...actionIconButtonSx,
                                 "&:hover": {
                                   backgroundColor: brand.dangerSoft,
                                 },

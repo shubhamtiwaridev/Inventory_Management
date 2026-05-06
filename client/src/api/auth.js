@@ -1,6 +1,6 @@
 import axios from "axios";
 import { API_BASE_URL } from "./config";
-import { getAuthToken } from "./authStorage";
+import { clearAuthSession, getAuthToken } from "./authStorage";
 
 const API = axios.create({
   baseURL: API_BASE_URL,
@@ -20,7 +20,15 @@ API.interceptors.request.use((config) => {
 
 API.interceptors.response.use(
   (response) => response,
-  async (error) => Promise.reject(error),
+  async (error) => {
+    const status = error?.response?.status;
+
+    if (status === 401 || status === 403) {
+      clearAuthSession();
+    }
+
+    return Promise.reject(error);
+  },
 );
 
 export const registerUser = async (data) => {

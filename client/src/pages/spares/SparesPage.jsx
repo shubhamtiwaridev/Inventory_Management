@@ -19,13 +19,27 @@ const softCardSx = {
 
 const SparesPage = () => {
   return (
-    <ModuleLayout sidebarItems={sparesSidebarItems}>
-      <Stack spacing={3}>
+    <ModuleLayout sidebarItems={sparesSidebarItems} lockPageScroll>
+      <Stack
+        spacing={3}
+        sx={{
+          height: "100%",
+          minHeight: 0,
+          overflow: "hidden",
+        }}
+      >
         <Typography variant="h4" sx={{ fontWeight: 800, color: brand.text }}>
           Spares
         </Typography>
 
-        <Paper elevation={0} sx={{ ...softCardSx, p: 3 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            ...softCardSx,
+            p: 3,
+            overflow: "hidden",
+          }}
+        >
           <Typography sx={{ fontWeight: 700, color: brand.text, mb: 1 }}>
             Spares Overview
           </Typography>

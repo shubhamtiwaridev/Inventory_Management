@@ -1,4 +1,5 @@
 import express from "express";
+import { protect } from "../../../middleware/authMiddleware.js";
 import {
   getStaffTypes,
   createStaffType,
@@ -8,9 +9,9 @@ import {
 
 const router = express.Router();
 
-router.get("/", getStaffTypes);
-router.post("/", createStaffType);
-router.put("/:id", updateStaffType);
-router.delete("/:id", deleteStaffType);
+router.get("/", protect, getStaffTypes);
+router.post("/", protect, createStaffType);
+router.put("/:id", protect, updateStaffType);
+router.delete("/:id", protect, deleteStaffType);
 
 export default router;

@@ -1,6 +1,7 @@
 const AUTH_TOKEN_KEY = "inventory_auth_token";
 export const AUTH_USER_KEY = "inventory_auth_user";
 export const AUTH_SESSION_CLEARED_EVENT = "inventory-auth-session-cleared";
+export const AUTH_TOKEN_UPDATED_EVENT = "inventory-auth-token-updated";
 
 const decodeBase64Url = (value = "") => {
   const normalized = String(value).replace(/-/g, "+").replace(/_/g, "/");
@@ -26,6 +27,7 @@ const parseTokenPayload = (token = "") => {
 export const removeAuthToken = () => {
   if (typeof window === "undefined") return;
   localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATED_EVENT));
 };
 
 export const getStoredAuthUser = () => {
@@ -66,6 +68,12 @@ export const notifyAuthSessionCleared = () => {
   window.dispatchEvent(new CustomEvent(AUTH_SESSION_CLEARED_EVENT));
 };
 
+export const notifyAuthTokenUpdated = () => {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(new CustomEvent(AUTH_TOKEN_UPDATED_EVENT));
+};
+
 const isPublicAuthPath = (pathname = "") =>
   ["/login", "/register", "/forgot-password", "/"].includes(pathname);
 
@@ -102,6 +110,16 @@ export const isAuthTokenExpired = (token = "") => {
   return Date.now() >= payload.exp * 1000;
 };
 
+export const getAuthTokenExpiryTime = (token = "") => {
+  const payload = parseTokenPayload(token);
+
+  if (!payload?.exp) {
+    return null;
+  }
+
+  return payload.exp * 1000;
+};
+
 export const getAuthToken = () => {
   if (typeof window === "undefined") return "";
 
@@ -110,7 +128,7 @@ export const getAuthToken = () => {
   if (!token) return "";
 
   if (isAuthTokenExpired(token)) {
-    removeAuthToken();
+    clearAuthSession();
     return "";
   }
 
@@ -121,11 +139,12 @@ export const setAuthToken = (token) => {
   if (typeof window === "undefined") return;
 
   if (!token || isAuthTokenExpired(token)) {
-    removeAuthToken();
+    clearAuthSession();
     return;
   }
 
   localStorage.setItem(AUTH_TOKEN_KEY, token);
+  notifyAuthTokenUpdated();
 };
 
 export const getAuthHeaders = (headers = {}) => {

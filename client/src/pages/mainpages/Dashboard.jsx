@@ -28,6 +28,7 @@ import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
 import HandymanRoundedIcon from "@mui/icons-material/HandymanRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
+import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 
 import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
@@ -170,6 +171,19 @@ const topProducts = [
   { rank: "#4", name: "USB-C Hub 7-in-1", sold: "258 sold", change: "+5%" },
 ];
 
+const dashboardFallbackCards = [
+  {
+    name: "log-activity",
+    title: "Log Activity",
+    path: "/log-activity",
+    icon: "AssignmentRoundedIcon",
+    iconBg: "#F3F0FF",
+    iconColor: "#5B21B6",
+    subtitle: "Track system actions",
+    subtitleTone: "info",
+  },
+];
+
 const getStatusStyles = (status) => {
   switch (status) {
     case "Delivered":
@@ -222,9 +236,27 @@ const getIconComponent = (iconName) => {
     HandymanRoundedIcon: <HandymanRoundedIcon />,
     Inventory2RoundedIcon: <Inventory2RoundedIcon />,
     BadgeRoundedIcon: <BadgeRoundedIcon />,
+    AssignmentRoundedIcon: <AssignmentRoundedIcon />,
   };
 
   return icons[iconName] || <BadgeRoundedIcon />;
+};
+
+const mergeCardsWithFallbacks = (cards = []) => {
+  const cardMap = new Map();
+
+  cards.forEach((card) => {
+    if (!card?.name) return;
+    cardMap.set(card.name, card);
+  });
+
+  dashboardFallbackCards.forEach((card) => {
+    if (!cardMap.has(card.name)) {
+      cardMap.set(card.name, card);
+    }
+  });
+
+  return Array.from(cardMap.values());
 };
 
 const Dashboard = () => {
@@ -241,10 +273,10 @@ const Dashboard = () => {
         const response = await getCards();
         const cards = Array.isArray(response?.data) ? response.data : [];
 
-        setAvailableCards(cards);
+        setAvailableCards(mergeCardsWithFallbacks(cards));
       } catch (error) {
         console.error("Failed to load cards:", error);
-        setAvailableCards([]);
+        setAvailableCards(mergeCardsWithFallbacks([]));
       } finally {
         setLoading(false);
       }

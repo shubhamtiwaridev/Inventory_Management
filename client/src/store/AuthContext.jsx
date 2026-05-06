@@ -9,7 +9,10 @@ import {
 } from "react";
 import { getMe, loginUser, logoutUser, registerUser } from "../api/auth";
 import {
+  AUTH_TOKEN_UPDATED_EVENT,
   AUTH_SESSION_CLEARED_EVENT,
+  clearAuthSession,
+  getAuthTokenExpiryTime,
   clearStoredAuthSession,
   getAuthToken,
   getStoredAuthUser,
@@ -120,6 +123,53 @@ export const AuthProvider = ({ children }) => {
         AUTH_SESSION_CLEARED_EVENT,
         handleSessionCleared,
       );
+    };
+  }, []);
+
+  useEffect(() => {
+    let timeoutId;
+
+    const clearExpiryTimer = () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
+    const syncExpiryTimer = () => {
+      clearExpiryTimer();
+
+      const token = getAuthToken();
+      if (!token) {
+        return;
+      }
+
+      const expiryTime = getAuthTokenExpiryTime(token);
+      if (!expiryTime) {
+        return;
+      }
+
+      const remainingMs = expiryTime - Date.now();
+
+      if (remainingMs <= 0) {
+        clearAuthSession();
+        return;
+      }
+
+      timeoutId = window.setTimeout(() => {
+        clearAuthSession();
+      }, remainingMs);
+    };
+
+    syncExpiryTimer();
+
+    window.addEventListener(AUTH_TOKEN_UPDATED_EVENT, syncExpiryTimer);
+    window.addEventListener(AUTH_SESSION_CLEARED_EVENT, syncExpiryTimer);
+
+    return () => {
+      clearExpiryTimer();
+      window.removeEventListener(AUTH_TOKEN_UPDATED_EVENT, syncExpiryTimer);
+      window.removeEventListener(AUTH_SESSION_CLEARED_EVENT, syncExpiryTimer);
     };
   }, []);
 

@@ -31,7 +31,6 @@ import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
-import { useAuth } from "../../store/AuthContext.jsx";
 import {
   getStaffTypes,
   createStaffType,
@@ -172,8 +171,17 @@ const canAssignCardToStaffType = (card) => {
   return true;
 };
 
+const blurActiveElement = () => {
+  if (typeof document === "undefined") return;
+
+  const activeElement = document.activeElement;
+
+  if (activeElement instanceof HTMLElement) {
+    activeElement.blur();
+  }
+};
+
 const StaffType = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -189,7 +197,6 @@ const StaffType = () => {
   const [formData, setFormData] = useState({
     name: "",
     assignedCards: [],
-    createdBy: "",
   });
 
   const rowsPerPage = 10;
@@ -206,11 +213,10 @@ const StaffType = () => {
     setFormData({
       name: "",
       assignedCards: [],
-      createdBy: user?.name || "",
     });
     setEditingId("");
     setShowForm(false);
-  }, [user?.name]);
+  }, []);
 
   const loadCards = useCallback(async () => {
     try {
@@ -248,6 +254,19 @@ const StaffType = () => {
     loadStaffTypes();
     loadCards();
   }, [loadStaffTypes, loadCards]);
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, []);
 
   const filteredRows = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -320,10 +339,10 @@ const StaffType = () => {
   };
 
   const handleOpenCreate = () => {
+    blurActiveElement();
     setFormData({
       name: "",
       assignedCards: [],
-      createdBy: user?.name || "",
     });
     setEditingId("");
     setShowForm(true);
@@ -331,10 +350,10 @@ const StaffType = () => {
   };
 
   const handleEdit = (row) => {
+    blurActiveElement();
     setFormData({
       name: row.name || "",
       assignedCards: (row.assignedCards || []).map((card) => card._id || card),
-      createdBy: row.createdBy || "",
     });
     setEditingId(row._id);
     setShowForm(true);
@@ -361,11 +380,10 @@ const StaffType = () => {
     const payload = {
       name: formData.name.trim(),
       assignedCards: formData.assignedCards,
-      createdBy: formData.createdBy.trim(),
     };
 
-    if (!payload.name || !payload.createdBy) {
-      setErrorMessage("Please fill Staff Type and Creater Person");
+    if (!payload.name) {
+      setErrorMessage("Please fill Staff Type");
       return;
     }
 
@@ -421,25 +439,34 @@ const StaffType = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
+        height: "100dvh",
         background: brand.pageBg,
+        overflow: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <Box
         sx={{
+          height: "100%",
           minWidth: 0,
           px: { xs: 2, md: 3 },
           py: { xs: 2, md: 3 },
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          overflow: "hidden",
+          boxSizing: "border-box",
         }}
       >
         <Box
           sx={{
-            mb: 2,
             px: { xs: 1, sm: 2 },
             pt: 1,
-            background: "transparent",
+            backgroundColor: "#FFFFFF",
             borderBottom: "none",
             overflowX: "auto",
+            flexShrink: 0,
           }}
         >
           <Stack
@@ -469,13 +496,31 @@ const StaffType = () => {
           </Stack>
         </Box>
 
-        <Paper elevation={0} sx={{ ...softCardSx, overflow: "hidden" }}>
-          <Box sx={{ p: { xs: 1.5, sm: 2 } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            ...softCardSx,
+            overflow: "hidden",
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Box
+            sx={{
+              p: { xs: 1.5, sm: 2 },
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <Stack
               direction={{ xs: "column", lg: "row" }}
               justifyContent="space-between"
               spacing={2}
-              sx={{ mb: 2 }}
+              sx={{ mb: 2, flexShrink: 0 }}
             >
               <Stack
                 direction={{ xs: "column", sm: "row" }}
@@ -620,19 +665,6 @@ const StaffType = () => {
                       }
                       fullWidth
                     />
-
-                    <TextField
-                      label="Creater Person"
-                      value={formData.createdBy}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          createdBy: e.target.value,
-                        }))
-                      }
-                      fullWidth
-                    />
-
                     <Box>
                       <Typography
                         variant="subtitle1"
@@ -776,21 +808,29 @@ const StaffType = () => {
               sx={{
                 borderRadius: 3,
                 border: `1px solid ${brand.border}`,
+                minHeight: 0,
+                maxHeight: "100%",
                 overflowX: "auto",
-                overflowY: "hidden",
+                overflowY: "auto",
                 backgroundColor: "#FFFFFF",
               }}
             >
               <Table
                 sx={{
                   width: "100%",
-                  minWidth: 900,
+                  minWidth: 980,
                   backgroundColor: "#FFFFFF",
                   tableLayout: "fixed",
                   borderCollapse: "collapse",
                 }}
               >
-                <TableHead>
+                <TableHead
+                  sx={{
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 2,
+                  }}
+                >
                   <TableRow
                     sx={{
                       backgroundColor: brand.softAlt,
@@ -973,7 +1013,7 @@ const StaffType = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-          </Box>
+        </Box>
         </Paper>
       </Box>
     </Box>

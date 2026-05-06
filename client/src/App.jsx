@@ -40,6 +40,7 @@ import FrequencyListPage from "./pages/machine-maintenance/configure/FrequencyLi
 import ContractTypeListPage from "./pages/machine-maintenance/configure/ContractTypeListPage.jsx";
 
 import InventoryMasterListPage from "./pages/inventory/components/InventoryMasterListPage.jsx";
+import LogActivityPage from "./pages/log-activity/LogActivityPage.jsx";
 
 const withPermissionRoute = (
   element,
@@ -78,6 +79,7 @@ function App() {
         <Route path="/staff" element={<StaffPage />} />
         <Route path="/staff-list" element={<StaffList />} />
         <Route path="/staff-type" element={<StaffType />} />
+        <Route path="/log-activity" element={<LogActivityPage />} />
 
         <Route
           path="/machine-maintenance"

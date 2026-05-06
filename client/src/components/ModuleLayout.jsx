@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../store/AuthContext.jsx";
 import SideBar from "../pages/mainpages/SideBar.jsx";
@@ -18,9 +18,28 @@ const ModuleLayout = ({
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  useEffect(() => {
+    if (!lockPageScroll) {
+      return undefined;
+    }
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [lockPageScroll]);
+
   return (
     <Box
       sx={{
+        width: "100%",
+        maxWidth: "100%",
         minHeight: "100dvh",
         height: lockPageScroll ? "100dvh" : "auto",
         background: brand.pageBg,
@@ -31,6 +50,8 @@ const ModuleLayout = ({
       <Box
         sx={{
           display: "flex",
+          width: "100%",
+          maxWidth: "100%",
           minHeight: "100dvh",
           height: lockPageScroll ? "100dvh" : "auto",
           flexDirection: { xs: "column", md: "row" },
@@ -60,6 +81,8 @@ const ModuleLayout = ({
             display: "flex",
             flexDirection: "column",
             boxSizing: "border-box",
+            maxWidth: "100%",
+            overflowX: "hidden",
           }}
         >
           {children}

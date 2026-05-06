@@ -28,6 +28,10 @@ import UserListPage from "./pages/machine-maintenance/assets/UserListPage.jsx";
 import VendorListPage from "./pages/machine-maintenance/assets/VendorListPage.jsx";
 import BreakdownListPage from "./pages/machine-maintenance/assets/BreakdownListPage.jsx";
 import ConsumeEntryPage from "./pages/machine-maintenance/assets/ConsumeEntryPage.jsx";
+import ComplaintAssetsPage from "./pages/machine-maintenance/complient/ComplaintAssetsPage.jsx";
+import ComplaintSparePage from "./pages/machine-maintenance/complient/ComplaintSparePage.jsx";
+import ComplaintTaskMasterPage from "./pages/machine-maintenance/complient/ComplaintTaskMasterPage.jsx";
+import ComplaintVendorPage from "./pages/machine-maintenance/complient/ComplaintVendorPage.jsx";
 
 import DepartmentListPage from "./pages/machine-maintenance/configure/DepartmentListPage.jsx";
 import ShiftTimingListPage from "./pages/machine-maintenance/configure/ShiftTimingListPage.jsx";
@@ -253,6 +257,48 @@ function App() {
               machineMaintenanceSidebarItems,
               "/machine-maintenance/consume/entry",
               "Consume Entry",
+            )}
+          />
+          <Route
+            path="complient"
+            element={
+              <Navigate to="/machine-maintenance/complient/assets" replace />
+            }
+          />
+          <Route
+            path="complient/assets"
+            element={withPermissionRoute(
+              <ComplaintAssetsPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/complient/assets",
+              "Assets",
+            )}
+          />
+          <Route
+            path="complient/spare"
+            element={withPermissionRoute(
+              <ComplaintSparePage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/complient/spare",
+              "Spare",
+            )}
+          />
+          <Route
+            path="complient/task-master"
+            element={withPermissionRoute(
+              <ComplaintTaskMasterPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/complient/task-master",
+              "Task Master",
+            )}
+          />
+          <Route
+            path="complient/vendor-supplier"
+            element={withPermissionRoute(
+              <ComplaintVendorPage />,
+              machineMaintenanceSidebarItems,
+              "/machine-maintenance/complient/vendor-supplier",
+              "Vendor/Supplier",
             )}
           />
 

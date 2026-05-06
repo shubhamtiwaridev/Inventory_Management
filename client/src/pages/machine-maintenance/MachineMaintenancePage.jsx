@@ -69,6 +69,9 @@ const hideScrollbarSx = {
 const isConfigureRoute = (pathname) =>
   pathname.startsWith("/machine-maintenance/configure");
 
+const isComplientRoute = (pathname) =>
+  pathname.startsWith("/machine-maintenance/complient");
+
 const MachineMaintenancePage = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -83,7 +86,8 @@ const MachineMaintenancePage = ({ children }) => {
     location.pathname,
     allowedSidebarItems,
   );
-  const headerActions = isConfigureRoute(location.pathname)
+  const headerActions =
+    isConfigureRoute(location.pathname) || isComplientRoute(location.pathname)
     ? currentParent?.children || []
     : [];
   const content = children ?? <Outlet />;
@@ -161,11 +165,6 @@ const MachineMaintenancePage = ({ children }) => {
               maxHeight: "100%",
               overflowY: "hidden",
               overflowX: "hidden",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              "&::-webkit-scrollbar": {
-                display: "none",
-              },
             }}
           >
             {content}

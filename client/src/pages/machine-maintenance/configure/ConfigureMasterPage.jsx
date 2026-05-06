@@ -294,8 +294,6 @@ const ConfigureMasterPage = ({
       sx={{
         ...softCardSx,
         overflow: "hidden",
-        height: "100%",
-        minHeight: 0,
         display: "flex",
         flexDirection: "column",
       }}
@@ -303,8 +301,6 @@ const ConfigureMasterPage = ({
       <Box
         sx={{
           p: { xs: 1.5, sm: 2 },
-          flex: 1,
-          minHeight: 0,
           display: "flex",
           flexDirection: "column",
         }}
@@ -347,19 +343,7 @@ const ConfigureMasterPage = ({
               variant="outlined"
               startIcon={<RefreshRoundedIcon />}
               onClick={handleRefresh}
-              sx={{
-                borderRadius: 3,
-                px: 2,
-                py: 1.15,
-                textTransform: "none",
-                fontWeight: 700,
-                color: brand.text,
-                borderColor: brand.border,
-                "&:hover": {
-                  borderColor: brand.primaryLight,
-                  backgroundColor: brand.soft,
-                },
-              }}
+              sx={outlinedActionButtonSx}
             >
               Refresh
             </Button>
@@ -493,13 +477,7 @@ const ConfigureMasterPage = ({
         </Dialog>
 
         {errorMessage ? (
-          <Typography
-            sx={{
-              mb: 2,
-              color: brand.danger,
-              fontWeight: 700,
-            }}
-          >
+          <Typography sx={{ mb: 2, color: brand.danger, fontWeight: 600 }}>
             {errorMessage}
           </Typography>
         ) : null}
@@ -508,10 +486,8 @@ const ConfigureMasterPage = ({
           sx={{
             borderRadius: 3,
             border: `1px solid ${brand.border}`,
-            flex: 1,
-            minHeight: 0,
             overflowX: "auto",
-            overflowY: "hidden",
+            overflowY: "auto",
             backgroundColor: "#FFFFFF",
           }}
         >

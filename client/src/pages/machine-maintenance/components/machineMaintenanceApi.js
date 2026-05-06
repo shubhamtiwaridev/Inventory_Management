@@ -286,6 +286,23 @@ export const mapVendorListRow = (item) => ({
   status: formatValue(item.status),
 });
 
+export const mapComplientListRow = (item) => ({
+  id: item._id,
+  complaintCode: formatValue(item.complaintCode),
+  complaintTitle: formatValue(item.complaintTitle),
+  assetName: formatValue(item.assetName),
+  spareName: formatValue(item.spareName),
+  taskName: formatValue(item.taskName),
+  vendorName: formatValue(item.vendorName),
+  issueDate: formatDateValue(item.issueDate),
+  priority: formatValue(item.priority),
+  status: formatValue(item.status),
+  description: formatValue(item.description),
+  createdBy: formatValue(item.createdBy),
+  resolvedBy: formatValue(item.resolvedBy),
+  resolvedDate: formatDateValue(item.resolvedDate),
+});
+
 export const mapAssetFormValues = (item) => ({
   assetCode: item.assetCode || "",
   assetName: item.assetName || "",
@@ -381,6 +398,22 @@ export const mapVendorFormValues = (item) => ({
   contractValidityTo: formatDateInputValue(item.contractValidityTo),
   escalationContacts: item.escalationContacts || "",
   status: item.status || "Active",
+});
+
+export const mapComplientFormValues = (item) => ({
+  section: item.section || "",
+  complaintCode: item.complaintCode || "",
+  complaintTitle: item.complaintTitle || "",
+  assetName: item.assetName || "",
+  spareName: item.spareName || "",
+  taskName: item.taskName || "",
+  vendorName: item.vendorName || "",
+  issueDate: formatDateInputValue(item.issueDate),
+  priority: item.priority || "Medium",
+  status: item.status || "Open",
+  description: item.description || "",
+  resolvedBy: item.resolvedBy || "",
+  resolvedDate: formatDateInputValue(item.resolvedDate),
 });
 
 const getResponseList = (response) =>
@@ -607,6 +640,57 @@ export const getRegisteredMachineOptions = async () => {
   }));
 };
 
+export const getSpareOptions = async () => {
+  const response = await getSpares();
+
+  const spareNames = Array.from(
+    new Set(
+      (response?.data || [])
+        .map((item) => String(item?.spareName || "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  return spareNames.map((name) => ({
+    label: name,
+    value: name,
+  }));
+};
+
+export const getTaskOptions = async () => {
+  const response = await getTasks();
+
+  const taskNames = Array.from(
+    new Set(
+      (response?.data || [])
+        .map((item) => String(item?.taskName || "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  return taskNames.map((name) => ({
+    label: name,
+    value: name,
+  }));
+};
+
+export const getVendorOptions = async () => {
+  const response = await getVendors({ skipCache: true });
+
+  const vendorNames = Array.from(
+    new Set(
+      (response?.data || [])
+        .map((item) => String(item?.vendorName || "").trim())
+        .filter(Boolean),
+    ),
+  );
+
+  return vendorNames.map((name) => ({
+    label: name,
+    value: name,
+  }));
+};
+
 export const getAssetById = async (id) =>
   request(`/machine-maintenance/assets/${id}`);
 export const createAsset = async (payload) =>
@@ -674,3 +758,22 @@ export const updateVendor = async (id, payload) =>
   });
 export const deleteVendor = async (id) =>
   request(`/machine-maintenance/vendors/${id}`, { method: "DELETE" });
+
+export const getComplients = async (section) =>
+  request(
+    `/machine-maintenance/complients${section ? `?section=${encodeURIComponent(section)}` : ""}`,
+  );
+export const getComplientById = async (id) =>
+  request(`/machine-maintenance/complients/${id}`);
+export const createComplient = async (payload) =>
+  request("/machine-maintenance/complients", {
+    method: "POST",
+    body: payload,
+  });
+export const updateComplient = async (id, payload) =>
+  request(`/machine-maintenance/complients/${id}`, {
+    method: "PUT",
+    body: payload,
+  });
+export const deleteComplient = async (id) =>
+  request(`/machine-maintenance/complients/${id}`, { method: "DELETE" });

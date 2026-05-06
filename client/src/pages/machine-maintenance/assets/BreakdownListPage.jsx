@@ -1,18 +1,7 @@
-import MachineMaintenanceListView from "../components/MachineMaintenanceListView.jsx";
-import { pageTableData } from "../components/machineMaintenanceUi.jsx";
+import BreakdownStatusListView from "./BreakdownStatusListView.jsx";
 
 const BreakdownListPage = () => {
-  const config = pageTableData.breakdownList;
-
-  return (
-    <MachineMaintenanceListView
-      title="Breakdown List"
-      columns={config.columns}
-      rows={[]}
-      showPrimaryAction={false}
-      showActions={false}
-    />
-  );
+  return <BreakdownStatusListView title="Breakdown List" />;
 };
 
 export default BreakdownListPage;

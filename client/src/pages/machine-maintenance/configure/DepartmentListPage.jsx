@@ -26,17 +26,16 @@ const departmentConfig = {
   ],
   columns: [
     { key: "department", label: "Department", width: "25%", chip: true },
-    { key: "createdBy", label: "Creater", width: "20%", bold: true },
     {
       key: "createdAt",
       label: "Created Time",
-      width: "20%",
+      width: "25%",
       softText: true,
     },
     {
       key: "updatedAt",
       label: "Updated Time",
-      width: "23%",
+      width: "28%",
       softText: true,
     },
   ],

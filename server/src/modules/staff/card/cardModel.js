@@ -62,9 +62,8 @@ const cardSchema = new mongoose.Schema(
   },
 );
 
-cardSchema.index({ name: 1 });
 cardSchema.index({ createdAt: -1 });
 
-const Card = mongoose.model("Card", cardSchema);
+const Card = mongoose.models.Card || mongoose.model("Card", cardSchema);
 
 export default Card;

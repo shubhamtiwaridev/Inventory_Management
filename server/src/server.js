@@ -15,6 +15,7 @@ import spareRoutes from "./modules/machine-maintenance/spare/spareRoute.js";
 import taskRoutes from "./modules/machine-maintenance/task/taskRoute.js";
 import userAllocationRoutes from "./modules/machine-maintenance/user-allocation/userAllocationRoute.js";
 import vendorRoutes from "./modules/machine-maintenance/vendor/vendorRoute.js";
+import complientRoutes from "./modules/machine-maintenance/complient/complientRoute.js";
 
 import departmentRoute from "./modules/configure/department/departmentRoute.js";
 import shiftTimingRoute from "./modules/configure/shift-timing/shiftTimingRoute.js";
@@ -25,6 +26,7 @@ import unitOfMeasureRoute from "./modules/configure/unit-of-measure/unitOfMeasur
 import taskCategoryRoute from "./modules/configure/task-category/taskCategoryRoute.js";
 import frequencyRoute from "./modules/configure/frequency/frequencyRoute.js";
 import contractTypeRoute from "./modules/configure/contract-type/contractTypeRoute.js";
+import logActivityRoutes from "./modules/log-activity/logActivityRoute.js";
 
 dotenv.config();
 connectDB();
@@ -87,6 +89,7 @@ app.use("/api/machine-maintenance/spares", spareRoutes);
 app.use("/api/machine-maintenance/tasks", taskRoutes);
 app.use("/api/machine-maintenance/user-allocations", userAllocationRoutes);
 app.use("/api/machine-maintenance/vendors", vendorRoutes);
+app.use("/api/machine-maintenance/complients", complientRoutes);
 
 app.use("/api/configure/departments", departmentRoute);
 app.use("/api/configure/shift-timings", shiftTimingRoute);
@@ -97,6 +100,7 @@ app.use("/api/configure/units-of-measure", unitOfMeasureRoute);
 app.use("/api/configure/task-categories", taskCategoryRoute);
 app.use("/api/configure/frequencies", frequencyRoute);
 app.use("/api/configure/contract-types", contractTypeRoute);
+app.use("/api/log-activities", logActivityRoutes);
 
 const PORT = process.env.PORT || 5000;
 

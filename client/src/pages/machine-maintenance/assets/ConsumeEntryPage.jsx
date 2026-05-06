@@ -1,18 +1,7 @@
-import MachineMaintenanceListView from "../components/MachineMaintenanceListView.jsx";
-import { pageTableData } from "../components/machineMaintenanceUi.jsx";
+import ConsumeStatusListView from "./ConsumeStatusListView.jsx";
 
 const ConsumeEntryPage = () => {
-  const config = pageTableData.consumeList;
-
-  return (
-    <MachineMaintenanceListView
-      title="Consume Entry"
-      columns={config.columns}
-      rows={[]}
-      showPrimaryAction={false}
-      showActions={false}
-    />
-  );
+  return <ConsumeStatusListView />;
 };
 
 export default ConsumeEntryPage;

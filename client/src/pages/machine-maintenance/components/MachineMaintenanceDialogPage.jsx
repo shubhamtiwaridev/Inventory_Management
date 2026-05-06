@@ -56,6 +56,7 @@ const MachineMaintenanceDialogPage = ({
   primaryButtonLabel,
   dialogMaxWidth = "sm",
   dialogWidth = { xs: "calc(100% - 24px)", sm: "496px" },
+  dialogHeight = { xs: "92vh", sm: "86vh" },
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -268,8 +269,8 @@ const MachineMaintenanceDialogPage = ({
             overflow: "hidden",
             width: "100%",
             maxWidth: dialogWidth,
-            height: { xs: "92vh", sm: "86vh" },
-            maxHeight: { xs: "92vh", sm: "86vh" },
+            height: dialogHeight,
+            maxHeight: dialogHeight,
             display: "flex",
             flexDirection: "column",
           },

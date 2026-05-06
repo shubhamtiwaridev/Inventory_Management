@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
-  Alert,
   Box,
   Button,
   Chip,
@@ -365,9 +364,9 @@ const MachineMaintenanceListView = ({
         </Stack>
 
         {error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Typography sx={{ color: brand.danger, mb: 2, fontWeight: 600 }}>
             {error}
-          </Alert>
+          </Typography>
         ) : null}
 
         <TableContainer
@@ -375,7 +374,7 @@ const MachineMaintenanceListView = ({
             borderRadius: 3,
             border: `1px solid ${brand.border}`,
             overflowX: "auto",
-            overflowY: "hidden",
+            overflowY: "auto",
             backgroundColor: "#FFFFFF",
           }}
         >
@@ -388,7 +387,13 @@ const MachineMaintenanceListView = ({
               borderCollapse: "collapse",
             }}
           >
-            <TableHead>
+            <TableHead
+              sx={{
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+              }}
+            >
               <TableRow
                 sx={{
                   backgroundColor: brand.softAlt,
@@ -405,7 +410,7 @@ const MachineMaintenanceListView = ({
                       }),
                       fontWeight: 800,
                       color: brand.text,
-                      minWidth: column.width || "180px",
+                      width: column.width || "180px",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -420,7 +425,7 @@ const MachineMaintenanceListView = ({
                       ...getCellSx({ isLast: true, align: "center" }),
                       fontWeight: 800,
                       color: brand.text,
-                      minWidth: "150px",
+                      width: "150px",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -495,7 +500,7 @@ const MachineMaintenanceListView = ({
                                 : column.nowrap
                                   ? "nowrap"
                                   : "normal",
-                            minWidth: column.width || "180px",
+                            width: column.width || "180px",
                           }}
                         >
                           {renderCellContent(column, value)}

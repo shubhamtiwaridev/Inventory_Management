@@ -13,6 +13,7 @@ import AssignmentIndRoundedIcon from "@mui/icons-material/AssignmentIndRounded";
 import PlaylistAddCheckRoundedIcon from "@mui/icons-material/PlaylistAddCheckRounded";
 import RemoveCircleOutlineRoundedIcon from "@mui/icons-material/RemoveCircleOutlineRounded";
 import ReportProblemRoundedIcon from "@mui/icons-material/ReportProblemRounded";
+import GppGoodRoundedIcon from "@mui/icons-material/GppGoodRounded";
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ApartmentRoundedIcon from "@mui/icons-material/ApartmentRounded";
 import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
@@ -146,6 +147,38 @@ export const machineMaintenanceSidebarItems = [
         icon: <RemoveCircleOutlineRoundedIcon />,
         path: "/machine-maintenance/consume/entry",
         description: "Manage consume entries.",
+      },
+    ],
+  },
+  {
+    label: "Complient",
+    icon: <GppGoodRoundedIcon />,
+    path: "/machine-maintenance/complient/assets",
+    description: "Manage complient records.",
+    children: [
+      {
+        label: "Assets",
+        icon: <PrecisionManufacturingRoundedIcon />,
+        path: "/machine-maintenance/complient/assets",
+        description: "Manage asset complient records.",
+      },
+      {
+        label: "Spare",
+        icon: <HandymanRoundedIcon />,
+        path: "/machine-maintenance/complient/spare",
+        description: "Manage spare complient records.",
+      },
+      {
+        label: "Task Master",
+        icon: <TaskAltRoundedIcon />,
+        path: "/machine-maintenance/complient/task-master",
+        description: "Manage task master complient records.",
+      },
+      {
+        label: "Vendor/Supplier",
+        icon: <LocalShippingRoundedIcon />,
+        path: "/machine-maintenance/complient/vendor-supplier",
+        description: "Manage vendor complient records.",
       },
     ],
   },

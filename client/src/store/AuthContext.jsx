@@ -173,12 +173,12 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const register = async (formData) => {
+  const register = useCallback(async (formData) => {
     const response = await registerUser(formData);
     return response?.data;
-  };
+  }, []);
 
-  const login = async (formData) => {
+  const login = useCallback(async (formData) => {
     const response = await loginUser(formData);
     const data = response?.data || {};
 
@@ -191,15 +191,15 @@ export const AuthProvider = ({ children }) => {
     setUser(data.user);
 
     return data;
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await logoutUser();
     } finally {
       clearAuth();
     }
-  };
+  }, [clearAuth]);
 
   const value = useMemo(
     () => ({
@@ -215,7 +215,7 @@ export const AuthProvider = ({ children }) => {
       fetchMe,
       refreshMe: restoreSession,
     }),
-    [user, authLoading, fetchMe, restoreSession],
+    [user, authLoading, register, login, logout, fetchMe, restoreSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -16,10 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
-import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
-import BarChartRoundedIcon from "@mui/icons-material/BarChartRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
@@ -32,8 +29,16 @@ import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 
 import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
-import { getCards } from "../../pages/staffs/staffApi";
-import { createLogActivity } from "../log-activity/logActivityApi.js";
+import { getCards, getStaffUsers } from "../../pages/staffs/staffApi";
+import {
+  getAssets,
+  getComplients,
+  getSpares,
+} from "../machine-maintenance/components/machineMaintenanceApi.js";
+import {
+  createLogActivity,
+  getLogActivities,
+} from "../log-activity/logActivityApi.js";
 
 const brand = {
   primary: "#106C6B",
@@ -51,127 +56,6 @@ const brand = {
     "0 0 0 1px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.10)",
 };
 
-const orders = [
-  {
-    id: "#ORD-7821",
-    product: "Wireless Headphones",
-    category: "Electronics",
-    qty: 120,
-    status: "Delivered",
-    value: "$14,400",
-  },
-  {
-    id: "#ORD-7820",
-    product: "Office Chair Pro",
-    category: "Furniture",
-    qty: 35,
-    status: "In Transit",
-    value: "$8,750",
-  },
-  {
-    id: "#ORD-7819",
-    product: "Standing Desk",
-    category: "Furniture",
-    qty: 18,
-    status: "Processing",
-    value: "$10,800",
-  },
-  {
-    id: "#ORD-7818",
-    product: "USB-C Hub 7-in-1",
-    category: "Electronics",
-    qty: 250,
-    status: "Delivered",
-    value: "$9,500",
-  },
-  {
-    id: "#ORD-7817",
-    product: "Ergonomic Keyboard",
-    category: "Electronics",
-    qty: 80,
-    status: "Low Stock",
-    value: "$6,400",
-  },
-];
-
-const categories = [
-  { name: "Electronics", units: "4,280 units", progress: 72, color: "#17A89F" },
-  { name: "Furniture", units: "1,950 units", progress: 55, color: "#106C6B" },
-  { name: "Clothing", units: "3,100 units", progress: 38, color: "#4FB8B0" },
-  { name: "Accessories", units: "2,640 units", progress: 89, color: "#0C5A58" },
-  {
-    name: "Food & Beverage",
-    units: "870 units",
-    progress: 20,
-    color: "#D97706",
-  },
-];
-
-const quickActions = [
-  {
-    title: "Add New Product",
-    icon: <AddRoundedIcon />,
-    iconBg: "#F3F5F7",
-    iconColor: "#106C6B",
-  },
-  {
-    title: "Create Purchase Order",
-    icon: <ShoppingCartRoundedIcon />,
-    iconBg: "#F3F5F7",
-    iconColor: "#12807B",
-  },
-  {
-    title: "Schedule Delivery",
-    icon: <LocalShippingRoundedIcon />,
-    iconBg: "#F3F5F7",
-    iconColor: "#0C5A58",
-  },
-  {
-    title: "Generate Report",
-    icon: <BarChartRoundedIcon />,
-    iconBg: "#F3F5F7",
-    iconColor: "#106C6B",
-  },
-];
-
-const alerts = [
-  {
-    title: "Wireless Mouse X200",
-    message: "Only 3 units left",
-    bg: "#FFF3E8",
-    border: "#F6D7B8",
-    iconColor: "#D97706",
-  },
-  {
-    title: "USB-C Cables (3m)",
-    message: "Reorder point reached",
-    bg: "#FFF8ED",
-    border: "#F4E0BE",
-    iconColor: "#D97706",
-  },
-  {
-    title: "Laptop Stand Pro",
-    message: "Supplier delay expected",
-    bg: "#FFF8ED",
-    border: "#F4E0BE",
-    iconColor: "#D97706",
-  },
-  {
-    title: "Gaming Monitor 27”",
-    message: "Demand increased this week",
-    bg: "#F8FAFC",
-    border: "#E5EAF0",
-    iconColor: "#106C6B",
-  },
-];
-
-const topProducts = [
-  { rank: "#1", name: "AirPods Pro Max", sold: "482 sold", change: "+18%" },
-  { rank: "#2", name: "MacBook Stand", sold: "371 sold", change: "+12%" },
-  { rank: "#3", name: "Logitech MX Master", sold: "294 sold", change: "+9%" },
-  { rank: "#4", name: "USB-C Hub 7-in-1", sold: "258 sold", change: "+5%" },
-];
-
 const dashboardFallbackCards = [
   {
     name: "log-activity",
@@ -185,46 +69,21 @@ const dashboardFallbackCards = [
   },
 ];
 
-const getStatusStyles = (status) => {
-  switch (status) {
-    case "Delivered":
-      return {
-        bg: "#F4F6F8",
-        color: "#0C5A58",
-      };
-
-    case "In Transit":
-      return {
-        bg: "#F5F7FA",
-        color: "#12807B",
-      };
-
-    case "Processing":
-      return {
-        bg: "#FFF3E8",
-        color: "#D97706",
-      };
-
-    case "Low Stock":
-      return {
-        bg: "#FFF1EE",
-        color: "#C2410C",
-      };
-
-    default:
-      return {
-        bg: "#F3F5F7",
-        color: "#556B6A",
-      };
-  }
-};
-
 const softCardSx = {
   borderRadius: 4,
   border: `1px solid ${brand.border}`,
   backgroundColor: "#FFFFFF",
   boxShadow: brand.shadow,
 };
+
+const sectionLabelMap = {
+  assets: "Assets",
+  spare: "Spare",
+  "task-master": "Task Master",
+  "vendor-supplier": "Vendor/Supplier",
+};
+
+const categoryPalette = ["#17A89F", "#106C6B", "#4FB8B0", "#D97706"];
 
 const isSuperadminRole = (role) =>
   String(role || "")
@@ -260,6 +119,33 @@ const mergeCardsWithFallbacks = (cards = []) => {
   return Array.from(cardMap.values());
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "-";
+
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
+const getSubtitleTone = (kind) => {
+  if (kind === "error") return "#FEF2F2";
+  if (kind === "warning") return "#FFFBEB";
+  if (kind === "success") return "#DCFCE7";
+  return "#F3F4F6";
+};
+
+const getSubtitleColor = (kind) => {
+  if (kind === "error") return "#DC2626";
+  if (kind === "warning") return "#D97706";
+  if (kind === "success") return "#166534";
+  return "#374151";
+};
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -267,23 +153,87 @@ const Dashboard = () => {
   const [availableCards, setAvailableCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dashboardSearch, setDashboardSearch] = useState("");
+  const [dashboardData, setDashboardData] = useState({
+    assets: [],
+    spares: [],
+    complaints: [],
+    staffUsers: [],
+    logs: [],
+  });
 
   useEffect(() => {
-    const loadCards = async () => {
+    const loadDashboard = async () => {
       try {
-        const response = await getCards();
-        const cards = Array.isArray(response?.data) ? response.data : [];
+        const [
+          cardsResult,
+          assetsResult,
+          sparesResult,
+          complaintsResult,
+          staffResult,
+          logsResult,
+        ] = await Promise.allSettled([
+          getCards(),
+          getAssets({ skipCache: true }),
+          getSpares(),
+          getComplients(),
+          getStaffUsers(),
+          getLogActivities({ limit: 20 }),
+        ]);
+
+        const cards =
+          cardsResult.status === "fulfilled" &&
+          Array.isArray(cardsResult.value?.data)
+            ? cardsResult.value.data
+            : [];
+        const assets =
+          assetsResult.status === "fulfilled" &&
+          Array.isArray(assetsResult.value?.data)
+            ? assetsResult.value.data
+            : [];
+        const spares =
+          sparesResult.status === "fulfilled" &&
+          Array.isArray(sparesResult.value?.data)
+            ? sparesResult.value.data
+            : [];
+        const complaints =
+          complaintsResult.status === "fulfilled" &&
+          Array.isArray(complaintsResult.value?.data)
+            ? complaintsResult.value.data
+            : [];
+        const staffUsers =
+          staffResult.status === "fulfilled" &&
+          Array.isArray(staffResult.value?.users)
+            ? staffResult.value.users
+            : [];
+        const logs =
+          logsResult.status === "fulfilled" && Array.isArray(logsResult.value)
+            ? logsResult.value
+            : [];
 
         setAvailableCards(mergeCardsWithFallbacks(cards));
+        setDashboardData({
+          assets,
+          spares,
+          complaints,
+          staffUsers,
+          logs,
+        });
       } catch (error) {
-        console.error("Failed to load cards:", error);
+        console.error("Failed to load dashboard data:", error);
         setAvailableCards(mergeCardsWithFallbacks([]));
+        setDashboardData({
+          assets: [],
+          spares: [],
+          complaints: [],
+          staffUsers: [],
+          logs: [],
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    loadCards();
+    loadDashboard();
   }, []);
 
   const isSuperadmin = useMemo(
@@ -309,6 +259,40 @@ const Dashboard = () => {
     [searchKeyword],
   );
 
+  const breakdownAssets = useMemo(
+    () =>
+      dashboardData.assets.filter(
+        (item) =>
+          String(item?.status || "")
+            .trim()
+            .toLowerCase() === "breakdown",
+      ),
+    [dashboardData.assets],
+  );
+
+  const lowStockSpares = useMemo(
+    () =>
+      dashboardData.spares.filter((item) => {
+        const currentStock = Number(item?.currentStock || 0);
+        const minQty = Number(item?.minQty || 0);
+        const reorderLevel = Number(item?.reorderLevel || 0);
+        const threshold = Math.max(minQty, reorderLevel);
+        return threshold > 0 && currentStock <= threshold;
+      }),
+    [dashboardData.spares],
+  );
+
+  const openComplaints = useMemo(
+    () =>
+      dashboardData.complaints.filter((item) => {
+        const status = String(item?.status || "")
+          .trim()
+          .toLowerCase();
+        return status !== "closed" && status !== "resolved";
+      }),
+    [dashboardData.complaints],
+  );
+
   const userAssignedCards = useMemo(() => {
     if (isSuperadmin) {
       return availableCards.map((card) => card.name);
@@ -319,65 +303,214 @@ const Dashboard = () => {
     return user.staffType.assignedCards.map((card) => card.name);
   }, [availableCards, isSuperadmin, user?.staffType?.assignedCards]);
 
+  const dashboardCardMetrics = useMemo(() => {
+    const totalStock = dashboardData.spares.reduce(
+      (sum, item) => sum + Number(item?.currentStock || 0),
+      0,
+    );
+    const activeStaffCount = dashboardData.staffUsers.filter(
+      (item) => item?.isVerified !== false,
+    ).length;
+    const pendingStaffCount = dashboardData.staffUsers.length - activeStaffCount;
+
+    return {
+      "machine-maintenance": {
+        value: String(openComplaints.length),
+        subtitle: `${breakdownAssets.length} breakdown issues`,
+        subtitleTone: openComplaints.length > 0 ? "warning" : "success",
+      },
+      spares: {
+        value: String(lowStockSpares.length),
+        subtitle: "Minimum quantity alerts",
+        subtitleTone: lowStockSpares.length > 0 ? "error" : "success",
+      },
+      inventory: {
+        value: String(totalStock),
+        subtitle: "Current spare stock",
+        subtitleTone: "success",
+      },
+      staff: {
+        value: String(activeStaffCount),
+        subtitle:
+          pendingStaffCount > 0
+            ? `${pendingStaffCount} pending verification`
+            : "Verified team members",
+        subtitleTone: pendingStaffCount > 0 ? "warning" : "success",
+      },
+      "log-activity": {
+        value: String(dashboardData.logs.length),
+        subtitle: "Recent project activity",
+        subtitleTone: "info",
+      },
+    };
+  }, [
+    dashboardData.logs.length,
+    dashboardData.spares,
+    dashboardData.staffUsers,
+    openComplaints.length,
+    breakdownAssets.length,
+    lowStockSpares.length,
+  ]);
+
   const visibleStats = useMemo(() => {
     return availableCards
       .filter((card) => isSuperadmin || userAssignedCards.includes(card.name))
       .filter((card) =>
         matchesDashboardSearch(card.name, card.title, card.subtitle, card.path),
       )
-      .map((card) => ({
-        title: card.title,
-        value: "12",
-        subtitle: card.subtitle,
-        subtitleTone: card.subtitleTone,
-        icon: getIconComponent(card.icon),
-        iconBg: card.iconBg,
-        iconColor: card.iconColor,
-        path: card.path,
-      }));
-  }, [availableCards, isSuperadmin, userAssignedCards, matchesDashboardSearch]);
+      .map((card) => {
+        const metrics = dashboardCardMetrics[card.name] || {};
+
+        return {
+          title: card.title,
+          value: metrics.value || "0",
+          subtitle: metrics.subtitle || card.subtitle,
+          subtitleTone: metrics.subtitleTone || card.subtitleTone,
+          icon: getIconComponent(card.icon),
+          iconBg: card.iconBg,
+          iconColor: card.iconColor,
+          path: card.path,
+        };
+      });
+  }, [
+    availableCards,
+    dashboardCardMetrics,
+    isSuperadmin,
+    userAssignedCards,
+    matchesDashboardSearch,
+  ]);
+
+  const complaintRows = useMemo(
+    () =>
+      dashboardData.complaints.slice(0, 5).map((item) => ({
+        id: item?._id,
+        complaintCode: item?.complaintCode || "-",
+        complaintTitle: item?.complaintTitle || "-",
+        section: sectionLabelMap[item?.section] || item?.section || "-",
+        priority: item?.priority || "-",
+        issueDate: formatDateTime(item?.issueDate),
+        createdBy: item?.createdBy || "-",
+      })),
+    [dashboardData.complaints],
+  );
+
+  const complaintCategories = useMemo(() => {
+    const total = dashboardData.complaints.length || 1;
+    const counts = dashboardData.complaints.reduce((acc, item) => {
+      const key = sectionLabelMap[item?.section] || "Other";
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(counts).map(([name, count], index) => ({
+      name,
+      units: `${count} complaints`,
+      progress: Math.max(5, Math.round((count / total) * 100)),
+      color: categoryPalette[index % categoryPalette.length],
+    }));
+  }, [dashboardData.complaints]);
+
+  const quickActions = useMemo(
+    () => [
+      {
+        title: "Register Machine",
+        path: "/machine-maintenance/assets/register",
+        icon: <AddRoundedIcon />,
+        iconBg: "#F3F5F7",
+        iconColor: "#106C6B",
+      },
+      {
+        title: "Register Spare",
+        path: "/machine-maintenance/spare-master/register",
+        icon: <HandymanRoundedIcon />,
+        iconBg: "#F3F5F7",
+        iconColor: "#12807B",
+      },
+      {
+        title: "View Breakdown",
+        path: "/machine-maintenance/consume/breakdown-list",
+        icon: <WarningAmberRoundedIcon />,
+        iconBg: "#FFF8ED",
+        iconColor: "#D97706",
+      },
+      {
+        title: "Create Complaint",
+        path: "/machine-maintenance/complient/assets",
+        icon: <AssignmentRoundedIcon />,
+        iconBg: "#F3F5F7",
+        iconColor: "#106C6B",
+      },
+    ],
+    [],
+  );
+
+  const alerts = useMemo(() => {
+    const spareAlerts = lowStockSpares.slice(0, 3).map((item) => ({
+      title: item?.spareName || item?.spareCode || "Low Stock Spare",
+      message: `Current stock ${item?.currentStock || 0} is at or below minimum ${item?.minQty || 0}`,
+      bg: "#FFF8ED",
+      border: "#F4E0BE",
+      iconColor: "#D97706",
+    }));
+
+    const breakdownAlerts = breakdownAssets.slice(0, 2).map((item) => ({
+      title: item?.assetName || item?.assetCode || "Breakdown Machine",
+      message: `${item?.department || "Department"} • ${item?.plant || "Plant"} is in breakdown`,
+      bg: "#FFF1EE",
+      border: "#F6D7D1",
+      iconColor: "#C2410C",
+    }));
+
+    return [...spareAlerts, ...breakdownAlerts].slice(0, 4);
+  }, [lowStockSpares, breakdownAssets]);
+
+  const latestUpdates = useMemo(
+    () =>
+      dashboardData.logs.slice(0, 4).map((item, index) => ({
+        rank: `#${index + 1}`,
+        name: item.targetName !== "-" ? item.targetName : item.page,
+        sold: `${item.action} • ${item.time}`,
+        change: item.userName !== "-" ? item.userName : item.role,
+      })),
+    [dashboardData.logs],
+  );
 
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) =>
+    return complaintRows.filter((row) =>
       matchesDashboardSearch(
-        order.id,
-        order.product,
-        order.category,
-        order.qty,
-        order.status,
-        order.value,
+        row.complaintCode,
+        row.complaintTitle,
+        row.section,
+        row.priority,
+        row.issueDate,
+        row.createdBy,
       ),
     );
-  }, [matchesDashboardSearch]);
+  }, [matchesDashboardSearch, complaintRows]);
 
   const filteredCategories = useMemo(() => {
-    return categories.filter((category) =>
+    return complaintCategories.filter((category) =>
       matchesDashboardSearch(category.name, category.units, category.progress),
     );
-  }, [matchesDashboardSearch]);
+  }, [matchesDashboardSearch, complaintCategories]);
 
   const filteredQuickActions = useMemo(() => {
     return quickActions.filter((action) =>
       matchesDashboardSearch(action.title),
     );
-  }, [matchesDashboardSearch]);
+  }, [matchesDashboardSearch, quickActions]);
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) =>
       matchesDashboardSearch(alert.title, alert.message),
     );
-  }, [matchesDashboardSearch]);
+  }, [matchesDashboardSearch, alerts]);
 
   const filteredTopProducts = useMemo(() => {
-    return topProducts.filter((product) =>
-      matchesDashboardSearch(
-        product.rank,
-        product.name,
-        product.sold,
-        product.change,
-      ),
+    return latestUpdates.filter((item) =>
+      matchesDashboardSearch(item.rank, item.name, item.sold, item.change),
     );
-  }, [matchesDashboardSearch]);
+  }, [matchesDashboardSearch, latestUpdates]);
 
   const hasDashboardSearchResults =
     visibleStats.length > 0 ||
@@ -388,7 +521,7 @@ const Dashboard = () => {
     filteredTopProducts.length > 0;
 
   const initials = useMemo(() => {
-    const name = user && user.name ? user.name.trim() : "";
+    const name = user?.name ? user.name.trim() : "";
 
     if (!name) return "U";
 
@@ -401,14 +534,16 @@ const Dashboard = () => {
       .toUpperCase();
   }, [user]);
 
-  const currentDate = useMemo(() => {
-    return new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  }, []);
+  const currentDate = useMemo(
+    () =>
+      new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+    [],
+  );
 
   const handleLogout = () => {
     logout();
@@ -439,11 +574,7 @@ const Dashboard = () => {
         background: brand.pageBg,
       }}
     >
-      <Box
-        sx={{
-          minHeight: "100vh",
-        }}
-      >
+      <Box sx={{ minHeight: "100vh" }}>
         <Box
           sx={{
             flex: 1,
@@ -516,6 +647,7 @@ const Dashboard = () => {
               />
 
               <IconButton
+                onClick={() => navigate("/machine-maintenance/assets/register")}
                 sx={{
                   width: 42,
                   height: 42,
@@ -541,7 +673,7 @@ const Dashboard = () => {
                   boxShadow: brand.shadow,
                 }}
               >
-                <Badge badgeContent={4} color="error">
+                <Badge badgeContent={filteredAlerts.length} color="error">
                   <NotificationsNoneRoundedIcon sx={{ color: "#D97706" }} />
                 </Badge>
               </IconButton>
@@ -573,8 +705,7 @@ const Dashboard = () => {
                 variant="body2"
                 sx={{ color: brand.textSoft, mt: 0.5 }}
               >
-                Try searching card name, order id, product, category, alert, or
-                action.
+                Try searching module, complaint, spare alert, breakdown, or update.
               </Typography>
             </Paper>
           ) : null}
@@ -628,7 +759,7 @@ const Dashboard = () => {
 
                 <Typography variant="body2" color="text.secondary">
                   {searchKeyword
-                    ? "Try searching another module, card, order, product, or alert."
+                    ? "Try searching another module, complaint, breakdown, or alert."
                     : "Please contact your administrator"}
                 </Typography>
               </Paper>
@@ -699,22 +830,8 @@ const Dashboard = () => {
                           height: 20,
                           fontSize: "0.75rem",
                           fontWeight: 500,
-                          backgroundColor:
-                            item.subtitleTone === "success"
-                              ? "#DCFCE7"
-                              : item.subtitleTone === "error"
-                                ? "#FEF2F2"
-                                : item.subtitleTone === "warning"
-                                  ? "#FFFBEB"
-                                  : "#F3F4F6",
-                          color:
-                            item.subtitleTone === "success"
-                              ? "#166534"
-                              : item.subtitleTone === "error"
-                                ? "#DC2626"
-                                : item.subtitleTone === "warning"
-                                  ? "#D97706"
-                                  : "#374151",
+                          backgroundColor: getSubtitleTone(item.subtitleTone),
+                          color: getSubtitleColor(item.subtitleTone),
                         }}
                       />
                     </Box>
@@ -747,11 +864,12 @@ const Dashboard = () => {
                 sx={{ px: 2.25, py: 2 }}
               >
                 <Typography fontWeight={800} sx={{ color: brand.text }}>
-                  Recent Orders
+                  Recent Complaints
                 </Typography>
 
                 <Button
                   size="small"
+                  onClick={() => navigate("/machine-maintenance/complient/assets")}
                   sx={{
                     borderRadius: 3,
                     textTransform: "none",
@@ -773,7 +891,7 @@ const Dashboard = () => {
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: "1.1fr 1.6fr 1fr 0.6fr 1fr 0.8fr",
+                      gridTemplateColumns: "1.1fr 1.6fr 1fr 0.8fr 1fr 0.9fr",
                       gap: 2,
                       px: 2.25,
                       py: 1.5,
@@ -783,12 +901,12 @@ const Dashboard = () => {
                     }}
                   >
                     {[
-                      "ORDER ID",
-                      "PRODUCT",
-                      "CATEGORY",
-                      "QTY",
-                      "STATUS",
-                      "VALUE",
+                      "COMPLAINT ID",
+                      "TITLE",
+                      "SECTION",
+                      "PRIORITY",
+                      "ISSUE DATE",
+                      "CREATED BY",
                     ].map((head) => (
                       <Typography
                         key={head}
@@ -816,91 +934,73 @@ const Dashboard = () => {
                       <Typography
                         sx={{ color: brand.textSoft, fontWeight: 700 }}
                       >
-                        No orders found
+                        No complaints found
                       </Typography>
                     </Box>
                   ) : (
-                    filteredOrders.map((order, index) => {
-                      const status = getStatusStyles(order.status);
-
-                      return (
-                        <Box
-                          key={order.id}
+                    filteredOrders.map((row, index) => (
+                      <Box
+                        key={row.id}
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "1.1fr 1.6fr 1fr 0.8fr 1fr 0.9fr",
+                          gap: 2,
+                          px: 2.25,
+                          py: 1.75,
+                          borderBottom:
+                            index !== filteredOrders.length - 1
+                              ? `1px solid ${brand.border}`
+                              : "none",
+                          alignItems: "center",
+                          backgroundColor: "#FFFFFF",
+                          "&:hover": {
+                            backgroundColor: "#FAFBFC",
+                          },
+                        }}
+                      >
+                        <Typography
                           sx={{
-                            display: "grid",
-                            gridTemplateColumns:
-                              "1.1fr 1.6fr 1fr 0.6fr 1fr 0.8fr",
-                            gap: 2,
-                            px: 2.25,
-                            py: 1.75,
-                            borderBottom:
-                              index !== filteredOrders.length - 1
-                                ? `1px solid ${brand.border}`
-                                : "none",
-                            alignItems: "center",
-                            backgroundColor: "#FFFFFF",
-                            "&:hover": {
-                              backgroundColor: "#FAFBFC",
-                            },
+                            color: brand.primary,
+                            fontWeight: 700,
+                            fontSize: "0.92rem",
                           }}
                         >
-                          <Typography
-                            sx={{
-                              color: brand.primary,
-                              fontWeight: 700,
-                              fontSize: "0.92rem",
-                            }}
-                          >
-                            {order.id}
-                          </Typography>
+                          {row.complaintCode}
+                        </Typography>
 
-                          <Typography
-                            fontWeight={600}
-                            sx={{ color: brand.text }}
-                          >
-                            {order.product}
-                          </Typography>
+                        <Typography fontWeight={600} sx={{ color: brand.text }}>
+                          {row.complaintTitle}
+                        </Typography>
 
-                          <Chip
-                            label={order.category}
-                            size="small"
-                            sx={{
-                              width: "fit-content",
-                              borderRadius: 2,
-                              bgcolor: "#F4F6F8",
-                              color: brand.textSoft,
-                              fontWeight: 600,
-                            }}
-                          />
+                        <Chip
+                          label={row.section}
+                          size="small"
+                          sx={{
+                            width: "fit-content",
+                            borderRadius: 2,
+                            bgcolor: "#F4F6F8",
+                            color: brand.textSoft,
+                            fontWeight: 600,
+                          }}
+                        />
 
-                          <Typography
-                            fontWeight={600}
-                            sx={{ color: brand.text }}
-                          >
-                            {order.qty}
-                          </Typography>
+                        <Typography fontWeight={600} sx={{ color: brand.text }}>
+                          {row.priority}
+                        </Typography>
 
-                          <Chip
-                            label={order.status}
-                            size="small"
-                            sx={{
-                              width: "fit-content",
-                              borderRadius: 2,
-                              bgcolor: status.bg,
-                              color: status.color,
-                              fontWeight: 700,
-                            }}
-                          />
+                        <Typography
+                          fontWeight={600}
+                          sx={{ color: brand.textSoft }}
+                        >
+                          {row.issueDate}
+                        </Typography>
 
-                          <Typography
-                            fontWeight={700}
-                            sx={{ color: brand.text }}
-                          >
-                            {order.value}
-                          </Typography>
-                        </Box>
-                      );
-                    })
+                        <Typography fontWeight={700} sx={{ color: brand.text }}>
+                          {row.createdBy}
+                        </Typography>
+                      </Box>
+                    ))
                   )}
                 </Box>
               </Box>
@@ -917,7 +1017,7 @@ const Dashboard = () => {
                 sx={{ mb: 2 }}
               >
                 <Typography fontWeight={800} sx={{ color: brand.text }}>
-                  Stock by Category
+                  Complaint by Section
                 </Typography>
 
                 <IconButton
@@ -935,7 +1035,7 @@ const Dashboard = () => {
               <Stack spacing={2}>
                 {filteredCategories.length === 0 ? (
                   <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
-                    No categories found
+                    No complaint categories found
                   </Typography>
                 ) : (
                   filteredCategories.map((item) => (
@@ -1010,6 +1110,7 @@ const Dashboard = () => {
                     <Button
                       key={item.title}
                       fullWidth
+                      onClick={() => navigate(item.path)}
                       sx={{
                         justifyContent: "flex-start",
                         p: 1.4,
@@ -1058,7 +1159,7 @@ const Dashboard = () => {
                 sx={{ mb: 2 }}
               >
                 <Typography fontWeight={800} sx={{ color: brand.text }}>
-                  Stock Alerts
+                  Critical Alerts
                 </Typography>
 
                 <Badge badgeContent={filteredAlerts.length} color="error">
@@ -1123,17 +1224,17 @@ const Dashboard = () => {
               sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
             >
               <Typography fontWeight={800} sx={{ color: brand.text, mb: 2 }}>
-                Top Products
+                Latest Updates
               </Typography>
 
               <Stack spacing={1.4}>
                 {filteredTopProducts.length === 0 ? (
                   <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
-                    No products found
+                    No updates found
                   </Typography>
                 ) : (
                   filteredTopProducts.map((item, index) => (
-                    <Box key={item.name}>
+                    <Box key={`${item.rank}-${item.name}`}>
                       <Stack
                         direction="row"
                         justifyContent="space-between"

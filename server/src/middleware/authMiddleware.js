@@ -1,7 +1,16 @@
 import jwt from "jsonwebtoken";
 import User from "../modules/auth/authModel.js";
+import { createRequestScopedLogActivity } from "../modules/log-activity/logActivityService.js";
+export { protect } from "../modules/auth/authMiddleware.js";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
+
+const isPublicRequest = (req) => {
+  const method = String(req.method || "").toUpperCase();
+  const path = String(req.originalUrl || req.url || "").split("?")[0];
+
+  return method === "GET" && path === "/api/staff-types";
+};
 
 const getTokensFromRequest = (req) => {
   const cookieToken = req.cookies?.token || null;
@@ -33,8 +42,37 @@ const getUserFromToken = async (token) => {
   }
 };
 
+const logLogoutFailure = async (req, statusCode, message) => {
+  try {
+    await createRequestScopedLogActivity({
+      req,
+      action: "Logout Failed",
+      module: "Authentication",
+      page: "Logout",
+      resource: "Logout",
+      targetName: "Logout Request",
+      method: String(req.method || "").toUpperCase(),
+      endpoint: req.originalUrl || req.url || "/api/auth/logout",
+      statusCode,
+      details: {
+        message,
+        page: "Logout",
+      },
+    });
+  } catch (error) {
+    if (isDevelopment) {
+      console.error("LOGOUT FAILURE LOG ERROR:", error.message);
+    }
+  }
+};
+
 export const protect = async (req, res, next) => {
   try {
+    if (isPublicRequest(req)) {
+      next();
+      return;
+    }
+
     const { bearerToken, cookieToken } = getTokensFromRequest(req);
 
     const user =
@@ -51,6 +89,10 @@ export const protect = async (req, res, next) => {
         });
       }
 
+      if ((req.originalUrl || req.url || "").startsWith("/api/auth/logout")) {
+        await logLogoutFailure(req, 401, "Not authorized, invalid token");
+      }
+
       return res.status(401).json({
         success: false,
         message: "Not authorized, invalid token",
@@ -60,6 +102,10 @@ export const protect = async (req, res, next) => {
     req.user = user;
     next();
   } catch {
+    if ((req.originalUrl || req.url || "").startsWith("/api/auth/logout")) {
+      await logLogoutFailure(req, 401, "Not authorized, invalid token");
+    }
+
     return res.status(401).json({
       success: false,
       message: "Not authorized, invalid token",

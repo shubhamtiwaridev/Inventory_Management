@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "./authModel.js";
 import StaffType from "../staff/stafftype/staffTypeModel.js";
+import { createRequestScopedLogActivity } from "../log-activity/logActivityService.js";
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -136,6 +137,38 @@ const getUserFromToken = async (token) => {
   }
 };
 
+const logLoginFailure = async (req, statusCode, message) => {
+  try {
+    await createRequestScopedLogActivity({
+      req,
+      action: "Login Failed",
+      module: "Authentication",
+      page: "Login",
+      resource: "Login",
+      targetName: String(req.body?.email || "")
+        .trim()
+        .toLowerCase(),
+      method: "POST",
+      endpoint: req.originalUrl || req.url || "/api/auth/login",
+      statusCode,
+      details: {
+        message,
+        page: "Login",
+      },
+      fallbackActor: {
+        userEmail: req.body?.email,
+        userName: String(req.body?.email || "")
+          .trim()
+          .toLowerCase() || "Guest",
+      },
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("LOGIN FAILURE LOG ERROR:", error.message);
+    }
+  }
+};
+
 export const register = async (req, res) => {
   try {
     const { name, email, roles, staffType, password } = req.body;
@@ -198,11 +231,33 @@ export const register = async (req, res) => {
   }
 };
 
+export const getPublicStaffTypes = async (req, res) => {
+  try {
+    const staffTypes = await StaffType.find({
+      name: { $not: /^superadmin$/i },
+    })
+      .select("_id name")
+      .sort({ name: 1 })
+      .lean();
+
+    return res.status(200).json({
+      success: true,
+      data: staffTypes,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to load staff types",
+    });
+  }
+};
+
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
+      await logLoginFailure(req, 400, "Email and password are required");
       return res.status(400).json({
         success: false,
         message: "Email and password are required",
@@ -216,6 +271,7 @@ export const login = async (req, res) => {
       .populate(staffTypePopulateOptions);
 
     if (!user) {
+      await logLoginFailure(req, 401, "Password or email are not match");
       return res.status(401).json({
         success: false,
         message: "Password or email are not match",
@@ -225,6 +281,7 @@ export const login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
+      await logLoginFailure(req, 401, "Password or email are not match");
       return res.status(401).json({
         success: false,
         message: "Password or email are not match",
@@ -232,6 +289,7 @@ export const login = async (req, res) => {
     }
 
     if (user.isVerified === false) {
+      await logLoginFailure(req, 403, "Your ID are not verified");
       return res.status(403).json({
         success: false,
         message: "Your ID are not verified",
@@ -240,6 +298,7 @@ export const login = async (req, res) => {
 
     sendTokenResponse(user, 200, res, "Login successful");
   } catch (error) {
+    await logLoginFailure(req, 500, error.message || "Login failed");
     res.status(500).json({
       success: false,
       message: error.message || "Login failed",
@@ -418,10 +477,40 @@ export const deleteUser = async (req, res) => {
 };
 
 export const logout = async (req, res) => {
+  const loggedOutUser = req.user ? buildUserResponse(req.user) : null;
+
+  try {
+    if (loggedOutUser) {
+      await createRequestScopedLogActivity({
+        req,
+        user: req.user,
+        action: "Logged Out",
+        module: "Authentication",
+        page: "Logout",
+        resource: "Logout",
+        targetName: loggedOutUser.name || loggedOutUser.email || "Logout",
+        resourceId: loggedOutUser._id ? String(loggedOutUser._id) : "",
+        method: "POST",
+        endpoint: req.originalUrl || req.url || "/api/auth/logout",
+        statusCode: 200,
+        details: {
+          message: "Logged out successfully",
+          page: "Logout",
+          targetName: loggedOutUser.name || loggedOutUser.email || "Logout",
+        },
+      });
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("LOGOUT SUCCESS LOG ERROR:", error.message);
+    }
+  }
+
   res.clearCookie("token", authCookieOptions);
 
   return res.status(200).json({
     success: true,
     message: "Logged out successfully",
+    user: loggedOutUser,
   });
 };

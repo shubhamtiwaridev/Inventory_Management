@@ -8,6 +8,11 @@ const RESOURCE_LABELS = {
   "staff-page": "Staff User",
   "staff-types": "Staff Type",
   cards: "Card",
+  login: "Login",
+  logout: "Logout",
+  register: "Register",
+  "change-password": "Password",
+  "forgot-password-notification": "Forgot Password",
   assets: "Asset",
   spares: "Spare",
   tasks: "Task",
@@ -28,15 +33,23 @@ const RESOURCE_LABELS = {
 };
 
 const AUTH_ACTIONS = {
-  login: "Logged in",
-  logout: "Logged out",
-  register: "Registered account",
-  "change-password": "Changed password",
-  "forgot-password-notification": "Requested password change",
+  login: "Logged In",
+  logout: "Logged Out",
+  register: "Registered From Public",
+  "change-password": "Changed Password",
+  "forgot-password-notification": "Forgot Password Request",
+};
+
+const AUTH_PAGE_LABELS = {
+  login: "Login",
+  logout: "Logout",
+  register: "Public Register",
+  "change-password": "Change Password",
+  "forgot-password-notification": "Forget Password",
 };
 
 const SPECIAL_ACTIONS = {
-  verify: "Verified Staff User",
+  verify: "Verified Registered Account",
   "clear-password-request": "Cleared Password Request",
   permissions: "Updated User Permissions",
   activate: "Activated Card",
@@ -115,7 +128,20 @@ const getModuleName = (businessSegments = []) => {
 };
 
 const getPageName = ({ businessSegments = [], req, responseBody }) => {
-  if (businessSegments[0] === "staff-page") return "Staff";
+  if (businessSegments[0] === "auth") {
+    return AUTH_PAGE_LABELS[businessSegments[1]] || "Authentication";
+  }
+
+  if (businessSegments[0] === "staff-page") {
+    if (businessSegments.includes("verify")) return "Verify Register Account";
+
+    if (String(req.method || "").toUpperCase() === "POST") {
+      return "Internal Register";
+    }
+
+    return "Staff";
+  }
+
   if (businessSegments[0] === "staff-types") return "Staff Type";
 
   if (businessSegments[0] === "machine-maintenance") {
@@ -141,6 +167,7 @@ const getPageName = ({ businessSegments = [], req, responseBody }) => {
       if (section === "spare") return "Spare Complaint";
       if (section === "task-master") return "Task Master Complaint";
       if (section === "vendor-supplier") return "Vendor/Supplier Complaint";
+
       return "Complaint";
     }
   }
@@ -159,6 +186,10 @@ const getAction = ({ method, endpoint }) => {
     businessSegments[0] === "auth" ? AUTH_ACTIONS[businessSegments[1]] : "";
 
   if (authAction) return authAction;
+
+  if (businessSegments[0] === "staff-page" && method === "POST") {
+    return "Registered From Internal";
+  }
 
   const specialSegment = businessSegments.find(
     (segment) => SPECIAL_ACTIONS[segment],
@@ -232,6 +263,20 @@ const getRoleValue = (user = {}) => {
   return user.roles || user.role || "";
 };
 
+const buildActorPayload = (user = {}, fallback = {}) => ({
+  userId: user?._id || user?.id || fallback.userId || null,
+  userName:
+    user?.name ||
+    user?.userName ||
+    user?.username ||
+    fallback.userName ||
+    "Guest",
+  userEmail:
+    user?.email ||
+    (fallback.userEmail ? String(fallback.userEmail).trim().toLowerCase() : ""),
+  role: getRoleValue(user) || fallback.role || "",
+});
+
 const getActor = ({ req, responseBody }) => {
   const responseUser = responseBody?.user || responseBody?.data?.user || null;
   const requestUser = req.user || null;
@@ -240,13 +285,10 @@ const getActor = ({ req, responseBody }) => {
     ? String(req.body.email).trim().toLowerCase()
     : "";
 
-  return {
-    userId: user?._id || user?.id || null,
-    userName:
-      user?.name || user?.userName || user?.username || bodyEmail || "Guest",
-    userEmail: user?.email || bodyEmail || "",
-    role: getRoleValue(user),
-  };
+  return buildActorPayload(user, {
+    userEmail: bodyEmail,
+    userName: bodyEmail || "Guest",
+  });
 };
 
 export const shouldLogActivity = (req, res) => {
@@ -257,6 +299,7 @@ export const shouldLogActivity = (req, res) => {
   if (!MUTATION_METHODS.has(method)) return false;
   if (endpoint.startsWith("/api/log-activity")) return false;
   if (endpoint.startsWith("/api/log-activities")) return false;
+  if (endpoint.startsWith("/api/auth/logout")) return false;
   if (res.statusCode >= 400) return false;
 
   return true;
@@ -274,7 +317,10 @@ export const createLogActivityFromRequest = async ({
   const businessSegments = getBusinessSegments(endpoint);
   const actor = getActor({ req, responseBody });
   const responseData =
-    responseBody?.data || responseBody?.user || responseBody?.permissions || null;
+    responseBody?.data ||
+    responseBody?.user ||
+    responseBody?.permissions ||
+    null;
   const targetName = getDisplayName(responseData, req.body);
   const page = getPageName({ businessSegments, req, responseBody });
 
@@ -301,3 +347,34 @@ export const createLogActivityFromRequest = async ({
 
 export const createManualLogActivity = async (payload = {}) =>
   LogActivity.create(payload);
+
+export const createRequestScopedLogActivity = async ({
+  req,
+  action,
+  module = "",
+  page = "",
+  resource = "",
+  targetName = "",
+  resourceId = "",
+  method = "",
+  endpoint = "",
+  statusCode = 0,
+  details = {},
+  user = null,
+  fallbackActor = {},
+}) =>
+  LogActivity.create({
+    ...buildActorPayload(user, fallbackActor),
+    action,
+    module,
+    page,
+    resource,
+    targetName,
+    resourceId,
+    method,
+    endpoint,
+    statusCode,
+    ipAddress: req?.ip || req?.headers?.["x-forwarded-for"] || "",
+    userAgent: req?.get?.("user-agent") || "",
+    details,
+  });

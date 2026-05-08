@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../../store/AuthContext";
 import logo from "../../assets/decostyle-logo.png";
@@ -55,6 +55,7 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const hasLoadedStaffTypesRef = useRef(false);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -67,27 +68,60 @@ const Register = () => {
   }, [successMessage]);
 
   useEffect(() => {
+    if (hasLoadedStaffTypesRef.current) {
+      return undefined;
+    }
+
+    hasLoadedStaffTypesRef.current = true;
+
     const loadStaffTypes = async () => {
       try {
         setLoadingRoles(true);
+        setError("");
 
-        const response = await authFetch(`${API_BASE_URL}/staff-types`);
+        const endpoints = [
+          `${API_BASE_URL}/auth/public-staff-types`,
+          `${API_BASE_URL}/staff-types`,
+        ];
 
-        const data = await response.json().catch(() => ({}));
+        let loadedList = [];
+        let lastErrorMessage = "Failed to load staff types";
 
-        if (!response.ok) {
-          throw new Error(data.message || "Failed to load staff types");
+        for (const endpoint of endpoints) {
+          const response = await authFetch(endpoint);
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            lastErrorMessage =
+              data.message || `Failed to load staff types from ${endpoint}`;
+
+            if (response.status === 404 || response.status === 401) {
+              continue;
+            }
+
+            throw new Error(lastErrorMessage);
+          }
+
+          loadedList = Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.staffTypes)
+              ? data.staffTypes
+              : Array.isArray(data)
+                ? data
+                : [];
+
+          break;
         }
 
-        const list = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data?.staffTypes)
-            ? data.staffTypes
-            : Array.isArray(data)
-              ? data
-              : [];
+        if (!loadedList.length) {
+          throw new Error(
+            lastErrorMessage === "Not authorized, invalid token"
+              ? "Staff types are not available yet. Restart the server and refresh this page."
+              : "Failed to load staff types. Restart the server and refresh this page.",
+          );
+        }
 
-        setStaffTypes(list);
+        setStaffTypes(loadedList);
       } catch (err) {
         setError(err.message || "Failed to load roles");
       } finally {
@@ -96,6 +130,7 @@ const Register = () => {
     };
 
     loadStaffTypes();
+    return undefined;
   }, []);
 
   const handleChange = (e) => {

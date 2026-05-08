@@ -26,6 +26,11 @@ const formatValue = (value) => {
   return value;
 };
 
+const isMissingValue = (value) => {
+  const text = String(value ?? "").trim().toLowerCase();
+  return !text || text === "-" || text === "guest";
+};
+
 const normalizeAction = (value) => {
   const cleanValue = String(value || "").trim();
 
@@ -33,18 +38,16 @@ const normalizeAction = (value) => {
 
   const lowered = cleanValue.toLowerCase();
 
-  if (lowered.startsWith("created")) return "Created";
-  if (lowered.startsWith("updated")) return "Updated";
-  if (lowered.startsWith("deleted")) return "Deleted";
-  if (lowered.startsWith("opened")) return "Opened";
-  if (lowered.startsWith("verified")) return "Verified";
-  if (lowered.startsWith("cleared")) return "Cleared";
-  if (lowered.startsWith("logged in")) return "Logged In";
-  if (lowered.startsWith("logged out")) return "Logged Out";
+  if (lowered === "created") return "Created";
+  if (lowered === "updated") return "Updated";
+  if (lowered === "deleted") return "Deleted";
+  if (lowered === "opened") return "Opened";
+  if (lowered === "cleared") return "Cleared";
+  if (lowered === "logged in") return "Logged In";
+  if (lowered === "logged out") return "Logged Out";
 
   return cleanValue;
 };
-
 export const mapLogActivityRow = (item) => ({
   id: item._id,
   userEmail: formatValue(item.userEmail),
@@ -58,6 +61,71 @@ export const mapLogActivityRow = (item) => ({
   endpoint: formatValue(item.endpoint),
   time: formatDateTime(item.createdAt),
 });
+
+const canReuseActorForLogout = (candidate, logoutItem) => {
+  if (!candidate || candidate === logoutItem) return false;
+
+  const action = String(candidate.action || "")
+    .trim()
+    .toLowerCase();
+
+  if (action === "logged out" || action === "logout failed") return false;
+  if (isMissingValue(candidate.userName) && isMissingValue(candidate.userEmail)) {
+    return false;
+  }
+
+  const logoutTime = new Date(logoutItem?.createdAt || 0).getTime();
+  const candidateTime = new Date(candidate?.createdAt || 0).getTime();
+
+  if (!logoutTime || !candidateTime) return false;
+
+  return Math.abs(logoutTime - candidateTime) <= 5 * 60 * 1000;
+};
+
+const resolveLogoutActor = (logs, index) => {
+  const current = logs[index];
+
+  if (!current) return current;
+
+  const action = String(current.action || "")
+    .trim()
+    .toLowerCase();
+
+  if (action !== "logged out") return current;
+  if (!isMissingValue(current.userName) || !isMissingValue(current.userEmail)) {
+    return current;
+  }
+
+  for (let offset = 1; offset <= 6; offset += 1) {
+    const previousCandidate = logs[index - offset];
+
+    if (canReuseActorForLogout(previousCandidate, current)) {
+      return {
+        ...current,
+        userName: previousCandidate.userName,
+        userEmail: previousCandidate.userEmail,
+        role: previousCandidate.role,
+        targetName:
+          current.targetName || previousCandidate.userName || previousCandidate.userEmail,
+      };
+    }
+
+    const nextCandidate = logs[index + offset];
+
+    if (canReuseActorForLogout(nextCandidate, current)) {
+      return {
+        ...current,
+        userName: nextCandidate.userName,
+        userEmail: nextCandidate.userEmail,
+        role: nextCandidate.role,
+        targetName:
+          current.targetName || nextCandidate.userName || nextCandidate.userEmail,
+      };
+    }
+  }
+
+  return current;
+};
 
 const request = async (path, options = {}) => {
   const response = await authFetch(buildApiUrl(path), options);
@@ -78,8 +146,11 @@ export const getLogActivities = async ({ limit = 500, search = "" } = {}) => {
   }
 
   const response = await request(`/log-activities?${params.toString()}`);
+  const logs = getResponseList(response);
 
-  return getResponseList(response).map(mapLogActivityRow);
+  return logs
+    .map((item, index) => resolveLogoutActor(logs, index))
+    .map(mapLogActivityRow);
 };
 
 export const deleteLogActivity = async (id) => {

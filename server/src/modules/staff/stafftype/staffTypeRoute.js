@@ -9,7 +9,7 @@ import {
 
 const router = express.Router();
 
-router.get("/", protect, getStaffTypes);
+router.get("/", getStaffTypes);
 router.post("/", protect, createStaffType);
 router.put("/:id", protect, updateStaffType);
 router.delete("/:id", protect, deleteStaffType);

@@ -209,6 +209,8 @@ const MachineMaintenanceListView = ({
   onPrimaryAction,
   showPrimaryAction = true,
   showActions = true,
+  showDownloadButton = true,
+  toolbarActions = null,
   onEdit,
   onDelete,
   onRefresh,
@@ -342,15 +344,19 @@ const MachineMaintenanceListView = ({
               Refresh
             </Button>
 
-            <Button
-              variant="outlined"
-              startIcon={<DownloadRoundedIcon />}
-              onClick={handleDownload}
-              sx={outlinedActionButtonSx}
-              disabled={loading || filteredRows.length === 0}
-            >
-              Download
-            </Button>
+            {showDownloadButton ? (
+              <Button
+                variant="outlined"
+                startIcon={<DownloadRoundedIcon />}
+                onClick={handleDownload}
+                sx={outlinedActionButtonSx}
+                disabled={loading || filteredRows.length === 0}
+              >
+                Download
+              </Button>
+            ) : null}
+
+            {toolbarActions}
           </Stack>
 
           <TextField

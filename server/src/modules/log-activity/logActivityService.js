@@ -13,6 +13,7 @@ const RESOURCE_LABELS = {
   tasks: "Task",
   "user-allocations": "User Allocation",
   vendors: "Vendor",
+  complients: "Complaint",
   departments: "Department",
   "shift-timings": "Shift Timing",
   "plant-sites": "Plant Site",
@@ -23,6 +24,7 @@ const RESOURCE_LABELS = {
   frequencies: "Frequency",
   "contract-types": "Contract Type",
   "log-activity": "Log Activity",
+  "log-activities": "Log Activity",
 };
 
 const AUTH_ACTIONS = {
@@ -96,6 +98,10 @@ const getResourceSegment = (businessSegments = []) => {
 
 const getModuleName = (businessSegments = []) => {
   if (businessSegments[0] === "auth") return "Authentication";
+  if (businessSegments[0] === "staff-page") return "Staff";
+  if (businessSegments[0] === "staff-types") return "Staff";
+  if (businessSegments[0] === "machine-maintenance")
+    return "Machine Maintenance";
 
   const moduleSegments = businessSegments.filter(
     (segment) => !OBJECT_ID_PATTERN.test(segment) && !SPECIAL_ACTIONS[segment],
@@ -106,6 +112,44 @@ const getModuleName = (businessSegments = []) => {
   return moduleSegments
     .map((segment) => RESOURCE_LABELS[segment] || titleCase(segment))
     .join(" / ");
+};
+
+const getPageName = ({ businessSegments = [], req, responseBody }) => {
+  if (businessSegments[0] === "staff-page") return "Staff";
+  if (businessSegments[0] === "staff-types") return "Staff Type";
+
+  if (businessSegments[0] === "machine-maintenance") {
+    const feature = businessSegments[1] || "";
+
+    if (feature === "assets") return "Machine Registration";
+    if (feature === "spares") return "Spare Registration";
+    if (feature === "tasks") return "Task Schedule";
+    if (feature === "user-allocations") return "User Allocation";
+    if (feature === "vendors") return "Vendor Registration";
+
+    if (feature === "complients") {
+      const section = String(
+        responseBody?.data?.section ||
+          req.body?.section ||
+          req.query?.section ||
+          "",
+      )
+        .trim()
+        .toLowerCase();
+
+      if (section === "assets") return "Assets Complaint";
+      if (section === "spare") return "Spare Complaint";
+      if (section === "task-master") return "Task Master Complaint";
+      if (section === "vendor-supplier") return "Vendor/Supplier Complaint";
+      return "Complaint";
+    }
+  }
+
+  if (businessSegments[0] === "configure") {
+    return singularize(businessSegments[1] || "Configure");
+  }
+
+  return getModuleName(businessSegments);
 };
 
 const getAction = ({ method, endpoint }) => {
@@ -122,9 +166,7 @@ const getAction = ({ method, endpoint }) => {
 
   if (specialSegment) return SPECIAL_ACTIONS[specialSegment];
 
-  const resource = singularize(getResourceSegment(businessSegments));
-
-  return `${METHOD_ACTIONS[method] || "Updated"} ${resource}`;
+  return METHOD_ACTIONS[method] || "Updated";
 };
 
 const getResourceId = ({ req, responseBody }) => {
@@ -157,6 +199,8 @@ const getDisplayName = (...records) => {
     "employeeId",
     "vendorName",
     "vendorCode",
+    "complaintTitle",
+    "complaintCode",
     "department",
     "plantSite",
     "shiftTiming",
@@ -212,6 +256,7 @@ export const shouldLogActivity = (req, res) => {
   if (!endpoint.startsWith("/api")) return false;
   if (!MUTATION_METHODS.has(method)) return false;
   if (endpoint.startsWith("/api/log-activity")) return false;
+  if (endpoint.startsWith("/api/log-activities")) return false;
   if (res.statusCode >= 400) return false;
 
   return true;
@@ -228,14 +273,18 @@ export const createLogActivityFromRequest = async ({
   const endpoint = req.originalUrl || req.url || "";
   const businessSegments = getBusinessSegments(endpoint);
   const actor = getActor({ req, responseBody });
-  const responseData = responseBody?.data || responseBody?.user || null;
+  const responseData =
+    responseBody?.data || responseBody?.user || responseBody?.permissions || null;
   const targetName = getDisplayName(responseData, req.body);
+  const page = getPageName({ businessSegments, req, responseBody });
 
   return LogActivity.create({
     ...actor,
     action: getAction({ method, endpoint }),
     module: getModuleName(businessSegments),
+    page,
     resource: singularize(getResourceSegment(businessSegments)),
+    targetName,
     resourceId: getResourceId({ req, responseBody }),
     method,
     endpoint,
@@ -244,6 +293,7 @@ export const createLogActivityFromRequest = async ({
     userAgent: req.get("user-agent") || "",
     details: {
       message: responseBody?.message || "",
+      page,
       targetName,
     },
   });

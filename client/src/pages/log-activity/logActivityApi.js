@@ -26,14 +26,35 @@ const formatValue = (value) => {
   return value;
 };
 
+const normalizeAction = (value) => {
+  const cleanValue = String(value || "").trim();
+
+  if (!cleanValue) return "-";
+
+  const lowered = cleanValue.toLowerCase();
+
+  if (lowered.startsWith("created")) return "Created";
+  if (lowered.startsWith("updated")) return "Updated";
+  if (lowered.startsWith("deleted")) return "Deleted";
+  if (lowered.startsWith("opened")) return "Opened";
+  if (lowered.startsWith("verified")) return "Verified";
+  if (lowered.startsWith("cleared")) return "Cleared";
+  if (lowered.startsWith("logged in")) return "Logged In";
+  if (lowered.startsWith("logged out")) return "Logged Out";
+
+  return cleanValue;
+};
+
 export const mapLogActivityRow = (item) => ({
   id: item._id,
   userEmail: formatValue(item.userEmail),
   userName: formatValue(item.userName),
   role: formatValue(item.role),
-  action: formatValue(item.action),
+  action: normalizeAction(item.action),
   module: formatValue(item.module),
+  page: formatValue(item.page),
   resource: formatValue(item.resource),
+  targetName: formatValue(item.targetName || item.details?.targetName),
   endpoint: formatValue(item.endpoint),
   time: formatDateTime(item.createdAt),
 });
@@ -56,7 +77,7 @@ export const getLogActivities = async ({ limit = 500, search = "" } = {}) => {
     params.set("search", search);
   }
 
-  const response = await request(`/log-activity?${params.toString()}`);
+  const response = await request(`/log-activities?${params.toString()}`);
 
   return getResponseList(response).map(mapLogActivityRow);
 };
@@ -64,7 +85,16 @@ export const getLogActivities = async ({ limit = 500, search = "" } = {}) => {
 export const deleteLogActivity = async (id) => {
   if (!id) return { success: true };
 
-  return request(`/log-activity/${id}`, {
+  return request(`/log-activities/${id}`, {
     method: "DELETE",
   });
 };
+
+export const createLogActivity = async (payload = {}) =>
+  request("/log-activities", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });

@@ -33,7 +33,17 @@ const logActivitySchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
+    page: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     resource: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    targetName: {
       type: String,
       trim: true,
       default: "",

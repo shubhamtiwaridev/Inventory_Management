@@ -568,6 +568,7 @@ export const deleteStaffUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "User deleted successfully",
+      user: buildUserResponse(user),
     });
   } catch (error) {
     res.status(500).json({

@@ -204,6 +204,7 @@ const MachineMaintenanceListView = ({
   title,
   columns = [],
   rows = [],
+  actionColumnLabel = "Action",
   primaryButtonLabel = "New",
   onPrimaryAction,
   showPrimaryAction = true,
@@ -223,7 +224,9 @@ const MachineMaintenanceListView = ({
   const canUpdate = hasActionPermission(user, location.pathname, "update");
   const canDelete = hasActionPermission(user, location.pathname, "delete");
 
-  const canShowActionColumn = showActions && (canUpdate || canDelete);
+  const canShowEditAction = showActions && canUpdate && Boolean(onEdit);
+  const canShowDeleteAction = showActions && canDelete && Boolean(onDelete);
+  const canShowActionColumn = canShowEditAction || canShowDeleteAction;
   const keyword = search.trim().toLowerCase();
 
   const filteredRows = useMemo(
@@ -291,12 +294,20 @@ const MachineMaintenanceListView = ({
         border: `1px solid ${brand.border}`,
         backgroundColor: "#FFFFFF",
         boxShadow: "none",
+        height: "100%",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
         overflow: "hidden",
       }}
     >
       <Box
         sx={{
           p: { xs: 1.5, sm: 2 },
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Stack
@@ -373,6 +384,9 @@ const MachineMaintenanceListView = ({
           sx={{
             borderRadius: 3,
             border: `1px solid ${brand.border}`,
+            flex: 1,
+            minHeight: 0,
+            maxHeight: "100%",
             overflowX: "auto",
             overflowY: "auto",
             backgroundColor: "#FFFFFF",
@@ -429,7 +443,7 @@ const MachineMaintenanceListView = ({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    Action
+                    {actionColumnLabel}
                   </TableCell>
                 ) : null}
               </TableRow>
@@ -518,11 +532,10 @@ const MachineMaintenanceListView = ({
                           spacing={1}
                           justifyContent="center"
                         >
-                          {canUpdate ? (
+                          {canShowEditAction ? (
                             <IconButton
                               sx={actionIconButtonSx}
                               onClick={() => handleEdit(row)}
-                              disabled={!onEdit}
                             >
                               <EditRoundedIcon
                                 sx={{
@@ -533,11 +546,10 @@ const MachineMaintenanceListView = ({
                             </IconButton>
                           ) : null}
 
-                          {canDelete ? (
+                          {canShowDeleteAction ? (
                             <IconButton
                               sx={actionIconButtonSx}
                               onClick={() => handleDelete(row)}
-                              disabled={!onDelete}
                             >
                               <DeleteOutlineRoundedIcon
                                 sx={{ fontSize: 18, color: brand.danger }}

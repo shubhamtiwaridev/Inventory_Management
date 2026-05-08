@@ -165,6 +165,7 @@ export const deleteStaffType = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Staff type deleted successfully",
+      data: staffType,
     });
   } catch (error) {
     res.status(500).json({

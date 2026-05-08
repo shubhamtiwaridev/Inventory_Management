@@ -191,6 +191,7 @@ export const deleteSpare = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Spare deleted successfully",
+      data: spare,
     });
   } catch (error) {
     res.status(500).json({

@@ -187,7 +187,6 @@ const StaffType = () => {
 
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -198,8 +197,6 @@ const StaffType = () => {
     name: "",
     assignedCards: [],
   });
-
-  const rowsPerPage = 10;
 
   const isSuperadminStaffType = useMemo(
     () =>
@@ -290,22 +287,8 @@ const StaffType = () => {
     });
   }, [rows, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const visibleRows = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredRows.slice(start, start + rowsPerPage);
-  }, [filteredRows, page]);
-
   const handleRefresh = async () => {
     setSearch("");
-    setPage(1);
     setShowForm(false);
     setErrorMessage("");
     await loadStaffTypes();
@@ -415,7 +398,6 @@ const StaffType = () => {
         const newRow = response?.data || response?.staffType || response;
 
         setRows((prev) => [newRow, ...prev]);
-        setPage(1);
       }
 
       resetForm();
@@ -595,7 +577,6 @@ const StaffType = () => {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1);
                 }}
                 placeholder="Search Word"
                 size="small"
@@ -808,6 +789,7 @@ const StaffType = () => {
               sx={{
                 borderRadius: 3,
                 border: `1px solid ${brand.border}`,
+                flex: 1,
                 minHeight: 0,
                 maxHeight: "100%",
                 overflowX: "auto",
@@ -906,7 +888,7 @@ const StaffType = () => {
                         Loading...
                       </TableCell>
                     </TableRow>
-                  ) : visibleRows.length === 0 ? (
+                  ) : filteredRows.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={5}
@@ -917,7 +899,7 @@ const StaffType = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    visibleRows.map((row) => (
+                    filteredRows.map((row) => (
                       <TableRow
                         key={row._id}
                         hover

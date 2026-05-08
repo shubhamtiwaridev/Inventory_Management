@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { GlobalStyles } from "@mui/material";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import PermissionRoute from "./routes/PermissionRoute.jsx";
@@ -63,39 +64,52 @@ const withPermissionRoute = (
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+    <>
+      <GlobalStyles
+        styles={{
+          "*::-webkit-scrollbar:vertical": {
+            width: 0,
+            display: "none",
+          },
+          "*::-webkit-scrollbar:horizontal": {
+            height: 10,
+            display: "block",
+          },
+        }}
+      />
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-      <Route element={<PublicRoute />}>
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/forgot-password" element={<ForgetPassword />} />
-      </Route>
+        <Route element={<PublicRoute />}>
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgetPassword />} />
+        </Route>
 
-      <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/orders" element={<Dashboard />} />
-        <Route path="/suppliers" element={<Dashboard />} />
-        <Route path="/warehouses" element={<Dashboard />} />
-        <Route path="/categories" element={<Dashboard />} />
-        <Route path="/reports" element={<Dashboard />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/orders" element={<Dashboard />} />
+          <Route path="/suppliers" element={<Dashboard />} />
+          <Route path="/warehouses" element={<Dashboard />} />
+          <Route path="/categories" element={<Dashboard />} />
+          <Route path="/reports" element={<Dashboard />} />
 
-        <Route path="/staff" element={<StaffPage />} />
-        <Route path="/staff-list" element={<StaffList />} />
-        <Route path="/staff-type" element={<StaffType />} />
-        <Route path="/log-activity" element={<LogActivityPage />} />
+          <Route path="/staff" element={<StaffPage />} />
+          <Route path="/staff-list" element={<StaffList />} />
+          <Route path="/staff-type" element={<StaffType />} />
+          <Route path="/log-activity" element={<LogActivityPage />} />
 
-        <Route
-          path="/machine-maintenance"
-          element={
-            <PermissionRoute
-              sidebarItems={machineMaintenanceSidebarItems}
-              requireModuleAccess
-            >
-              <MachineMaintenancePage />
-            </PermissionRoute>
-          }
-        >
+          <Route
+            path="/machine-maintenance"
+            element={
+              <PermissionRoute
+                sidebarItems={machineMaintenanceSidebarItems}
+                requireModuleAccess
+              >
+                <MachineMaintenancePage />
+              </PermissionRoute>
+            }
+          >
           <Route
             index
             element={<Navigate to="/machine-maintenance/assets/list" replace />}
@@ -392,42 +406,46 @@ function App() {
               "Contract Type",
             )}
           />
-        </Route>
+          </Route>
 
-        <Route
-          path="/spares"
-          element={
-            <PermissionRoute
-              sidebarItems={sparesSidebarItems}
-              requireModuleAccess
-            >
-              <SparesPage />
-            </PermissionRoute>
-          }
-        />
-
-        <Route
-          path="/inventory/*"
-          element={
-            <PermissionRoute
-              sidebarItems={inventorySidebarItems}
-              requireModuleAccess
-            >
-              <InventoryPage />
-            </PermissionRoute>
-          }
-        >
           <Route
-            path="goodslist/:tabKey"
+            path="/spares"
             element={
-              <PermissionRoute sidebarItems={inventorySidebarItems} requireModuleAccess>
-                <InventoryMasterListPage />
+              <PermissionRoute
+                sidebarItems={sparesSidebarItems}
+                requireModuleAccess
+              >
+                <SparesPage />
               </PermissionRoute>
             }
           />
+
+          <Route
+            path="/inventory/*"
+            element={
+              <PermissionRoute
+                sidebarItems={inventorySidebarItems}
+                requireModuleAccess
+              >
+                <InventoryPage />
+              </PermissionRoute>
+            }
+          >
+            <Route
+              path="goodslist/:tabKey"
+              element={
+                <PermissionRoute
+                  sidebarItems={inventorySidebarItems}
+                  requireModuleAccess
+                >
+                  <InventoryMasterListPage />
+                </PermissionRoute>
+              }
+            />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

@@ -221,6 +221,7 @@ export const deleteComplient = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Complaint deleted successfully",
+      data: complient,
     });
   } catch (error) {
     res.status(500).json({

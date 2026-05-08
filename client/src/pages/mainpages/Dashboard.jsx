@@ -33,6 +33,7 @@ import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { getCards } from "../../pages/staffs/staffApi";
+import { createLogActivity } from "../log-activity/logActivityApi.js";
 
 const brand = {
   primary: "#106C6B",
@@ -414,6 +415,23 @@ const Dashboard = () => {
     navigate("/login");
   };
 
+  const handleOpenCard = (item) => {
+    createLogActivity({
+      action: "Opened",
+      module: "Dashboard",
+      page: item.title,
+      resource: "Card",
+      targetName: "Dashboard Card",
+      endpoint: item.path,
+      details: {
+        source: "dashboard",
+        cardTitle: item.title,
+      },
+    }).catch(() => {});
+
+    navigate(item.path);
+  };
+
   return (
     <Box
       sx={{
@@ -619,7 +637,7 @@ const Dashboard = () => {
                 <Paper
                   key={item.title}
                   elevation={0}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => handleOpenCard(item)}
                   sx={{
                     ...softCardSx,
                     p: 2.25,

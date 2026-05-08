@@ -194,6 +194,7 @@ export const deleteVendor = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Vendor deleted successfully",
+      data: vendor,
     });
   } catch (error) {
     res.status(500).json({

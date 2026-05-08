@@ -2221,6 +2221,7 @@ const StaffPage = () => {
               sx={{
                 borderRadius: 3,
                 border: `1px solid ${brand.border}`,
+                flex: 1,
                 minHeight: 0,
                 maxHeight: "100%",
                 overflowX: "auto",

@@ -117,7 +117,10 @@ const createMasterController = (Model, fieldName, label) => {
         return res.status(404).json({ message: `${label} not found` });
       }
 
-      res.status(200).json({ message: `${label} deleted successfully` });
+      res.status(200).json({
+        message: `${label} deleted successfully`,
+        data: item,
+      });
     } catch (error) {
       res
         .status(500)

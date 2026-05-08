@@ -27,6 +27,7 @@ import taskCategoryRoute from "./modules/configure/task-category/taskCategoryRou
 import frequencyRoute from "./modules/configure/frequency/frequencyRoute.js";
 import contractTypeRoute from "./modules/configure/contract-type/contractTypeRoute.js";
 import logActivityRoutes from "./modules/log-activity/logActivityRoute.js";
+import activityLogger from "./modules/log-activity/logActivityMiddleware.js";
 
 dotenv.config();
 connectDB();
@@ -73,6 +74,7 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(activityLogger);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.get("/", (req, res) => {

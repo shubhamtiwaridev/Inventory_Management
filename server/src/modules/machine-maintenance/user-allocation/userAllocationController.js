@@ -178,6 +178,7 @@ export const deleteUserAllocation = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "User allocation deleted successfully",
+      data: userAllocation,
     });
   } catch (error) {
     res.status(500).json({

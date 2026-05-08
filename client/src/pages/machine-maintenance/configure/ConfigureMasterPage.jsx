@@ -70,15 +70,12 @@ const ConfigureMasterPage = ({
 
   const [rows, setRows] = useState([]);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [formData, setFormData] = useState(buildInitialFormData(config.fields));
-
-  const rowsPerPage = 10;
 
   const canCreate = hasActionPermission(user, location.pathname, "create");
   const canUpdate = hasActionPermission(user, location.pathname, "update");
@@ -133,22 +130,8 @@ const ConfigureMasterPage = ({
     );
   }, [rows, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
-
-  const visibleRows = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredRows.slice(start, start + rowsPerPage);
-  }, [filteredRows, page]);
-
   const handleRefresh = async () => {
     setSearch("");
-    setPage(1);
     setShowForm(false);
     setErrorMessage("");
     await loadRows();
@@ -264,7 +247,6 @@ const ConfigureMasterPage = ({
         }
 
         await createItem(payload);
-        setPage(1);
       }
 
       await loadRows();
@@ -293,6 +275,8 @@ const ConfigureMasterPage = ({
       elevation={0}
       sx={{
         ...softCardSx,
+        height: "100%",
+        minHeight: 0,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -301,6 +285,8 @@ const ConfigureMasterPage = ({
       <Box
         sx={{
           p: { xs: 1.5, sm: 2 },
+          flex: 1,
+          minHeight: 0,
           display: "flex",
           flexDirection: "column",
         }}
@@ -363,7 +349,6 @@ const ConfigureMasterPage = ({
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setPage(1);
             }}
             placeholder={config.searchPlaceholder || "Search Word"}
             size="small"
@@ -486,6 +471,9 @@ const ConfigureMasterPage = ({
           sx={{
             borderRadius: 3,
             border: `1px solid ${brand.border}`,
+            flex: 1,
+            minHeight: 0,
+            maxHeight: "100%",
             overflowX: "auto",
             overflowY: "auto",
             backgroundColor: "#FFFFFF",
@@ -571,7 +559,7 @@ const ConfigureMasterPage = ({
                     </Stack>
                   </TableCell>
                 </TableRow>
-              ) : visibleRows.length === 0 ? (
+              ) : filteredRows.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={
@@ -584,7 +572,7 @@ const ConfigureMasterPage = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                visibleRows.map((row) => (
+                filteredRows.map((row) => (
                   <TableRow
                     key={row.id}
                     hover

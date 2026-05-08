@@ -1,4 +1,5 @@
 import LogActivity from "./logActivityModel.js";
+import { createManualLogActivity } from "./logActivityService.js";
 
 const escapeRegex = (value) =>
   String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -25,7 +26,9 @@ export const getLogActivities = async (req, res) => {
         { role: regex },
         { action: regex },
         { module: regex },
+        { page: regex },
         { resource: regex },
+        { targetName: regex },
         { endpoint: regex },
       ];
     }
@@ -92,6 +95,57 @@ export const clearLogActivities = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Failed to clear activity logs",
+    });
+  }
+};
+
+export const createLogActivity = async (req, res) => {
+  try {
+    const action = String(req.body?.action || "").trim() || "Opened";
+    const module = String(req.body?.module || "").trim();
+    const page = String(req.body?.page || "").trim();
+    const resource = String(req.body?.resource || "").trim() || "Card";
+    const targetName = String(req.body?.targetName || "").trim();
+    const endpoint = String(req.body?.endpoint || "").trim();
+    const details =
+      req.body?.details && typeof req.body.details === "object"
+        ? req.body.details
+        : {};
+
+    if (!page) {
+      return res.status(400).json({
+        success: false,
+        message: "Page is required",
+      });
+    }
+
+    const log = await createManualLogActivity({
+      userId: req.user?._id || null,
+      userName: req.user?.name || req.user?.username || req.user?.email || "Guest",
+      userEmail: req.user?.email || "",
+      role: req.user?.roles || req.user?.role || "",
+      action,
+      module,
+      page,
+      resource,
+      targetName,
+      endpoint,
+      method: "OPEN",
+      statusCode: 200,
+      ipAddress: req.ip || req.headers["x-forwarded-for"] || "",
+      userAgent: req.get("user-agent") || "",
+      details,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Activity log created successfully",
+      data: log,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create activity log",
     });
   }
 };

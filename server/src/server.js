@@ -28,6 +28,7 @@ import frequencyRoute from "./modules/configure/frequency/frequencyRoute.js";
 import contractTypeRoute from "./modules/configure/contract-type/contractTypeRoute.js";
 import logActivityRoutes from "./modules/log-activity/logActivityRoute.js";
 import activityLogger from "./modules/log-activity/logActivityMiddleware.js";
+import goodsListRoutes from "./modules/inventory/goods-list/goodsListRoute.js";
 
 dotenv.config();
 connectDB();
@@ -85,6 +86,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/staff-types", staffTypeRoutes);
 app.use("/api/staff-page", staffPageRoutes);
 app.use("/api/cards", cardRoutes);
+app.use("/api/inventory/goods-list", goodsListRoutes);
 
 app.use("/api/machine-maintenance/assets", assetRoutes);
 app.use("/api/machine-maintenance/spares", spareRoutes);

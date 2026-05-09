@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../modules/auth/authModel.js";
 import { createRequestScopedLogActivity } from "../modules/log-activity/logActivityService.js";
-export { protect } from "../modules/auth/authMiddleware.js";
 
 const isDevelopment = process.env.NODE_ENV !== "production";
 

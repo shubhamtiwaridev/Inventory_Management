@@ -1,6 +1,20 @@
 import Card from "./cardModel.js";
 
 const RESTRICTED_STAFF_TYPE_CARD_NAMES = new Set(["staff"]);
+const SYSTEM_DEFAULT_CARDS = [
+  {
+    name: "log-activity",
+    title: "Log Activity",
+    path: "/log-activity",
+    icon: "AssignmentRoundedIcon",
+    iconBg: "#F3F0FF",
+    iconColor: "#5B21B6",
+    subtitle: "Track system actions",
+    subtitleTone: "info",
+    allowInStaffTypes: true,
+    createdBy: "System",
+  },
+];
 
 const shouldAllowInStaffTypesByDefault = ({ name = "", path = "" } = {}) => {
   const normalizedName = String(name || "")
@@ -21,8 +35,26 @@ const shouldAllowInStaffTypesByDefault = ({ name = "", path = "" } = {}) => {
   return true;
 };
 
+const ensureDefaultCards = async () => {
+  if (SYSTEM_DEFAULT_CARDS.length === 0) return;
+
+  await Promise.all(
+    SYSTEM_DEFAULT_CARDS.map((card) =>
+      Card.updateOne(
+        { name: card.name },
+        {
+          $setOnInsert: card,
+        },
+        { upsert: true },
+      ),
+    ),
+  );
+};
+
 export const getCards = async (req, res) => {
   try {
+    await ensureDefaultCards();
+
     const cards = await Card.find({ isActive: true })
       .sort({ createdAt: -1 })
       .lean();

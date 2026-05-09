@@ -30,6 +30,9 @@ const RESOURCE_LABELS = {
   "contract-types": "Contract Type",
   "log-activity": "Log Activity",
   "log-activities": "Log Activity",
+  inventory: "Inventory",
+  "goods-list": "Goods List",
+  "import-excel": "Import Excel",
 };
 
 const AUTH_ACTIONS = {
@@ -53,6 +56,7 @@ const SPECIAL_ACTIONS = {
   "clear-password-request": "Cleared Password Request",
   permissions: "Updated User Permissions",
   activate: "Activated Card",
+  "import-excel": "Imported Excel",
 };
 
 const METHOD_ACTIONS = {
@@ -115,6 +119,7 @@ const getModuleName = (businessSegments = []) => {
   if (businessSegments[0] === "staff-types") return "Staff";
   if (businessSegments[0] === "machine-maintenance")
     return "Machine Maintenance";
+  if (businessSegments[0] === "inventory") return "Inventory";
 
   const moduleSegments = businessSegments.filter(
     (segment) => !OBJECT_ID_PATTERN.test(segment) && !SPECIAL_ACTIONS[segment],
@@ -174,6 +179,10 @@ const getPageName = ({ businessSegments = [], req, responseBody }) => {
 
   if (businessSegments[0] === "configure") {
     return singularize(businessSegments[1] || "Configure");
+  }
+
+  if (businessSegments[0] === "inventory") {
+    if (businessSegments[1] === "goods-list") return "Goods List";
   }
 
   return getModuleName(businessSegments);

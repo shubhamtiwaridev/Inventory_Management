@@ -16,7 +16,6 @@ export const inventoryMasterConfigs = {
       { key: "goodsColor", label: "Goods Color", width: 150 },
       { key: "goodsSpecs", label: "Goods Specs", width: 200 },
       { key: "goodsOrigin", label: "Goods Origin", width: 150 },
-      { key: "createdBy", label: "Creator", width: 140 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],
@@ -67,38 +66,7 @@ export const inventoryMasterConfigs = {
         selectFrom: "origin",
       },
     ],
-    rows: [
-      {
-        id: 1,
-        goodsCode: "GD-001",
-        goodsDesc: "PVC Ceiling Panel Premium White",
-        goodsSupplier: "Shree Supplier",
-        goodsUnit: "Nos",
-        goodsClass: "Panel",
-        goodsBrand: "Decostyle",
-        goodsColor: "White",
-        goodsSpecs: "8mm x 250mm x 5.95m",
-        goodsOrigin: "India",
-        createdBy: "Admin",
-        createdAt: now("2026-04-19 10:30 AM"),
-        updatedAt: now("2026-04-19 10:30 AM"),
-      },
-      {
-        id: 2,
-        goodsCode: "GD-002",
-        goodsDesc: "Wall Cladding Sheet Teak Finish",
-        goodsSupplier: "Mahalaxmi Traders",
-        goodsUnit: "Sheet",
-        goodsClass: "Cladding",
-        goodsBrand: "Prime",
-        goodsColor: "Teak",
-        goodsSpecs: "10mm x 200mm x 2.9m",
-        goodsOrigin: "India",
-        createdBy: "Admin",
-        createdAt: now("2026-04-19 11:10 AM"),
-        updatedAt: now("2026-04-19 11:10 AM"),
-      },
-    ],
+    rows: [],
   },
 
   units: {
@@ -108,7 +76,6 @@ export const inventoryMasterConfigs = {
     primaryValueKey: "goodsUnit",
     columns: [
       { key: "goodsUnit", label: "Goods Unit", width: 220 },
-      { key: "createdBy", label: "Creator", width: 150 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],
@@ -138,7 +105,6 @@ export const inventoryMasterConfigs = {
     primaryValueKey: "goodsClass",
     columns: [
       { key: "goodsClass", label: "Goods Class", width: 220 },
-      { key: "createdBy", label: "Creator", width: 150 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],
@@ -168,7 +134,6 @@ export const inventoryMasterConfigs = {
     primaryValueKey: "goodsColor",
     columns: [
       { key: "goodsColor", label: "Goods Color", width: 220 },
-      { key: "createdBy", label: "Creator", width: 150 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],
@@ -198,7 +163,6 @@ export const inventoryMasterConfigs = {
     primaryValueKey: "goodsBrand",
     columns: [
       { key: "goodsBrand", label: "Goods Brand", width: 220 },
-      { key: "createdBy", label: "Creator", width: 150 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],
@@ -228,7 +192,6 @@ export const inventoryMasterConfigs = {
     primaryValueKey: "goodsSpecs",
     columns: [
       { key: "goodsSpecs", label: "Goods Specs", width: 260 },
-      { key: "createdBy", label: "Creator", width: 150 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],
@@ -258,7 +221,6 @@ export const inventoryMasterConfigs = {
     primaryValueKey: "goodsOrigin",
     columns: [
       { key: "goodsOrigin", label: "Goods Origin", width: 220 },
-      { key: "createdBy", label: "Creator", width: 150 },
       { key: "createdAt", label: "Create Time", width: 180, nowrap: true },
       { key: "updatedAt", label: "Update Time", width: 180, nowrap: true },
     ],

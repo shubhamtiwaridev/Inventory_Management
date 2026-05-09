@@ -68,6 +68,21 @@ const tabs = [
   },
 ];
 
+const staffTypeFallbackCards = [
+  {
+    _id: "system-log-activity",
+    name: "log-activity",
+    title: "Log Activity",
+    path: "/log-activity",
+    icon: "AssignmentRoundedIcon",
+    iconBg: "#F3F0FF",
+    iconColor: "#5B21B6",
+    subtitle: "Track system actions",
+    subtitleTone: "info",
+    allowInStaffTypes: true,
+  },
+];
+
 const softCardSx = {
   borderRadius: 4,
   border: `1px solid ${brand.border}`,
@@ -171,6 +186,27 @@ const canAssignCardToStaffType = (card) => {
   return true;
 };
 
+const mergeCardsWithFallbacks = (cards = []) => {
+  const cardMap = new Map();
+
+  cards.forEach((card) => {
+    const key = String(card?.name || "").trim().toLowerCase();
+
+    if (!key) return;
+    cardMap.set(key, card);
+  });
+
+  staffTypeFallbackCards.forEach((card) => {
+    const key = String(card?.name || "").trim().toLowerCase();
+
+    if (!cardMap.has(key)) {
+      cardMap.set(key, card);
+    }
+  });
+
+  return Array.from(cardMap.values());
+};
+
 const blurActiveElement = () => {
   if (typeof document === "undefined") return;
 
@@ -219,9 +255,14 @@ const StaffType = () => {
     try {
       const response = await getCards();
       const cards = Array.isArray(response?.data) ? response.data : [];
-      setAvailableCards(cards.filter(canAssignCardToStaffType));
+      setAvailableCards(
+        mergeCardsWithFallbacks(cards).filter(canAssignCardToStaffType),
+      );
     } catch (error) {
       console.error("Failed to load cards:", error);
+      setAvailableCards(
+        mergeCardsWithFallbacks([]).filter(canAssignCardToStaffType),
+      );
     }
   }, []);
 

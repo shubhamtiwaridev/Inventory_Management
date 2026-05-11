@@ -161,19 +161,12 @@ const normalizeExcelRow = (row = {}) => {
 
 const normalizeExcelArrayRow = (row = []) => {
   const normalized = {};
-  const nonEmptyValues = row
-    .map((value) => normalizeValue(value))
-    .filter(Boolean);
-
-  if (nonEmptyValues.length === 1) {
-    return normalizeGoodsPayload({
-      goodsDesc: nonEmptyValues[0],
-    });
-  }
+  const firstValueIndex = row.findIndex((value) => normalizeValue(value));
+  const alignedRow = firstValueIndex > 0 ? row.slice(firstValueIndex) : row;
 
   EXCEL_COLUMN_FIELD_ORDER.forEach((field, index) => {
-    if (row[index] !== undefined) {
-      normalized[field] = row[index];
+    if (alignedRow[index] !== undefined) {
+      normalized[field] = alignedRow[index];
     }
   });
 
@@ -182,6 +175,33 @@ const normalizeExcelArrayRow = (row = []) => {
   }
 
   return normalizeGoodsPayload(normalized);
+};
+
+const materializeMergedWorksheetCells = (worksheet) => {
+  const merges = Array.isArray(worksheet?.["!merges"]) ? worksheet["!merges"] : [];
+
+  merges.forEach((merge) => {
+    const startCellAddress = xlsx.utils.encode_cell(merge.s);
+    const startCell = worksheet[startCellAddress];
+
+    if (!startCell || startCell.v === undefined || startCell.v === null) {
+      return;
+    }
+
+    for (let rowIndex = merge.s.r; rowIndex <= merge.e.r; rowIndex += 1) {
+      for (let colIndex = merge.s.c; colIndex <= merge.e.c; colIndex += 1) {
+        const cellAddress = xlsx.utils.encode_cell({ r: rowIndex, c: colIndex });
+
+        if (!worksheet[cellAddress]) {
+          worksheet[cellAddress] = {
+            t: startCell.t || "s",
+            v: startCell.v,
+            w: startCell.w || String(startCell.v),
+          };
+        }
+      }
+    }
+  });
 };
 
 const isEmptyPayload = (payload = {}) =>
@@ -263,6 +283,7 @@ const parseWorksheetRows = (fileBuffer) => {
   if (!firstSheetName) return [];
 
   const worksheet = workbook.Sheets[firstSheetName];
+  materializeMergedWorksheetCells(worksheet);
   const rows = xlsx.utils.sheet_to_json(worksheet, {
     header: 1,
     defval: "",
@@ -270,10 +291,17 @@ const parseWorksheetRows = (fileBuffer) => {
     blankrows: false,
   });
 
-  if (rows.length === 0) return [];
+  const nonEmptyRows = rows.filter((row) =>
+    Array.isArray(row) && row.some((value) => normalizeValue(value)),
+  );
 
-  if (isLikelyHeaderRow(rows[0])) {
-    const [headers, ...dataRows] = rows;
+  if (nonEmptyRows.length === 0) return [];
+
+  const headerRowIndex = nonEmptyRows.findIndex((row) => isLikelyHeaderRow(row));
+
+  if (headerRowIndex !== -1) {
+    const headers = nonEmptyRows[headerRowIndex];
+    const dataRows = nonEmptyRows.slice(headerRowIndex + 1);
 
     return dataRows.map((row) =>
       normalizeExcelRow(
@@ -282,7 +310,7 @@ const parseWorksheetRows = (fileBuffer) => {
     );
   }
 
-  return rows.map((row) => normalizeExcelArrayRow(row));
+  return nonEmptyRows.map((row) => normalizeExcelArrayRow(row));
 };
 
 export const getGoodsItems = async (req, res) => {
@@ -445,9 +473,17 @@ export const importGoodsItemsFromExcel = async (req, res) => {
     const duplicateKeySet = new Set();
     const rowsToInsert = [];
     let skippedDuplicates = 0;
+    let skippedInvalid = 0;
 
     normalizedRows.forEach((rawPayload, index) => {
       const payload = withImportPlaceholderCode(rawPayload, index);
+      const validationError = getValidationError(payload);
+
+      if (validationError) {
+        skippedInvalid += 1;
+        return;
+      }
+
       const duplicateKeys = buildDuplicateKeys(payload);
 
       if (duplicateKeys.some((key) => duplicateKeySet.has(key))) {
@@ -463,17 +499,29 @@ export const importGoodsItemsFromExcel = async (req, res) => {
       });
     });
 
+    if (rowsToInsert.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid goods rows were found in the uploaded Excel file",
+      });
+    }
+
+    let insertedItems = [];
+
     if (rowsToInsert.length > 0) {
-      await GoodsList.insertMany(rowsToInsert, { ordered: false });
+      insertedItems = await GoodsList.insertMany(rowsToInsert, { ordered: false });
     }
 
     return res.status(200).json({
       success: true,
       message: "Excel import completed successfully",
+      data: insertedItems.map((item) =>
+        mapGoodsItem(typeof item.toObject === "function" ? item.toObject() : item),
+      ),
       summary: {
         importedCount: rowsToInsert.length,
         skippedDuplicates,
-        skippedInvalid: 0,
+        skippedInvalid,
         totalRows: normalizedRows.length,
       },
     });

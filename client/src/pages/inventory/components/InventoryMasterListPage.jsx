@@ -426,8 +426,14 @@ const InventoryMasterListPage = () => {
       const importedCount = summary.importedCount || 0;
       const skippedDuplicates = summary.skippedDuplicates || 0;
       const skippedInvalid = summary.skippedInvalid || 0;
+      const importedRows = Array.isArray(response?.data) ? response.data : [];
 
-      await fetchGoodsRows();
+      if (importedRows.length > 0) {
+        syncGoodsInventoryRows(importedRows);
+      } else {
+        await fetchGoodsRows();
+      }
+
       showFeedback(
         "success",
         `Imported ${importedCount} record(s). Skipped duplicates: ${skippedDuplicates}, invalid: ${skippedInvalid}.`,

@@ -56,11 +56,11 @@ import {
 } from "./staffApi";
 import {
   ACTIONS,
-  ACTION_LABELS,
   buildPermissionKey,
   filterUserPermissionsForCards,
   getCardSections,
   getDefaultPermissionRecord,
+  getPermissionActionOptions,
   getPermissionCardsForStaffType,
   getSectionFeatures,
   initializeUserPermissions,
@@ -1500,16 +1500,22 @@ const StaffPage = () => {
                                                     gap={1}
                                                     sx={{ ml: 4, mt: 0.5 }}
                                                   >
-                                                    {Object.entries(
-                                                      permission.actions,
+                                                    {getPermissionActionOptions(
+                                                      card.name,
+                                                      feature,
                                                     ).map(
-                                                      ([action, checked]) => (
+                                                      ({ action, label }) => (
                                                         <FormControlLabel
                                                           key={`${keyBase}_${action}`}
                                                           control={
                                                             <Checkbox
                                                               size="small"
-                                                              checked={checked}
+                                                              checked={Boolean(
+                                                                permission
+                                                                  .actions?.[
+                                                                  action
+                                                                ],
+                                                              )}
                                                               onChange={(
                                                                 event,
                                                               ) =>
@@ -1524,11 +1530,7 @@ const StaffPage = () => {
                                                               }
                                                             />
                                                           }
-                                                          label={
-                                                            ACTION_LABELS[
-                                                              action
-                                                            ] || action
-                                                          }
+                                                          label={label}
                                                           sx={{
                                                             mr: 0,
                                                             ml: 0,
@@ -2036,16 +2038,22 @@ const StaffPage = () => {
                                                     flexWrap="wrap"
                                                     gap={1}
                                                   >
-                                                    {Object.entries(
-                                                      permission.actions,
+                                                    {getPermissionActionOptions(
+                                                      card.name,
+                                                      feature,
                                                     ).map(
-                                                      ([action, checked]) => (
+                                                      ({ action, label }) => (
                                                         <FormControlLabel
                                                           key={`${keyBase}_${action}`}
                                                           control={
                                                             <Checkbox
                                                               size="small"
-                                                              checked={checked}
+                                                              checked={Boolean(
+                                                                permission
+                                                                  .actions?.[
+                                                                  action
+                                                                ],
+                                                              )}
                                                               onChange={(
                                                                 event,
                                                               ) =>
@@ -2060,11 +2068,7 @@ const StaffPage = () => {
                                                               }
                                                             />
                                                           }
-                                                          label={
-                                                            ACTION_LABELS[
-                                                              action
-                                                            ] || action
-                                                          }
+                                                          label={label}
                                                           sx={{
                                                             mr: 0,
                                                             ml: 0,
@@ -2099,15 +2103,20 @@ const StaffPage = () => {
                                                 flexWrap="wrap"
                                                 gap={1}
                                               >
-                                                {Object.entries(
-                                                  permission.actions,
-                                                ).map(([action, checked]) => (
+                                                {getPermissionActionOptions(
+                                                  card.name,
+                                                  feature,
+                                                ).map(({ action, label }) => (
                                                   <FormControlLabel
                                                     key={`${keyBase}_${action}`}
                                                     control={
                                                       <Checkbox
                                                         size="small"
-                                                        checked={checked}
+                                                        checked={Boolean(
+                                                          permission.actions?.[
+                                                            action
+                                                          ],
+                                                        )}
                                                         onChange={(event) =>
                                                           handlePermissionActionChange(
                                                             card.name,
@@ -2120,10 +2129,7 @@ const StaffPage = () => {
                                                         }
                                                       />
                                                     }
-                                                    label={
-                                                      ACTION_LABELS[action] ||
-                                                      action
-                                                    }
+                                                    label={label}
                                                     sx={{
                                                       mr: 0,
                                                       ml: 0,

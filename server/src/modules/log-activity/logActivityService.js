@@ -267,6 +267,30 @@ const getDisplayName = (...records) => {
   return "";
 };
 
+const getAssignedCardNames = (...records) => {
+  for (const record of records) {
+    const assignedCards = record?.assignedCards;
+
+    if (!Array.isArray(assignedCards) || assignedCards.length === 0) {
+      continue;
+    }
+
+    const names = assignedCards
+      .map((card) => {
+        if (!card) return "";
+        if (typeof card === "string") return card.trim();
+        return String(card.title || card.name || card.label || "").trim();
+      })
+      .filter(Boolean);
+
+    if (names.length > 0) {
+      return names;
+    }
+  }
+
+  return [];
+};
+
 const getRoleValue = (user = {}) => {
   if (Array.isArray(user.roles)) return user.roles.join(", ");
   return user.roles || user.role || "";
@@ -332,6 +356,11 @@ export const createLogActivityFromRequest = async ({
     null;
   const targetName = getDisplayName(responseData, req.body);
   const page = getPageName({ businessSegments, req, responseBody });
+  const assignedCardNames = getAssignedCardNames(
+    responseData,
+    responseData?.staffType,
+    req.body,
+  );
 
   return LogActivity.create({
     ...actor,
@@ -350,6 +379,7 @@ export const createLogActivityFromRequest = async ({
       message: responseBody?.message || "",
       page,
       targetName,
+      assignedCards: assignedCardNames,
     },
   });
 };

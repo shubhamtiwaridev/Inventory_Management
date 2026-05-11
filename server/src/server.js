@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
+import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 
 import authRoutes from "./modules/auth/authRoute.js";
@@ -34,6 +35,7 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 app.set("trust proxy", 1);
 app.set("etag", false);
@@ -76,7 +78,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 app.use(activityLogger);
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/uploads", express.static(path.join(serverRoot, "uploads")));
 
 app.get("/", (req, res) => {
   res.send("Server is running");

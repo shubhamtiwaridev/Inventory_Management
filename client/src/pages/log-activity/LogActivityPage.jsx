@@ -11,6 +11,7 @@ const logActivityColumns = [
   { key: "action", label: "Action", width: "220px" },
   { key: "page", label: "Page", width: "240px" },
   { key: "targetName", label: "Record", width: "240px" },
+  { key: "assignedCards", label: "Assigned Cards", width: "280px" },
   { key: "time", label: "Time", width: "220px", nowrap: true },
 ];
 

@@ -313,6 +313,39 @@ const MachineMaintenanceListView = ({
         }}
       >
         <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", sm: "center" }}
+          spacing={1}
+          sx={{ mb: 2 }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              color: brand.text,
+              fontWeight: 800,
+            }}
+          >
+            {title}
+          </Typography>
+
+          <Chip
+            label={
+              keyword
+                ? `Showing ${filteredRows.length} of ${rows.length}`
+                : `Total Records: ${rows.length}`
+            }
+            size="small"
+            sx={{
+              borderRadius: 2,
+              backgroundColor: brand.soft,
+              color: brand.primaryDark,
+              fontWeight: 700,
+            }}
+          />
+        </Stack>
+
+        <Stack
           direction={{ xs: "column", lg: "row" }}
           justifyContent="space-between"
           spacing={2}

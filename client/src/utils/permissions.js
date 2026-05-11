@@ -10,6 +10,11 @@ export const ACTION_LABELS = {
   delete: "Delete",
 };
 
+const LOG_ACTIVITY_PERMISSION_ACTIONS = [
+  { action: "create", label: "Export CSV" },
+  { action: "update", label: "Export Excel" },
+];
+
 const createDefaultActions = (actionState = true) =>
   ACTIONS.reduce((acc, action) => {
     acc[action] = actionState;
@@ -49,6 +54,27 @@ const formatCardLabel = (value = "") =>
 
 export const buildPermissionKey = (cardName, featureLabel) =>
   `${normalizeKey(cardName)}_${normalizeKey(featureLabel)}`;
+
+const isLogActivityPermission = (cardName, feature = {}) => {
+  const normalizedCardName = normalizeKey(cardName);
+  const normalizedFeaturePath = normalizePath(feature?.path || "");
+
+  return (
+    normalizedCardName === "log_activity" ||
+    normalizedFeaturePath === "/log-activity"
+  );
+};
+
+export const getPermissionActionOptions = (cardName, feature = {}) => {
+  if (isLogActivityPermission(cardName, feature)) {
+    return LOG_ACTIVITY_PERMISSION_ACTIONS;
+  }
+
+  return ACTIONS.map((action) => ({
+    action,
+    label: ACTION_LABELS[action] || action,
+  }));
+};
 
 const allSidebarItems = [
   ...inventorySidebarItems,
@@ -96,6 +122,47 @@ const buildCardGroups = (sidebarItems) => {
 
 export const ALL_CARDS = buildCardGroups(allSidebarItems);
 
+const createStandalonePermissionCard = (card) => {
+  const cardName =
+    String(card?.name || card?.title || card?.label || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[-\s]+/g, "_") || "card";
+  const cardTitle =
+    String(card?.title || card?.name || card?.label || "")
+      .trim() || formatCardLabel(cardName);
+  const cardPath = String(card?.path || `/${cardName}`).trim() || `/${cardName}`;
+
+  return {
+    ...card,
+    name: cardName,
+    title: cardTitle,
+    label: cardTitle,
+    sidebarItem: {
+      label: cardTitle,
+      path: cardPath,
+      children: [
+        {
+          label: cardTitle,
+          path: cardPath,
+        },
+      ],
+    },
+    sections: [
+      {
+        label: cardTitle,
+        path: cardPath,
+        children: [
+          {
+            label: cardTitle,
+            path: cardPath,
+          },
+        ],
+      },
+    ],
+  };
+};
+
 export const getCardSections = (card) =>
   Array.isArray(card?.sections) && card.sections.length > 0
     ? card.sections
@@ -114,11 +181,22 @@ const getAssignedCardNames = (assignedCards = []) =>
     .filter(Boolean);
 
 export const getPermissionCardsForStaffType = (staffType) => {
-  const assignedNames = getAssignedCardNames(staffType?.assignedCards || []);
-
-  return ALL_CARDS.filter((card) =>
+  const assignedCards = Array.isArray(staffType?.assignedCards)
+    ? staffType.assignedCards
+    : [];
+  const assignedNames = getAssignedCardNames(assignedCards);
+  const matchedCards = ALL_CARDS.filter((card) =>
     assignedNames.includes(normalizeKey(card.name)),
   );
+  const matchedNames = new Set(matchedCards.map((card) => normalizeKey(card.name)));
+  const fallbackCards = assignedCards
+    .filter((card) => {
+      const cardName = normalizeKey(card?.name || card?.title || card);
+      return cardName && !matchedNames.has(cardName);
+    })
+    .map((card) => createStandalonePermissionCard(card));
+
+  return [...matchedCards, ...fallbackCards];
 };
 
 export const generateCardPermissions = (
@@ -242,6 +320,26 @@ const hasAssignedCard = (user, cardName) => {
 
   return assignedNames.includes(normalizeKey(cardName));
 };
+
+export const isDashboardCardVisible = (user, card) => {
+  if (!card || typeof card !== "object") return false;
+  if (isSuperadminRole(user?.roles)) return true;
+
+  const cardName = normalizeKey(card.name || card.title || "");
+  const cardPath = String(card.path || "").trim();
+  const pathRoot = getSidebarRootKey(cardPath);
+  const hasCardAccess =
+    hasAssignedCard(user, cardName) || hasAssignedCard(user, pathRoot);
+
+  if (!hasCardAccess) return false;
+  if (!pathRoot) return true;
+  if (!hasAssignedCard(user, pathRoot)) return true;
+
+  return isSidebarFeatureVisible(user, cardPath, card.title || card.name);
+};
+
+export const getVisibleDashboardCardsForUser = (cards = [], user) =>
+  cards.filter((card) => isDashboardCardVisible(user, card));
 
 const findPermissionByPathOrLabel = (userPermissions, path, label) => {
   const targetPath = normalizePath(path);

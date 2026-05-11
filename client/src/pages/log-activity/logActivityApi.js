@@ -58,6 +58,9 @@ export const mapLogActivityRow = (item) => ({
   page: formatValue(item.page),
   resource: formatValue(item.resource),
   targetName: formatValue(item.targetName || item.details?.targetName),
+  assignedCards: Array.isArray(item.details?.assignedCards) && item.details.assignedCards.length > 0
+    ? item.details.assignedCards.join(", ")
+    : "-",
   endpoint: formatValue(item.endpoint),
   time: formatDateTime(item.createdAt),
 });

@@ -31,6 +31,10 @@ import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { getCards, getStaffUsers } from "../../pages/staffs/staffApi";
 import {
+  getVisibleDashboardCardsForUser,
+  isSidebarFeatureVisible,
+} from "../../utils/permissions.js";
+import {
   getAssets,
   getComplients,
   getSpares,
@@ -293,15 +297,18 @@ const Dashboard = () => {
     [dashboardData.complaints],
   );
 
-  const userAssignedCards = useMemo(() => {
-    if (isSuperadmin) {
-      return availableCards.map((card) => card.name);
-    }
+  const visibleDashboardCards = useMemo(
+    () => getVisibleDashboardCardsForUser(availableCards, user),
+    [availableCards, user],
+  );
 
-    if (!user?.staffType?.assignedCards) return [];
-
-    return user.staffType.assignedCards.map((card) => card.name);
-  }, [availableCards, isSuperadmin, user?.staffType?.assignedCards]);
+  const canAccessFeature = useCallback(
+    (path, label = "") => {
+      if (isSuperadmin) return true;
+      return isSidebarFeatureVisible(user, path, label);
+    },
+    [isSuperadmin, user],
+  );
 
   const dashboardCardMetrics = useMemo(() => {
     const totalStock = dashboardData.spares.reduce(
@@ -353,8 +360,7 @@ const Dashboard = () => {
   ]);
 
   const visibleStats = useMemo(() => {
-    return availableCards
-      .filter((card) => isSuperadmin || userAssignedCards.includes(card.name))
+    return visibleDashboardCards
       .filter((card) =>
         matchesDashboardSearch(card.name, card.title, card.subtitle, card.path),
       )
@@ -373,16 +379,52 @@ const Dashboard = () => {
         };
       });
   }, [
-    availableCards,
     dashboardCardMetrics,
-    isSuperadmin,
-    userAssignedCards,
     matchesDashboardSearch,
+    visibleDashboardCards,
   ]);
+
+  const canViewComplaintSection = useMemo(
+    () =>
+      [
+        ["Assets", "/machine-maintenance/complient/assets"],
+        ["Spare", "/machine-maintenance/complient/spare"],
+        ["Task Master", "/machine-maintenance/complient/task-master"],
+        ["Vendor/Supplier", "/machine-maintenance/complient/vendor-supplier"],
+      ].some(([label, path]) => canAccessFeature(path, label)),
+    [canAccessFeature],
+  );
+
+  const canViewAlertsSection = useMemo(
+    () =>
+      canAccessFeature(
+        "/machine-maintenance/spare-master/list",
+        "List of Spares",
+      ) ||
+      canAccessFeature(
+        "/machine-maintenance/consume/breakdown-list",
+        "Breakdown List",
+      ),
+    [canAccessFeature],
+  );
+
+  const canViewLogUpdatesSection = useMemo(
+    () =>
+      visibleDashboardCards.some(
+        (card) =>
+          String(card?.name || "")
+            .trim()
+            .toLowerCase() === "log-activity" ||
+          String(card?.path || "")
+            .trim()
+            .toLowerCase() === "/log-activity",
+      ),
+    [visibleDashboardCards],
+  );
 
   const complaintRows = useMemo(
     () =>
-      dashboardData.complaints.slice(0, 5).map((item) => ({
+      (canViewComplaintSection ? dashboardData.complaints : []).slice(0, 5).map((item) => ({
         id: item?._id,
         complaintCode: item?.complaintCode || "-",
         complaintTitle: item?.complaintTitle || "-",
@@ -391,10 +433,12 @@ const Dashboard = () => {
         issueDate: formatDateTime(item?.issueDate),
         createdBy: item?.createdBy || "-",
       })),
-    [dashboardData.complaints],
+    [canViewComplaintSection, dashboardData.complaints],
   );
 
   const complaintCategories = useMemo(() => {
+    if (!canViewComplaintSection) return [];
+
     const total = dashboardData.complaints.length || 1;
     const counts = dashboardData.complaints.reduce((acc, item) => {
       const key = sectionLabelMap[item?.section] || "Other";
@@ -408,13 +452,14 @@ const Dashboard = () => {
       progress: Math.max(5, Math.round((count / total) * 100)),
       color: categoryPalette[index % categoryPalette.length],
     }));
-  }, [dashboardData.complaints]);
+  }, [canViewComplaintSection, dashboardData.complaints]);
 
   const quickActions = useMemo(
     () => [
       {
         title: "Register Machine",
         path: "/machine-maintenance/assets/register",
+        permissionLabel: "Machine Registration",
         icon: <AddRoundedIcon />,
         iconBg: "#F3F5F7",
         iconColor: "#106C6B",
@@ -422,6 +467,7 @@ const Dashboard = () => {
       {
         title: "Register Spare",
         path: "/machine-maintenance/spare-master/register",
+        permissionLabel: "Spare Registration",
         icon: <HandymanRoundedIcon />,
         iconBg: "#F3F5F7",
         iconColor: "#12807B",
@@ -429,6 +475,7 @@ const Dashboard = () => {
       {
         title: "View Breakdown",
         path: "/machine-maintenance/consume/breakdown-list",
+        permissionLabel: "Breakdown List",
         icon: <WarningAmberRoundedIcon />,
         iconBg: "#FFF8ED",
         iconColor: "#D97706",
@@ -436,6 +483,7 @@ const Dashboard = () => {
       {
         title: "Create Complaint",
         path: "/machine-maintenance/complient/assets",
+        permissionLabel: "Assets",
         icon: <AssignmentRoundedIcon />,
         iconBg: "#F3F5F7",
         iconColor: "#106C6B",
@@ -445,34 +493,44 @@ const Dashboard = () => {
   );
 
   const alerts = useMemo(() => {
-    const spareAlerts = lowStockSpares.slice(0, 3).map((item) => ({
-      title: item?.spareName || item?.spareCode || "Low Stock Spare",
-      message: `Current stock ${item?.currentStock || 0} is at or below minimum ${item?.minQty || 0}`,
-      bg: "#FFF8ED",
-      border: "#F4E0BE",
-      iconColor: "#D97706",
-    }));
+    const spareAlerts = canAccessFeature(
+      "/machine-maintenance/spare-master/list",
+      "List of Spares",
+    )
+      ? lowStockSpares.slice(0, 3).map((item) => ({
+          title: item?.spareName || item?.spareCode || "Low Stock Spare",
+          message: `Current stock ${item?.currentStock || 0} is at or below minimum ${item?.minQty || 0}`,
+          bg: "#FFF8ED",
+          border: "#F4E0BE",
+          iconColor: "#D97706",
+        }))
+      : [];
 
-    const breakdownAlerts = breakdownAssets.slice(0, 2).map((item) => ({
+    const breakdownAlerts = canAccessFeature(
+      "/machine-maintenance/consume/breakdown-list",
+      "Breakdown List",
+    )
+      ? breakdownAssets.slice(0, 2).map((item) => ({
       title: item?.assetName || item?.assetCode || "Breakdown Machine",
       message: `${item?.department || "Department"} • ${item?.plant || "Plant"} is in breakdown`,
       bg: "#FFF1EE",
       border: "#F6D7D1",
       iconColor: "#C2410C",
-    }));
+        }))
+      : [];
 
     return [...spareAlerts, ...breakdownAlerts].slice(0, 4);
-  }, [lowStockSpares, breakdownAssets]);
+  }, [breakdownAssets, canAccessFeature, lowStockSpares]);
 
   const latestUpdates = useMemo(
     () =>
-      dashboardData.logs.slice(0, 4).map((item, index) => ({
+      (canViewLogUpdatesSection ? dashboardData.logs : []).slice(0, 4).map((item, index) => ({
         rank: `#${index + 1}`,
         name: item.targetName !== "-" ? item.targetName : item.page,
         sold: `${item.action} • ${item.time}`,
         change: item.userName !== "-" ? item.userName : item.role,
       })),
-    [dashboardData.logs],
+    [canViewLogUpdatesSection, dashboardData.logs],
   );
 
   const filteredOrders = useMemo(() => {
@@ -494,11 +552,17 @@ const Dashboard = () => {
     );
   }, [matchesDashboardSearch, complaintCategories]);
 
-  const filteredQuickActions = useMemo(() => {
+  const visibleQuickActions = useMemo(() => {
     return quickActions.filter((action) =>
+      canAccessFeature(action.path, action.permissionLabel || action.title),
+    );
+  }, [canAccessFeature, quickActions]);
+
+  const filteredQuickActions = useMemo(() => {
+    return visibleQuickActions.filter((action) =>
       matchesDashboardSearch(action.title),
     );
-  }, [matchesDashboardSearch, quickActions]);
+  }, [matchesDashboardSearch, visibleQuickActions]);
 
   const filteredAlerts = useMemo(() => {
     return alerts.filter((alert) =>
@@ -519,6 +583,8 @@ const Dashboard = () => {
     filteredQuickActions.length > 0 ||
     filteredAlerts.length > 0 ||
     filteredTopProducts.length > 0;
+
+  const firstQuickAction = visibleQuickActions[0] || null;
 
   const initials = useMemo(() => {
     const name = user?.name ? user.name.trim() : "";
@@ -646,37 +712,41 @@ const Dashboard = () => {
                 }}
               />
 
-              <IconButton
-                onClick={() => navigate("/machine-maintenance/assets/register")}
-                sx={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 3,
-                  backgroundColor: "#FFFFFF",
-                  border: `1px solid ${brand.border}`,
-                  boxShadow: brand.shadow,
-                  "&:hover": {
-                    backgroundColor: "#F7F9FB",
-                  },
-                }}
-              >
-                <AddRoundedIcon sx={{ color: brand.primary }} />
-              </IconButton>
+              {firstQuickAction ? (
+                <IconButton
+                  onClick={() => navigate(firstQuickAction.path)}
+                  sx={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 3,
+                    backgroundColor: "#FFFFFF",
+                    border: `1px solid ${brand.border}`,
+                    boxShadow: brand.shadow,
+                    "&:hover": {
+                      backgroundColor: "#F7F9FB",
+                    },
+                  }}
+                >
+                  <AddRoundedIcon sx={{ color: brand.primary }} />
+                </IconButton>
+              ) : null}
 
-              <IconButton
-                sx={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 3,
-                  backgroundColor: "#FFF8ED",
-                  border: "1px solid rgba(217, 119, 6, 0.18)",
-                  boxShadow: brand.shadow,
-                }}
-              >
-                <Badge badgeContent={filteredAlerts.length} color="error">
-                  <NotificationsNoneRoundedIcon sx={{ color: "#D97706" }} />
-                </Badge>
-              </IconButton>
+              {canViewAlertsSection ? (
+                <IconButton
+                  sx={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: 3,
+                    backgroundColor: "#FFF8ED",
+                    border: "1px solid rgba(217, 119, 6, 0.18)",
+                    boxShadow: brand.shadow,
+                  }}
+                >
+                  <Badge badgeContent={filteredAlerts.length} color="error">
+                    <NotificationsNoneRoundedIcon sx={{ color: "#D97706" }} />
+                  </Badge>
+                </IconButton>
+              ) : null}
 
               <UserMenu
                 user={user}
@@ -841,14 +911,15 @@ const Dashboard = () => {
             )}
           </Box>
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 2fr) 320px" },
-              gap: 2,
-              mb: 2.5,
-            }}
-          >
+          {canViewComplaintSection ? (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 2fr) 320px" },
+                gap: 2,
+                mb: 2.5,
+              }}
+            >
             <Paper
               elevation={0}
               sx={{
@@ -1080,19 +1151,24 @@ const Dashboard = () => {
                 )}
               </Stack>
             </Paper>
-          </Box>
+            </Box>
+          ) : null}
 
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                lg: "1.15fr 1.2fr 1fr",
-              },
-              gap: 2,
-            }}
-          >
-            <Paper
+          {visibleQuickActions.length > 0 ||
+          canViewAlertsSection ||
+          canViewLogUpdatesSection ? (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  lg: "1.15fr 1.2fr 1fr",
+                },
+                gap: 2,
+              }}
+            >
+            {visibleQuickActions.length > 0 ? (
+              <Paper
               elevation={0}
               sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
             >
@@ -1146,9 +1222,11 @@ const Dashboard = () => {
                   ))
                 )}
               </Stack>
-            </Paper>
+              </Paper>
+            ) : null}
 
-            <Paper
+            {canViewAlertsSection ? (
+              <Paper
               elevation={0}
               sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
             >
@@ -1217,9 +1295,11 @@ const Dashboard = () => {
                   ))
                 )}
               </Stack>
-            </Paper>
+              </Paper>
+            ) : null}
 
-            <Paper
+            {canViewLogUpdatesSection ? (
+              <Paper
               elevation={0}
               sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
             >
@@ -1295,8 +1375,10 @@ const Dashboard = () => {
                   ))
                 )}
               </Stack>
-            </Paper>
-          </Box>
+              </Paper>
+            ) : null}
+            </Box>
+          ) : null}
         </Box>
       </Box>
     </Box>

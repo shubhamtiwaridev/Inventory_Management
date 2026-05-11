@@ -1,8 +1,11 @@
 import fs from "fs";
 import path from "path";
 import multer from "multer";
+import { fileURLToPath } from "url";
 
-const uploadRoot = path.join(process.cwd(), "uploads", "machine-maintenance");
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const serverRoot = path.resolve(currentDir, "..", "..");
+const uploadRoot = path.join(serverRoot, "uploads", "machine-maintenance");
 
 fs.mkdirSync(uploadRoot, { recursive: true });
 

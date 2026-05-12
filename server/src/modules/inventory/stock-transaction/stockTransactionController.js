@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import GoodsList from "../goods-list/goodsListModel.js";
 import Warehouse from "../warehouse/warehouseModel.js";
 import StockTransaction from "./stockTransactionModel.js";
@@ -136,50 +137,59 @@ const getValidatedWarehouse = async (warehouseId) => {
   return Warehouse.findById(warehouseId).select("warehouseName").lean();
 };
 
+const toObjectId = (value) => {
+  if (!value || !mongoose.Types.ObjectId.isValid(value)) {
+    return null;
+  }
+
+  return new mongoose.Types.ObjectId(value);
+};
+
 const buildBalanceKey = (goodsItemId, warehouseId) =>
   `${String(goodsItemId)}::${String(warehouseId)}`;
 
-const buildStockBalanceMap = (transactions = []) => {
-  const balanceMap = new Map();
+const getBalanceAggregationPipeline = (match = {}) => [
+  { $match: match },
+  {
+    $group: {
+      _id: {
+        goodsItemId: "$goodsItemId",
+        warehouseId: "$warehouseId",
+      },
+      goodsCode: { $first: "$goodsCode" },
+      goodsDesc: { $first: "$goodsDesc" },
+      warehouseName: { $first: "$warehouseName" },
+      unit: { $first: "$unit" },
+      inboundQuantity: {
+        $sum: {
+          $cond: [{ $eq: ["$transactionType", "inbound"] }, "$quantity", 0],
+        },
+      },
+      outboundQuantity: {
+        $sum: {
+          $cond: [{ $eq: ["$transactionType", "outbound"] }, "$quantity", 0],
+        },
+      },
+    },
+  },
+  {
+    $project: {
+      _id: 0,
+      goodsItemId: "$_id.goodsItemId",
+      warehouseId: "$_id.warehouseId",
+      goodsCode: 1,
+      goodsDesc: 1,
+      warehouseName: 1,
+      unit: 1,
+      inboundQuantity: 1,
+      outboundQuantity: 1,
+      currentQuantity: { $subtract: ["$inboundQuantity", "$outboundQuantity"] },
+    },
+  },
+];
 
-  transactions.forEach((item) => {
-    const key = buildBalanceKey(item.goodsItemId, item.warehouseId);
-    const current = balanceMap.get(key) || {
-      goodsItemId: String(item.goodsItemId || ""),
-      warehouseId: String(item.warehouseId || ""),
-      goodsCode: item.goodsCode || "",
-      goodsDesc: item.goodsDesc || "",
-      warehouseName: item.warehouseName || "",
-      unit: item.unit || "",
-      inboundQuantity: 0,
-      outboundQuantity: 0,
-      currentQuantity: 0,
-    };
-    const quantity = Number(item.quantity) || 0;
-
-    if (item.transactionType === "outbound") {
-      current.outboundQuantity += quantity;
-      current.currentQuantity -= quantity;
-    } else {
-      current.inboundQuantity += quantity;
-      current.currentQuantity += quantity;
-    }
-
-    balanceMap.set(key, current);
-  });
-
-  return balanceMap;
-};
-
-const getAllTransactionBalances = async ({ excludeTransactionId = null } = {}) => {
-  const filter = excludeTransactionId ? { _id: { $ne: excludeTransactionId } } : {};
-  const items = await StockTransaction.find(filter)
-    .select(
-      "transactionType goodsItemId warehouseId goodsCode goodsDesc warehouseName unit quantity",
-    )
-    .lean();
-
-  return buildStockBalanceMap(items);
+const getAggregatedBalances = async (match = {}) => {
+  return StockTransaction.aggregate(getBalanceAggregationPipeline(match));
 };
 
 const mapBalanceItem = (item) => ({
@@ -199,9 +209,26 @@ const getAvailableOutboundBalance = async ({
   warehouseId,
   excludeTransactionId = null,
 } = {}) => {
-  const balanceMap = await getAllTransactionBalances({ excludeTransactionId });
-  const balance = balanceMap.get(buildBalanceKey(goodsItemId, warehouseId));
+  const match = {};
+  const goodsObjectId = toObjectId(goodsItemId);
+  const warehouseObjectId = toObjectId(warehouseId);
 
+  if (!goodsObjectId || !warehouseObjectId) {
+    return 0;
+  }
+
+  match.goodsItemId = goodsObjectId;
+  match.warehouseId = warehouseObjectId;
+
+  if (excludeTransactionId) {
+    const excludedId = toObjectId(excludeTransactionId);
+
+    if (excludedId) {
+      match._id = { $ne: excludedId };
+    }
+  }
+
+  const [balance] = await getAggregatedBalances(match);
   return balance ? Number(balance.currentQuantity || 0) : 0;
 };
 
@@ -227,8 +254,7 @@ export const getStockTransactions = async (req, res) => {
 
 export const getAvailableOutboundItems = async (req, res) => {
   try {
-    const balanceMap = await getAllTransactionBalances();
-    const items = Array.from(balanceMap.values())
+    const items = (await getAggregatedBalances())
       .filter((item) => Number(item.currentQuantity || 0) > 0)
       .map(mapBalanceItem)
       .sort((left, right) =>
@@ -251,8 +277,7 @@ export const getAvailableOutboundItems = async (req, res) => {
 
 export const getInventorySummary = async (req, res) => {
   try {
-    const balanceMap = await getAllTransactionBalances();
-    const summaryRows = Array.from(balanceMap.values())
+    const summaryRows = (await getAggregatedBalances())
       .map(mapBalanceItem)
       .sort((left, right) =>
         `${left.goodsCode} ${left.warehouseName}`.localeCompare(

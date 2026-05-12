@@ -205,10 +205,10 @@ const InventoryMasterListPage = () => {
     }));
   }, []);
 
-  const fetchGoodsRows = useCallback(async () => {
+  const fetchGoodsRows = useCallback(async ({ skipCache = false } = {}) => {
     try {
       setLoadingRows(true);
-      const goodsItems = await getGoodsListItems();
+      const goodsItems = await getGoodsListItems({ skipCache });
       syncGoodsInventoryRows(goodsItems);
       setFeedback((prev) => (prev.type === "error" ? { type: "", message: "" } : prev));
     } catch (error) {
@@ -289,7 +289,7 @@ const InventoryMasterListPage = () => {
     if (isGoodsListTab) {
       try {
         await deleteGoodsListItem(row.id);
-        await fetchGoodsRows();
+        await fetchGoodsRows({ skipCache: true });
         showFeedback("success", "Goods item deleted successfully.");
       } catch (error) {
         showFeedback("error", error.message || "Failed to delete goods item");
@@ -306,7 +306,7 @@ const InventoryMasterListPage = () => {
 
   const handleRefresh = async () => {
     if (isGoodsListTab) {
-      await fetchGoodsRows();
+      await fetchGoodsRows({ skipCache: true });
       return;
     }
 
@@ -360,7 +360,7 @@ const InventoryMasterListPage = () => {
           showFeedback("success", "Goods item created successfully.");
         }
 
-        await fetchGoodsRows();
+        await fetchGoodsRows({ skipCache: true });
         closeDialog();
       } catch (error) {
         showFeedback("error", error.message || "Failed to save goods item");
@@ -426,7 +426,7 @@ const InventoryMasterListPage = () => {
       const importedCount = summary.importedCount || 0;
       const skippedDuplicates = summary.skippedDuplicates || 0;
       const skippedInvalid = summary.skippedInvalid || 0;
-      await fetchGoodsRows();
+      await fetchGoodsRows({ skipCache: true });
 
       showFeedback(
         "success",
@@ -472,6 +472,7 @@ const InventoryMasterListPage = () => {
         onDelete={handleDelete}
         primaryButtonLabel={config.primaryButtonLabel}
         onPrimaryAction={openAddDialog}
+        showDownloadButton={!isGoodsListTab}
         toolbarActions={
           isGoodsListTab ? (
             <Button

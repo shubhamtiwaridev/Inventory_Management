@@ -48,11 +48,6 @@ const logActivitySchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    resourceId: {
-      type: String,
-      trim: true,
-      default: "",
-    },
     method: {
       type: String,
       trim: true,

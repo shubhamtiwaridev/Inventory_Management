@@ -230,10 +230,6 @@ const InventoryDownloadCenterPage = () => {
             <Typography variant="h5" sx={{ fontWeight: 800, color: brand.text }}>
               Download Center
             </Typography>
-            <Typography sx={{ color: brand.textSoft, mt: 0.75 }}>
-              Download live inventory data for goods, warehouses, inbound,
-              outbound, and current stock summary.
-            </Typography>
           </Box>
 
           <Button
@@ -261,9 +257,6 @@ const InventoryDownloadCenterPage = () => {
                 <Box>
                   <Typography sx={{ fontWeight: 800, color: brand.text }}>
                     {definition.label}
-                  </Typography>
-                  <Typography sx={{ color: brand.textSoft, mt: 0.35 }}>
-                    Live records available: {definition.rows.length}
                   </Typography>
                 </Box>
               </Stack>

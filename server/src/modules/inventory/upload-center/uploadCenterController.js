@@ -3,7 +3,7 @@ import path from "path";
 import UploadCenterFile from "./uploadCenterModel.js";
 
 const UPLOAD_CENTER_SELECT_FIELDS =
-  "originalName storedName mimeType sizeBytes extension relativePath createdBy createdAt updatedAt";
+  "originalName storedName mimeType sizeBytes extension description relativePath createdBy createdAt updatedAt";
 
 const pad = (value) => String(value).padStart(2, "0");
 
@@ -37,6 +37,7 @@ const mapUploadCenterFile = (item) => ({
   mimeType: item.mimeType || "application/octet-stream",
   sizeBytes: Number(item.sizeBytes || 0),
   extension: item.extension || "",
+  description: item.description || "",
   relativePath: item.relativePath || "",
   url: item.relativePath || "",
   fileKind: getFileKind(item.mimeType || ""),
@@ -67,6 +68,7 @@ export const getUploadCenterFiles = async (req, res) => {
 export const uploadCenterFiles = async (req, res) => {
   try {
     const files = Array.isArray(req.files) ? req.files : [];
+    const description = String(req.body?.description || "").trim();
 
     if (files.length === 0) {
       return res.status(400).json({
@@ -81,6 +83,7 @@ export const uploadCenterFiles = async (req, res) => {
       mimeType: file.mimetype || "application/octet-stream",
       sizeBytes: Number(file.size || 0),
       extension: path.extname(file.originalname || file.filename || ""),
+      description,
       relativePath: `/uploads/inventory-upload-center/${file.filename}`,
       createdBy: getUserName(req),
       updatedBy: getUserName(req),

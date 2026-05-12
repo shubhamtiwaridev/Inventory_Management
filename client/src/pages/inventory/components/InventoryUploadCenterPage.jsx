@@ -3,9 +3,14 @@ import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   Paper,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
@@ -77,6 +82,10 @@ const InventoryUploadCenterPage = () => {
   const [feedback, setFeedback] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [description, setDescription] = useState("");
+  const [descriptionError, setDescriptionError] = useState("");
   const fileInputRef = useRef(null);
 
   const totalFiles = useMemo(() => files.length, [files]);
@@ -117,22 +126,47 @@ const InventoryUploadCenterPage = () => {
     };
   }, [feedback]);
 
+  const resetUploadDialog = () => {
+    setUploadDialogOpen(false);
+    setSelectedFiles([]);
+    setDescription("");
+    setDescriptionError("");
+  };
+
   const handleOpenPicker = () => {
     setFeedback({ type: "", message: "" });
+    setUploadDialogOpen(true);
+  };
+
+  const handleOpenFileChooser = () => {
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (event) => {
-    const selectedFiles = Array.from(event.target.files || []);
+    const nextSelectedFiles = Array.from(event.target.files || []);
     event.target.value = "";
 
-    if (selectedFiles.length === 0) return;
+    if (nextSelectedFiles.length === 0) return;
+
+    setSelectedFiles(nextSelectedFiles);
+  };
+
+  const handleUploadSubmit = async () => {
+    if (selectedFiles.length === 0) {
+      setDescriptionError("Please choose at least one file.");
+      return;
+    }
 
     try {
       setUploading(true);
+      setDescriptionError("");
       setFeedback({ type: "", message: "" });
-      const response = await uploadFilesToUploadCenter(selectedFiles);
+      const response = await uploadFilesToUploadCenter({
+        files: selectedFiles,
+        description,
+      });
       await loadFiles();
+      resetUploadDialog();
       setFeedback({
         type: "success",
         message: `${response?.summary?.uploadedCount || selectedFiles.length} file(s) uploaded successfully.`,
@@ -194,10 +228,6 @@ const InventoryUploadCenterPage = () => {
             <Typography variant="h5" sx={{ fontWeight: 800, color: brand.text }}>
               Upload Center
             </Typography>
-            <Typography sx={{ color: brand.textSoft, mt: 0.75 }}>
-              Upload any file type and keep it stored here. Files are shown below
-              in cards, four per row on desktop.
-            </Typography>
             <Typography sx={{ color: brand.textSoft, mt: 0.5 }}>
               Total files stored: {totalFiles}
             </Typography>
@@ -228,15 +258,11 @@ const InventoryUploadCenterPage = () => {
 
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "repeat(2, minmax(0, 1fr))",
-            md: "repeat(3, minmax(0, 1fr))",
-            lg: "repeat(4, minmax(0, 1fr))",
-          },
+          display: "flex",
+          flexWrap: "wrap",
           gap: 2,
           alignItems: "stretch",
+          alignContent: "flex-start",
         }}
       >
         {files.map((file) => {
@@ -252,7 +278,9 @@ const InventoryUploadCenterPage = () => {
                 p: 2,
                 display: "flex",
                 flexDirection: "column",
-                minHeight: 240,
+                boxSizing: "border-box",
+                width: { xs: "100%", sm: 240 },
+                minHeight: 236,
               }}
             >
               <Stack
@@ -321,20 +349,31 @@ const InventoryUploadCenterPage = () => {
                     color: brand.text,
                     lineHeight: 1.35,
                     wordBreak: "break-word",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
                   }}
                 >
                   {file.originalName}
                 </Typography>
-                <Typography
-                  sx={{
-                    mt: 1,
-                    color: brand.textSoft,
-                    fontSize: "0.92rem",
-                    wordBreak: "break-word",
-                  }}
-                >
-                  {file.mimeType}
-                </Typography>
+                {file.description ? (
+                  <Typography
+                    sx={{
+                      mt: 1,
+                      color: brand.textSoft,
+                      fontSize: "0.92rem",
+                      lineHeight: 1.45,
+                      wordBreak: "break-word",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {file.description}
+                  </Typography>
+                ) : null}
               </Box>
 
               <Stack spacing={0.65} sx={{ mt: "auto", pt: 2 }}>
@@ -356,11 +395,95 @@ const InventoryUploadCenterPage = () => {
       {!loading && files.length === 0 ? (
         <Paper elevation={0} sx={pageCardSx}>
           <Typography sx={{ color: brand.textSoft }}>
-            No uploaded files found. Use `Upload Files` to store any type of file
-            here.
+            No uploaded files found.
           </Typography>
         </Paper>
       ) : null}
+
+      <Dialog
+        open={uploadDialogOpen}
+        onClose={() => {
+          if (!uploading) {
+            resetUploadDialog();
+          }
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: brand.text }}>
+          Upload Files
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <Stack spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<CloudUploadRoundedIcon />}
+              onClick={handleOpenFileChooser}
+              disabled={uploading}
+              sx={outlinedActionButtonSx}
+            >
+              {selectedFiles.length > 0
+                ? `${selectedFiles.length} file(s) selected`
+                : "Choose Files"}
+            </Button>
+
+            {selectedFiles.length > 0 ? (
+              <Box
+                sx={{
+                  borderRadius: 3,
+                  border: `1px solid ${brand.border}`,
+                  backgroundColor: brand.softAlt,
+                  p: 1.5,
+                }}
+              >
+                <Stack spacing={0.75}>
+                  {selectedFiles.map((file) => (
+                    <Typography
+                      key={`${file.name}-${file.size}`}
+                      sx={{ color: brand.textSoft, fontSize: "0.92rem" }}
+                    >
+                      {file.name}
+                    </Typography>
+                  ))}
+                </Stack>
+              </Box>
+            ) : null}
+
+            <TextField
+              label="Description"
+              value={description}
+              onChange={(event) => {
+                setDescription(event.target.value);
+                setDescriptionError("");
+              }}
+              placeholder="Write a short description for these file(s)"
+              multiline
+              minRows={3}
+              fullWidth
+              error={Boolean(descriptionError)}
+              helperText={descriptionError || "This description will be shown on the file card."}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={resetUploadDialog}
+            variant="outlined"
+            disabled={uploading}
+            sx={outlinedActionButtonSx}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleUploadSubmit}
+            variant="contained"
+            disabled={uploading}
+            sx={filledActionButtonSx}
+          >
+            {uploading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 };

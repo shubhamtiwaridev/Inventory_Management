@@ -83,11 +83,11 @@ const InventoryOverview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const loadSummary = useCallback(async () => {
+  const loadSummary = useCallback(async ({ skipCache = false } = {}) => {
     try {
       setLoading(true);
       setError("");
-      const response = await getInventorySummary();
+      const response = await getInventorySummary({ skipCache });
       setSummary({
         totals: response?.totals || {
           inboundQuantity: 0,
@@ -196,9 +196,10 @@ const InventoryOverview = () => {
         rows={summary.items}
         loading={loading}
         error={error}
-        onRefresh={loadSummary}
+        onRefresh={() => loadSummary({ skipCache: true })}
         showPrimaryAction={false}
         showActions={false}
+        showDownloadButton={false}
       />
     </Stack>
   );

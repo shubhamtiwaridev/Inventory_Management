@@ -17,11 +17,15 @@ export const getUploadCenterFiles = async () => {
   return Array.isArray(response?.data) ? response.data : [];
 };
 
-export const uploadFilesToUploadCenter = async (files = []) => {
+export const uploadFilesToUploadCenter = async ({
+  files = [],
+  description = "",
+} = {}) => {
   const formData = new FormData();
   files.forEach((file) => {
     formData.append("files", file);
   });
+  formData.append("description", description);
 
   return request("/inventory/upload-center", {
     method: "POST",

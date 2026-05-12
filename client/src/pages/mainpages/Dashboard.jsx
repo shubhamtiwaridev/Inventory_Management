@@ -41,8 +41,15 @@ import {
 } from "../machine-maintenance/components/machineMaintenanceApi.js";
 import {
   createLogActivity,
+  getLogActivityCount,
   getLogActivities,
 } from "../log-activity/logActivityApi.js";
+import { getGoodsListItems } from "../inventory/components/inventoryGoodsListApi.js";
+import {
+  getInventorySummary,
+  getInventoryTransactions,
+} from "../inventory/components/inventoryTransactionApi.js";
+import { getWarehouses } from "../inventory/components/inventoryWarehouseApi.js";
 
 const brand = {
   primary: "#106C6B",
@@ -163,6 +170,19 @@ const Dashboard = () => {
     complaints: [],
     staffUsers: [],
     logs: [],
+    logCount: 0,
+    goodsItems: [],
+    warehouses: [],
+    inboundTransactions: [],
+    outboundTransactions: [],
+    inventorySummary: {
+      totals: {
+        inboundQuantity: 0,
+        outboundQuantity: 0,
+        currentQuantity: 0,
+      },
+      items: [],
+    },
   });
 
   useEffect(() => {
@@ -174,14 +194,26 @@ const Dashboard = () => {
           sparesResult,
           complaintsResult,
           staffResult,
+          logCountResult,
           logsResult,
+          goodsItemsResult,
+          warehousesResult,
+          inboundResult,
+          outboundResult,
+          inventorySummaryResult,
         ] = await Promise.allSettled([
           getCards(),
           getAssets({ skipCache: true }),
           getSpares(),
           getComplients(),
           getStaffUsers(),
+          getLogActivityCount(),
           getLogActivities({ limit: 20 }),
+          getGoodsListItems(),
+          getWarehouses(),
+          getInventoryTransactions("inbound"),
+          getInventoryTransactions("outbound"),
+          getInventorySummary(),
         ]);
 
         const cards =
@@ -213,6 +245,50 @@ const Dashboard = () => {
           logsResult.status === "fulfilled" && Array.isArray(logsResult.value)
             ? logsResult.value
             : [];
+        const logCount =
+          logCountResult.status === "fulfilled"
+            ? Number(logCountResult.value || 0)
+            : 0;
+        const goodsItems =
+          goodsItemsResult.status === "fulfilled" &&
+          Array.isArray(goodsItemsResult.value)
+            ? goodsItemsResult.value
+            : [];
+        const warehouses =
+          warehousesResult.status === "fulfilled" &&
+          Array.isArray(warehousesResult.value)
+            ? warehousesResult.value
+            : [];
+        const inboundTransactions =
+          inboundResult.status === "fulfilled" &&
+          Array.isArray(inboundResult.value)
+            ? inboundResult.value
+            : [];
+        const outboundTransactions =
+          outboundResult.status === "fulfilled" &&
+          Array.isArray(outboundResult.value)
+            ? outboundResult.value
+            : [];
+        const inventorySummary =
+          inventorySummaryResult.status === "fulfilled"
+            ? {
+                totals: inventorySummaryResult.value?.totals || {
+                  inboundQuantity: 0,
+                  outboundQuantity: 0,
+                  currentQuantity: 0,
+                },
+                items: Array.isArray(inventorySummaryResult.value?.items)
+                  ? inventorySummaryResult.value.items
+                  : [],
+              }
+            : {
+                totals: {
+                  inboundQuantity: 0,
+                  outboundQuantity: 0,
+                  currentQuantity: 0,
+                },
+                items: [],
+              };
 
         setAvailableCards(mergeCardsWithFallbacks(cards));
         setDashboardData({
@@ -221,6 +297,12 @@ const Dashboard = () => {
           complaints,
           staffUsers,
           logs,
+          logCount,
+          goodsItems,
+          warehouses,
+          inboundTransactions,
+          outboundTransactions,
+          inventorySummary,
         });
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
@@ -231,6 +313,19 @@ const Dashboard = () => {
           complaints: [],
           staffUsers: [],
           logs: [],
+          logCount: 0,
+          goodsItems: [],
+          warehouses: [],
+          inboundTransactions: [],
+          outboundTransactions: [],
+          inventorySummary: {
+            totals: {
+              inboundQuantity: 0,
+              outboundQuantity: 0,
+              currentQuantity: 0,
+            },
+            items: [],
+          },
         });
       } finally {
         setLoading(false);
@@ -311,14 +406,23 @@ const Dashboard = () => {
   );
 
   const dashboardCardMetrics = useMemo(() => {
-    const totalStock = dashboardData.spares.reduce(
-      (sum, item) => sum + Number(item?.currentStock || 0),
-      0,
-    );
     const activeStaffCount = dashboardData.staffUsers.filter(
       (item) => item?.isVerified !== false,
     ).length;
     const pendingStaffCount = dashboardData.staffUsers.length - activeStaffCount;
+    const inventoryTotals = dashboardData.inventorySummary?.totals || {
+      inboundQuantity: 0,
+      outboundQuantity: 0,
+      currentQuantity: 0,
+    };
+    const inventoryItemsCount = Array.isArray(dashboardData.inventorySummary?.items)
+      ? dashboardData.inventorySummary.items.length
+      : 0;
+    const inventoryValue = Number(inventoryTotals.currentQuantity || 0);
+    const goodsCount = dashboardData.goodsItems.length;
+    const warehouseCount = dashboardData.warehouses.length;
+    const inboundCount = dashboardData.inboundTransactions.length;
+    const outboundCount = dashboardData.outboundTransactions.length;
 
     return {
       "machine-maintenance": {
@@ -332,8 +436,11 @@ const Dashboard = () => {
         subtitleTone: lowStockSpares.length > 0 ? "error" : "success",
       },
       inventory: {
-        value: String(totalStock),
-        subtitle: "Current spare stock",
+        value: String(inventoryValue),
+        subtitle:
+          inventoryItemsCount > 0
+            ? `${inboundCount} inbound, ${outboundCount} outbound, ${warehouseCount} warehouses`
+            : `${goodsCount} goods items available`,
         subtitleTone: "success",
       },
       staff: {
@@ -345,15 +452,23 @@ const Dashboard = () => {
         subtitleTone: pendingStaffCount > 0 ? "warning" : "success",
       },
       "log-activity": {
-        value: String(dashboardData.logs.length),
-        subtitle: "Recent project activity",
+        value: String(dashboardData.logCount),
+        subtitle:
+          dashboardData.logCount > 0
+            ? `${dashboardData.logs.length} recent logs loaded`
+            : "No activity logs found",
         subtitleTone: "info",
       },
     };
   }, [
+    dashboardData.logCount,
     dashboardData.logs.length,
-    dashboardData.spares,
+    dashboardData.goodsItems.length,
+    dashboardData.inboundTransactions.length,
+    dashboardData.inventorySummary,
+    dashboardData.outboundTransactions.length,
     dashboardData.staffUsers,
+    dashboardData.warehouses.length,
     openComplaints.length,
     breakdownAssets.length,
     lowStockSpares.length,
@@ -512,7 +627,7 @@ const Dashboard = () => {
     )
       ? breakdownAssets.slice(0, 2).map((item) => ({
       title: item?.assetName || item?.assetCode || "Breakdown Machine",
-      message: `${item?.department || "Department"} • ${item?.plant || "Plant"} is in breakdown`,
+      message: `${item?.department || "Department"} | ${item?.plant || "Plant"} is in breakdown`,
       bg: "#FFF1EE",
       border: "#F6D7D1",
       iconColor: "#C2410C",
@@ -527,7 +642,7 @@ const Dashboard = () => {
       (canViewLogUpdatesSection ? dashboardData.logs : []).slice(0, 4).map((item, index) => ({
         rank: `#${index + 1}`,
         name: item.targetName !== "-" ? item.targetName : item.page,
-        sold: `${item.action} • ${item.time}`,
+        sold: `${item.action} | ${item.time}`,
         change: item.userName !== "-" ? item.userName : item.role,
       })),
     [canViewLogUpdatesSection, dashboardData.logs],
@@ -1129,7 +1244,7 @@ const Dashboard = () => {
                           variant="body2"
                           sx={{ color: brand.textSoft }}
                         >
-                          {item.units} · {item.progress}%
+                          {item.units} | {item.progress}%
                         </Typography>
                       </Stack>
 

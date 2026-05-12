@@ -156,6 +156,17 @@ export const getLogActivities = async ({ limit = 500, search = "" } = {}) => {
     .map(mapLogActivityRow);
 };
 
+export const getLogActivityCount = async ({ search = "" } = {}) => {
+  const params = new URLSearchParams({ limit: "1" });
+
+  if (search) {
+    params.set("search", search);
+  }
+
+  const response = await request(`/log-activities?${params.toString()}`);
+  return Number(response?.pagination?.total || 0);
+};
+
 export const deleteLogActivity = async (id) => {
   if (!id) return { success: true };
 

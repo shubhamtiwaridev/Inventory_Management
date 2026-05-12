@@ -470,8 +470,6 @@ const parseWorksheetRows = (fileBuffer) => {
 
 export const getGoodsItems = async (req, res) => {
   try {
-    await removeLegacyDefaultGoodsItems();
-
     const items = await GoodsList.find().sort({ createdAt: -1 }).lean();
 
     return res.status(200).json({

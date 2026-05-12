@@ -433,6 +433,7 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
         onDelete={handleDelete}
         primaryButtonLabel={config.primaryButtonLabel}
         onPrimaryAction={openAddDialog}
+        showDownloadButton={false}
       />
 
       <Dialog

@@ -197,6 +197,7 @@ const InventoryWarehousePage = () => {
         onDelete={handleDelete}
         primaryButtonLabel="New Warehouse"
         onPrimaryAction={openAddDialog}
+        showDownloadButton={false}
       />
 
       <Dialog

@@ -15,6 +15,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Typography,
@@ -221,6 +222,8 @@ const MachineMaintenanceListView = ({
   const location = useLocation();
 
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
 
   const canCreate = hasActionPermission(user, location.pathname, "create");
   const canUpdate = hasActionPermission(user, location.pathname, "update");
@@ -236,6 +239,11 @@ const MachineMaintenanceListView = ({
     [rows, keyword],
   );
 
+  const paginatedRows = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return filteredRows.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredRows, page, rowsPerPage]);
+
   const tableMinWidth = Math.max(
     980,
     (columns.length + (canShowActionColumn ? 1 : 0)) * 180,
@@ -243,7 +251,22 @@ const MachineMaintenanceListView = ({
 
   const handleRefresh = () => {
     setSearch("");
+    setPage(0);
     onRefresh?.();
+  };
+
+  const handleChangePage = (_, nextPage) => {
+    setPage(nextPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(Number(event.target.value));
+    setPage(0);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setPage(0);
   };
 
   const handleDownload = () => {
@@ -394,9 +417,7 @@ const MachineMaintenanceListView = ({
 
           <TextField
             value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-            }}
+            onChange={handleSearchChange}
             placeholder="Search Word"
             size="small"
             sx={{
@@ -520,7 +541,7 @@ const MachineMaintenanceListView = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredRows.map((row) => (
+                paginatedRows.map((row) => (
                   <TableRow
                     key={row.id || row._id}
                     hover
@@ -604,6 +625,23 @@ const MachineMaintenanceListView = ({
             </TableBody>
           </Table>
         </TableContainer>
+
+        <TablePagination
+          component="div"
+          count={filteredRows.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[25, 50, 100, 250]}
+          sx={{
+            borderTop: `1px solid ${brand.border}`,
+            flexShrink: 0,
+            ".MuiTablePagination-toolbar": {
+              px: 1.5,
+            },
+          }}
+        />
       </Box>
     </Paper>
   );

@@ -45,6 +45,10 @@ import FrequencyListPage from "./pages/machine-maintenance/configure/FrequencyLi
 import ContractTypeListPage from "./pages/machine-maintenance/configure/ContractTypeListPage.jsx";
 
 import InventoryMasterListPage from "./pages/inventory/components/InventoryMasterListPage.jsx";
+import InventoryTransactionPage from "./pages/inventory/components/InventoryTransactionPage.jsx";
+import InventoryWarehousePage from "./pages/inventory/components/InventoryWarehousePage.jsx";
+import InventoryUploadCenterPage from "./pages/inventory/components/InventoryUploadCenterPage.jsx";
+import InventoryDownloadCenterPage from "./pages/inventory/components/InventoryDownloadCenterPage.jsx";
 import LogActivityPage from "./pages/log-activity/LogActivityPage.jsx";
 
 const withPermissionRoute = (
@@ -432,6 +436,30 @@ function App() {
             }
           >
             <Route
+              path="inbound"
+              element={
+                <PermissionRoute
+                  sidebarItems={inventorySidebarItems}
+                  featurePath="/inventory/inbound"
+                  featureLabel="Inbound"
+                >
+                  <InventoryTransactionPage type="inbound" />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="outbound"
+              element={
+                <PermissionRoute
+                  sidebarItems={inventorySidebarItems}
+                  featurePath="/inventory/outbound"
+                  featureLabel="Outbound"
+                >
+                  <InventoryTransactionPage type="outbound" />
+                </PermissionRoute>
+              }
+            />
+            <Route
               path="goodslist/:tabKey"
               element={
                 <PermissionRoute
@@ -439,6 +467,42 @@ function App() {
                   requireModuleAccess
                 >
                   <InventoryMasterListPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="warehouses"
+              element={
+                <PermissionRoute
+                  sidebarItems={inventorySidebarItems}
+                  featurePath="/inventory/warehouses"
+                  featureLabel="Warehouses"
+                >
+                  <InventoryWarehousePage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="upload-center"
+              element={
+                <PermissionRoute
+                  sidebarItems={inventorySidebarItems}
+                  featurePath="/inventory/upload-center"
+                  featureLabel="Upload Center"
+                >
+                  <InventoryUploadCenterPage />
+                </PermissionRoute>
+              }
+            />
+            <Route
+              path="download-center"
+              element={
+                <PermissionRoute
+                  sidebarItems={inventorySidebarItems}
+                  featurePath="/inventory/download-center"
+                  featureLabel="Download Center"
+                >
+                  <InventoryDownloadCenterPage />
                 </PermissionRoute>
               }
             />

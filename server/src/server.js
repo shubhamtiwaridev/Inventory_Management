@@ -30,6 +30,9 @@ import contractTypeRoute from "./modules/configure/contract-type/contractTypeRou
 import logActivityRoutes from "./modules/log-activity/logActivityRoute.js";
 import activityLogger from "./modules/log-activity/logActivityMiddleware.js";
 import goodsListRoutes from "./modules/inventory/goods-list/goodsListRoute.js";
+import createStockTransactionRouter from "./modules/inventory/stock-transaction/stockTransactionRoute.js";
+import uploadCenterRoutes from "./modules/inventory/upload-center/uploadCenterRoute.js";
+import warehouseRoutes from "./modules/inventory/warehouse/warehouseRoute.js";
 
 dotenv.config();
 connectDB();
@@ -89,6 +92,10 @@ app.use("/api/staff-types", staffTypeRoutes);
 app.use("/api/staff-page", staffPageRoutes);
 app.use("/api/cards", cardRoutes);
 app.use("/api/inventory/goods-list", goodsListRoutes);
+app.use("/api/inventory/upload-center", uploadCenterRoutes);
+app.use("/api/inventory/warehouses", warehouseRoutes);
+app.use("/api/inventory/inbound", createStockTransactionRouter("inbound"));
+app.use("/api/inventory/outbound", createStockTransactionRouter("outbound"));
 
 app.use("/api/machine-maintenance/assets", assetRoutes);
 app.use("/api/machine-maintenance/spares", spareRoutes);

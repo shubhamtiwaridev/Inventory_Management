@@ -27,18 +27,29 @@ const matchesPath = (pathname, targetPath) => {
   return pathname === targetPath || pathname.startsWith(`${targetPath}/`);
 };
 
-const getSidebarItemState = (item, pathname) => {
-  const itemPath = item.path || "";
-  const children = Array.isArray(item.children) ? item.children : [];
+const getBestMatchingSidebarPath = (pathname, sidebarItems = []) => {
+  const matchedItems = sidebarItems
+    .map((item) => {
+      const itemPath = item.path || "";
+      const children = Array.isArray(item.children) ? item.children : [];
+      const directMatch = matchesPath(pathname, itemPath) ? itemPath : "";
+      const childMatch =
+        children.find((child) => matchesPath(pathname, child.path))?.path || "";
+      const matchedPath =
+        childMatch.length > directMatch.length ? childMatch : directMatch;
 
-  const isDirectMatch = matchesPath(pathname, itemPath);
-  const isChildMatch = children.some((child) =>
-    matchesPath(pathname, child.path),
-  );
+      return {
+        itemPath,
+        matchedPath,
+      };
+    })
+    .filter(({ matchedPath }) => Boolean(matchedPath));
 
-  return {
-    isActive: isDirectMatch || isChildMatch,
-  };
+  if (matchedItems.length === 0) return "";
+
+  return matchedItems.sort(
+    (left, right) => right.matchedPath.length - left.matchedPath.length,
+  )[0].itemPath;
 };
 
 const SideBar = ({
@@ -58,6 +69,11 @@ const SideBar = ({
     rawSidebarItems,
     user,
   );
+  const activeSidebarPath = getBestMatchingSidebarPath(
+    location.pathname,
+    visibleSidebarItems,
+  );
+
   return (
     <Box
       sx={{
@@ -145,7 +161,7 @@ const SideBar = ({
 
       <Stack spacing={0.75} sx={{ pb: 1 }}>
         {visibleSidebarItems.map((item) => {
-          const { isActive } = getSidebarItemState(item, location.pathname);
+          const isActive = item.path === activeSidebarPath;
 
           return (
             <Button

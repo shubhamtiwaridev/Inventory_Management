@@ -47,9 +47,15 @@ const EXCEL_FIELD_MAP = {
   productcode: "goodsCode",
   productsku: "goodsCode",
   sku: "goodsSku",
+  itemcode: "goodsCode",
+  materialcode: "goodsCode",
   goodsdesc: "goodsDesc",
   itemname: "goodsDesc",
+  nameofitem: "goodsDesc",
   goodsdescription: "goodsDesc",
+  itemdescription: "goodsDesc",
+  itemdesc: "goodsDesc",
+  particulars: "goodsDesc",
   description: "goodsDesc",
   goodssupplier: "goodsSupplier",
   supplier: "goodsSupplier",
@@ -69,6 +75,24 @@ const EXCEL_FIELD_MAP = {
   barcode: "goodsBarcode",
 };
 
+const KNOWN_EXCEL_HEADER_KEYS = new Set([
+  ...Object.keys(EXCEL_FIELD_MAP),
+  "closingstock",
+  "purcorderspending",
+  "purchorderspending",
+  "purchaseorderspending",
+  "saleordersdue",
+  "salesordersdue",
+  "nettavailable",
+  "netavailable",
+  "reorderlevel",
+  "reorderqty",
+  "shortfall",
+  "minreorderqty",
+  "minimumreorderqty",
+  "ordertobeplaced",
+]);
+
 const EXCEL_COLUMN_FIELD_ORDER = [
   "goodsCode",
   "goodsDesc",
@@ -83,6 +107,18 @@ const EXCEL_COLUMN_FIELD_ORDER = [
   "goodsBarcode",
 ];
 const IMPORT_PLACEHOLDER_CODE_PREFIX = "__IMPORT_PLACEHOLDER__";
+const LEGACY_REPORT_HEADER_SIGNATURE = {
+  goodsDesc: ["nameofitem"],
+  goodsSupplier: ["closingstock"],
+  goodsUnit: ["purcorderspending", "purchorderspending", "purchaseorderspending"],
+  goodsClass: ["saleordersdue", "salesordersdue"],
+  goodsBrand: ["nettavailable", "netavailable"],
+  goodsColor: ["reorderlevel", "reorderqty"],
+  goodsSpecs: ["shortfall"],
+  goodsOrigin: ["minreorderqty", "minimumreorderqty", "ordertobeplaced"],
+};
+const QUANTITY_LIKE_VALUE_PATTERN =
+  /^[\d,]+(?:\.\d+)?(?:\s*[a-zA-Z.%/()-]+(?:\s*[a-zA-Z.%/()-]+)*)?$/;
 
 const pad = (value) => String(value).padStart(2, "0");
 const normalizeValue = (value) => String(value || "").trim();
@@ -97,6 +133,13 @@ const getUserName = (req) =>
 const isPlaceholderGoodsCode = (value) =>
   normalizeValue(value).startsWith(IMPORT_PLACEHOLDER_CODE_PREFIX);
 
+const normalizeDisplayText = (value) =>
+  String(value || "")
+    .replace(/^"+|"+$/g, "")
+    .replace(/\r?\n+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const formatDateTime = (value) => {
   const date = new Date(value);
 
@@ -107,6 +150,110 @@ const formatDateTime = (value) => {
   const amPm = hours >= 12 ? "PM" : "AM";
 
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${hours12}:${pad(date.getMinutes())} ${amPm}`;
+};
+
+const isQuantityLikeValue = (value) => {
+  const normalized = normalizeDisplayText(value);
+
+  return Boolean(normalized) && QUANTITY_LIKE_VALUE_PATTERN.test(normalized);
+};
+
+const isLegacyReportHeaderItem = (item = {}) =>
+  Object.entries(LEGACY_REPORT_HEADER_SIGNATURE).every(([field, expectedKeys]) => {
+    const value = normalizeKey(item?.[field] || "");
+    return !value || expectedKeys.includes(value);
+  });
+
+const looksLikeDescriptiveGoodsCode = (value) => {
+  const normalized = normalizeDisplayText(value);
+
+  if (!normalized) return false;
+
+  const compactCodePattern = /^[a-zA-Z0-9._/-]{1,24}$/;
+
+  return !compactCodePattern.test(normalized) && /\s/.test(normalized);
+};
+
+const sanitizeLegacyImportedItem = (item = {}) => {
+  if (isLegacyReportHeaderItem(item)) {
+    return null;
+  }
+
+  const goodsCode = normalizeDisplayText(item.goodsCode);
+  const goodsDesc = normalizeDisplayText(item.goodsDesc);
+  const goodsSupplier = normalizeDisplayText(item.goodsSupplier);
+  const goodsUnit = normalizeDisplayText(item.goodsUnit);
+  const goodsClass = normalizeDisplayText(item.goodsClass);
+  const goodsBrand = normalizeDisplayText(item.goodsBrand);
+  const goodsColor = normalizeDisplayText(item.goodsColor);
+  const goodsSpecs = normalizeDisplayText(item.goodsSpecs);
+  const goodsOrigin = normalizeDisplayText(item.goodsOrigin);
+  const goodsSku = normalizeDisplayText(item.goodsSku);
+  const goodsBarcode = normalizeDisplayText(item.goodsBarcode);
+
+  const auxiliaryValues = [
+    goodsDesc,
+    goodsSupplier,
+    goodsUnit,
+    goodsClass,
+    goodsBrand,
+    goodsColor,
+    goodsSpecs,
+    goodsOrigin,
+  ].filter(Boolean);
+
+  const hasOnlyQuantityAuxiliaryValues =
+    auxiliaryValues.length > 0 &&
+    auxiliaryValues.every((value) => isQuantityLikeValue(value));
+
+  if (goodsDesc && hasOnlyQuantityAuxiliaryValues) {
+    return {
+      ...item,
+      goodsCode,
+      goodsDesc,
+      goodsSupplier: "",
+      goodsUnit: "",
+      goodsClass: "",
+      goodsBrand: "",
+      goodsColor: "",
+      goodsSpecs: "",
+      goodsOrigin: "",
+      goodsSku,
+      goodsBarcode,
+    };
+  }
+
+  if (looksLikeDescriptiveGoodsCode(goodsCode) && hasOnlyQuantityAuxiliaryValues) {
+    return {
+      ...item,
+      goodsCode: "",
+      goodsDesc: goodsCode,
+      goodsSupplier: "",
+      goodsUnit: "",
+      goodsClass: "",
+      goodsBrand: "",
+      goodsColor: "",
+      goodsSpecs: "",
+      goodsOrigin: "",
+      goodsSku,
+      goodsBarcode,
+    };
+  }
+
+  return {
+    ...item,
+    goodsCode,
+    goodsDesc,
+    goodsSupplier,
+    goodsUnit,
+    goodsClass,
+    goodsBrand,
+    goodsColor,
+    goodsSpecs,
+    goodsOrigin,
+    goodsSku,
+    goodsBarcode,
+  };
 };
 
 const mapGoodsItem = (item) => ({
@@ -232,6 +379,14 @@ const getValidationError = (payload = {}) => {
     : "";
 };
 
+const getImportValidationError = (payload = {}) => {
+  if (!normalizeValue(payload.goodsCode) && !normalizeValue(payload.goodsDesc)) {
+    return "Missing item identifier";
+  }
+
+  return "";
+};
+
 const buildDuplicateKeys = (payload = {}) =>
   [
     payload.goodsCode &&
@@ -270,7 +425,7 @@ const isLikelyHeaderRow = (row = []) => {
   if (normalizedRow.length === 0) return false;
 
   const matchedHeaderCount = normalizedRow.filter(
-    (value) => EXCEL_FIELD_MAP[normalizeKey(value)],
+    (value) => KNOWN_EXCEL_HEADER_KEYS.has(normalizeKey(value)),
   ).length;
 
   return matchedHeaderCount >= Math.min(3, normalizedRow.length);
@@ -321,7 +476,10 @@ export const getGoodsItems = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: items.map(mapGoodsItem),
+      data: items
+        .map((item) => sanitizeLegacyImportedItem(item))
+        .filter(Boolean)
+        .map(mapGoodsItem),
     });
   } catch (error) {
     return res.status(500).json({
@@ -476,8 +634,15 @@ export const importGoodsItemsFromExcel = async (req, res) => {
     let skippedInvalid = 0;
 
     normalizedRows.forEach((rawPayload, index) => {
-      const payload = withImportPlaceholderCode(rawPayload, index);
-      const validationError = getValidationError(payload);
+      const sanitizedPayload = sanitizeLegacyImportedItem(rawPayload);
+
+      if (!sanitizedPayload) {
+        skippedInvalid += 1;
+        return;
+      }
+
+      const payload = withImportPlaceholderCode(sanitizedPayload, index);
+      const validationError = getImportValidationError(payload);
 
       if (validationError) {
         skippedInvalid += 1;
@@ -512,12 +677,12 @@ export const importGoodsItemsFromExcel = async (req, res) => {
       insertedItems = await GoodsList.insertMany(rowsToInsert, { ordered: false });
     }
 
+    const allItems = await GoodsList.find().sort({ createdAt: -1 }).lean();
+
     return res.status(200).json({
       success: true,
       message: "Excel import completed successfully",
-      data: insertedItems.map((item) =>
-        mapGoodsItem(typeof item.toObject === "function" ? item.toObject() : item),
-      ),
+      data: allItems.map(mapGoodsItem),
       summary: {
         importedCount: rowsToInsert.length,
         skippedDuplicates,

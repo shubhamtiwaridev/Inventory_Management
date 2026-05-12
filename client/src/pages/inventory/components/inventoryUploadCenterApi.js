@@ -1,0 +1,38 @@
+import { authFetch } from "../../../api/authFetch.js";
+import { buildApiUrl } from "../../../api/config.js";
+
+const request = async (path, options = {}) => {
+  const response = await authFetch(buildApiUrl(path), options);
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || "Something went wrong");
+  }
+
+  return data;
+};
+
+export const getUploadCenterFiles = async () => {
+  const response = await request("/inventory/upload-center");
+  return Array.isArray(response?.data) ? response.data : [];
+};
+
+export const uploadFilesToUploadCenter = async (files = []) => {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append("files", file);
+  });
+
+  return request("/inventory/upload-center", {
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const deleteUploadCenterFile = async (id) => {
+  const response = await request(`/inventory/upload-center/${id}`, {
+    method: "DELETE",
+  });
+
+  return response?.data;
+};

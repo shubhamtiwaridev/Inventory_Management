@@ -1,10 +1,12 @@
-import { useMemo } from "react";
-import { Box, Button, Paper, Stack, Typography } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import ModuleLayout from "../../components/ModuleLayout";
 import { inventorySidebarItems } from "../../components/sidebars/inventorySidebarItems";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
+import MachineMaintenanceListView from "../machine-maintenance/components/MachineMaintenanceListView.jsx";
+import { getInventorySummary } from "./components/inventoryTransactionApi.js";
 
 const matchesPath = (pathname, targetPath) =>
   pathname === targetPath || pathname.startsWith(`${targetPath}/`);
@@ -70,29 +72,134 @@ const hideScrollbarSx = {
 };
 
 const InventoryOverview = () => {
+  const [summary, setSummary] = useState({
+    totals: {
+      inboundQuantity: 0,
+      outboundQuantity: 0,
+      currentQuantity: 0,
+    },
+    items: [],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const loadSummary = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const response = await getInventorySummary();
+      setSummary({
+        totals: response?.totals || {
+          inboundQuantity: 0,
+          outboundQuantity: 0,
+          currentQuantity: 0,
+        },
+        items: Array.isArray(response?.items) ? response.items : [],
+      });
+    } catch (loadError) {
+      setError(loadError.message || "Failed to load inventory summary");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
+
+  const summaryCards = [
+    {
+      label: "Total Inbound",
+      value: Number(summary.totals?.inboundQuantity || 0),
+      color: "#106C6B",
+      bg: "#E8F7F6",
+    },
+    {
+      label: "Total Outbound",
+      value: Number(summary.totals?.outboundQuantity || 0),
+      color: "#C2410C",
+      bg: "#FFF1EE",
+    },
+    {
+      label: "Current Stock",
+      value: Number(summary.totals?.currentQuantity || 0),
+      color: "#1D4ED8",
+      bg: "#EEF4FF",
+    },
+  ];
+
+  const columns = [
+    { key: "goodsCode", label: "Goods Code", width: 150, nowrap: true },
+    { key: "goodsDesc", label: "Goods Desc", width: 240 },
+    { key: "warehouseName", label: "Warehouse", width: 180 },
+    { key: "unit", label: "Unit", width: 120, nowrap: true },
+    {
+      key: "inboundQuantity",
+      label: "Inbound Qty",
+      width: 140,
+      nowrap: true,
+    },
+    {
+      key: "outboundQuantity",
+      label: "Outbound Qty",
+      width: 140,
+      nowrap: true,
+    },
+    {
+      key: "currentQuantity",
+      label: "Current Qty",
+      width: 140,
+      nowrap: true,
+    },
+  ];
+
   return (
     <Stack spacing={3}>
       <Typography variant="h4" sx={{ fontWeight: 800, color: "#143736" }}>
         Inventory
       </Typography>
 
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          borderRadius: 4,
-          border: "1px solid rgba(15, 23, 42, 0.08)",
-          boxShadow:
-            "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
-        }}
-      >
-        <Typography sx={{ fontWeight: 700, color: "#143736", mb: 1 }}>
-          Inventory Overview
-        </Typography>
-        <Typography sx={{ color: "#617776" }}>
-          Goods List header actions are available under the Goods List menu.
-        </Typography>
-      </Paper>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+        {summaryCards.map((card) => (
+          <Paper
+            key={card.label}
+            elevation={0}
+            sx={{
+              flex: 1,
+              p: 2.5,
+              borderRadius: 4,
+              border: "1px solid rgba(15, 23, 42, 0.08)",
+              boxShadow:
+                "0 0 0 1px rgba(15, 23, 42, 0.03), 0 12px 30px rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <Typography sx={{ color: "#617776", fontWeight: 700, mb: 1 }}>
+              {card.label}
+            </Typography>
+            <Chip
+              label={String(card.value)}
+              sx={{
+                borderRadius: 2.5,
+                backgroundColor: card.bg,
+                color: card.color,
+                fontWeight: 800,
+                fontSize: "1rem",
+              }}
+            />
+          </Paper>
+        ))}
+      </Stack>
+
+      <MachineMaintenanceListView
+        title="Current Inventory"
+        columns={columns}
+        rows={summary.items}
+        loading={loading}
+        error={error}
+        onRefresh={loadSummary}
+        showPrimaryAction={false}
+        showActions={false}
+      />
     </Stack>
   );
 };
@@ -112,11 +219,9 @@ const InventoryPage = ({ children }) => {
     allowedSidebarItems,
   );
   const headerActions = currentParent?.children || [];
-  const isGoodsListRoute = location.pathname.startsWith(
-    "/inventory/goodslist/",
-  );
+  const isInventoryRootRoute = location.pathname === "/inventory";
   const content =
-    children ?? (isGoodsListRoute ? <Outlet /> : <InventoryOverview />);
+    children ?? (isInventoryRootRoute ? <InventoryOverview /> : <Outlet />);
 
   const shouldLockPageScroll = true;
 

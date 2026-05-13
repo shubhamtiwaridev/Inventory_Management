@@ -35,6 +35,7 @@ Thumbs.db
 # local runtime
 *.pid
 
-# keep server-side uploaded files trackable in git
-!server/uploads/
-!server/uploads/**
+# uploaded files
+uploads/
+**/uploads/
+**/uploads/**

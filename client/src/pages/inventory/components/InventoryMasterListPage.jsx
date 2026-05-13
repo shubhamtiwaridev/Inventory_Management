@@ -355,7 +355,7 @@ const InventoryMasterListPage = () => {
             overflow: "hidden",
             width: "100%",
             maxWidth: { xs: "calc(100% - 24px)", sm: "496px" },
-            height: { xs: "92vh", sm: "86vh" },
+            height: "auto",
             maxHeight: { xs: "92vh", sm: "86vh" },
             display: "flex",
             flexDirection: "column",
@@ -368,9 +368,8 @@ const InventoryMasterListPage = () => {
           sx={{
             display: "flex",
             flexDirection: "column",
+            flex: "0 1 auto",
             minHeight: 0,
-            flex: 1,
-            overflow: "hidden",
           }}
         >
           <DialogContent
@@ -378,8 +377,8 @@ const InventoryMasterListPage = () => {
             sx={{
               pt: 2.5,
               pb: 3,
-              flex: 1,
-              minHeight: 0,
+              flex: "0 1 auto",
+              minHeight: "auto",
               overflowY: "auto",
               overflowX: "hidden",
               ...hiddenScrollbarSx,

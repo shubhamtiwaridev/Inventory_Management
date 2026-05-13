@@ -15,6 +15,17 @@ const LOG_ACTIVITY_PERMISSION_ACTIONS = [
   { action: "update", label: "Export Excel" },
 ];
 
+const UPLOAD_CENTER_PERMISSION_ACTIONS = [
+  { action: "create", label: "Upload Files" },
+  { action: "update", label: "Edit File" },
+  { action: "delete", label: "Delete File" },
+];
+
+const DOWNLOAD_CENTER_PERMISSION_ACTIONS = [
+  { action: "create", label: "Export CSV" },
+  { action: "update", label: "Export Excel" },
+];
+
 const createDefaultActions = (actionState = true) =>
   ACTIONS.reduce((acc, action) => {
     acc[action] = actionState;
@@ -65,9 +76,23 @@ const isLogActivityPermission = (cardName, feature = {}) => {
   );
 };
 
+const isUploadCenterPermission = (feature = {}) =>
+  normalizePath(feature?.path || "") === "/inventory/upload-center";
+
+const isDownloadCenterPermission = (feature = {}) =>
+  normalizePath(feature?.path || "") === "/inventory/download-center";
+
 export const getPermissionActionOptions = (cardName, feature = {}) => {
   if (isLogActivityPermission(cardName, feature)) {
     return LOG_ACTIVITY_PERMISSION_ACTIONS;
+  }
+
+  if (isUploadCenterPermission(feature)) {
+    return UPLOAD_CENTER_PERMISSION_ACTIONS;
+  }
+
+  if (isDownloadCenterPermission(feature)) {
+    return DOWNLOAD_CENTER_PERMISSION_ACTIONS;
   }
 
   return ACTIONS.map((action) => ({

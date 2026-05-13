@@ -13,6 +13,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useLocation } from "react-router-dom";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
@@ -30,6 +31,8 @@ import {
   filledActionButtonSx,
   outlinedActionButtonSx,
 } from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
+import { useAuth } from "../../../store/AuthContext.jsx";
+import { hasActionPermission } from "../../../utils/permissions.js";
 import {
   deleteUploadCenterFile,
   getUploadCenterFiles,
@@ -95,6 +98,8 @@ const getFileIcon = (file) => {
 };
 
 const InventoryUploadCenterPage = () => {
+  const { user } = useAuth();
+  const location = useLocation();
   const [files, setFiles] = useState([]);
   const [feedback, setFeedback] = useState({ type: "", message: "" });
   const [loading, setLoading] = useState(false);
@@ -110,6 +115,9 @@ const InventoryUploadCenterPage = () => {
   const fileInputRef = useRef(null);
 
   const totalFiles = useMemo(() => files.length, [files]);
+  const canUpload = hasActionPermission(user, location.pathname, "create");
+  const canEdit = hasActionPermission(user, location.pathname, "update");
+  const canDelete = hasActionPermission(user, location.pathname, "delete");
 
   const loadFiles = useCallback(async () => {
     try {
@@ -306,15 +314,17 @@ const InventoryUploadCenterPage = () => {
             >
               Refresh
             </Button>
-            <Button
-              variant="contained"
-              startIcon={<CloudUploadRoundedIcon />}
-              onClick={handleOpenPicker}
-              disabled={uploading}
-              sx={filledActionButtonSx}
-            >
-              {uploading ? "Uploading..." : "Upload Files"}
-            </Button>
+            {canUpload ? (
+              <Button
+                variant="contained"
+                startIcon={<CloudUploadRoundedIcon />}
+                onClick={handleOpenPicker}
+                disabled={uploading}
+                sx={filledActionButtonSx}
+              >
+                {uploading ? "Uploading..." : "Upload Files"}
+              </Button>
+            ) : null}
           </Stack>
         </Stack>
       </Paper>
@@ -393,14 +403,16 @@ const InventoryUploadCenterPage = () => {
                   </Box>
 
                   <Stack direction="row" spacing={0.5}>
-                    <IconButton
-                      onClick={() => handleOpenEditDialog(file)}
-                      sx={actionIconButtonSx}
-                    >
-                      <EditRoundedIcon
-                        sx={{ fontSize: 18, color: brand.primaryDark }}
-                      />
-                    </IconButton>
+                    {canEdit ? (
+                      <IconButton
+                        onClick={() => handleOpenEditDialog(file)}
+                        sx={actionIconButtonSx}
+                      >
+                        <EditRoundedIcon
+                          sx={{ fontSize: 18, color: brand.primaryDark }}
+                        />
+                      </IconButton>
+                    ) : null}
                     <IconButton
                       component="a"
                       href={fileUrl}
@@ -412,14 +424,16 @@ const InventoryUploadCenterPage = () => {
                         sx={{ fontSize: 18, color: brand.primaryDark }}
                       />
                     </IconButton>
-                    <IconButton
-                      onClick={() => handleDelete(file)}
-                      sx={actionIconButtonSx}
-                    >
-                      <DeleteOutlineRoundedIcon
-                        sx={{ fontSize: 18, color: brand.danger }}
-                      />
-                    </IconButton>
+                    {canDelete ? (
+                      <IconButton
+                        onClick={() => handleDelete(file)}
+                        sx={actionIconButtonSx}
+                      >
+                        <DeleteOutlineRoundedIcon
+                          sx={{ fontSize: 18, color: brand.danger }}
+                        />
+                      </IconButton>
+                    ) : null}
                   </Stack>
                 </Stack>
 

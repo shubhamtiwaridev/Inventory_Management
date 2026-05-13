@@ -8,6 +8,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { useLocation } from "react-router-dom";
 import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import WarehouseRoundedIcon from "@mui/icons-material/WarehouseRounded";
@@ -15,6 +16,8 @@ import MoveToInboxRoundedIcon from "@mui/icons-material/MoveToInboxRounded";
 import OutboxRoundedIcon from "@mui/icons-material/OutboxRounded";
 import AssessmentRoundedIcon from "@mui/icons-material/AssessmentRounded";
 import { brand, filledActionButtonSx, outlinedActionButtonSx } from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
+import { useAuth } from "../../../store/AuthContext.jsx";
+import { hasActionPermission } from "../../../utils/permissions.js";
 import { getGoodsListItems } from "./inventoryGoodsListApi.js";
 import { getWarehouses } from "./inventoryWarehouseApi.js";
 import {
@@ -135,9 +138,13 @@ const downloadDefinitions = [
 ];
 
 const InventoryDownloadCenterPage = () => {
+  const { user } = useAuth();
+  const location = useLocation();
   const [datasets, setDatasets] = useState(defaultDatasets);
   const [datasetMeta, setDatasetMeta] = useState(defaultDatasetMeta);
   const [feedback, setFeedback] = useState({ type: "", message: "" });
+  const canExportCsv = hasActionPermission(user, location.pathname, "create");
+  const canExportExcel = hasActionPermission(user, location.pathname, "update");
 
   const datasetDefinitions = useMemo(
     () =>
@@ -330,24 +337,28 @@ const InventoryDownloadCenterPage = () => {
                     fontWeight: 700,
                   }}
                 />
-                <Button
-                  variant="outlined"
-                  startIcon={<DownloadRoundedIcon />}
-                  onClick={() => handleExport(definition, "csv")}
-                  disabled={definition.loading}
-                  sx={outlinedActionButtonSx}
-                >
-                  Export CSV
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadRoundedIcon />}
-                  onClick={() => handleExport(definition, "excel")}
-                  disabled={definition.loading}
-                  sx={filledActionButtonSx}
-                >
-                  Export Excel
-                </Button>
+                {canExportCsv ? (
+                  <Button
+                    variant="outlined"
+                    startIcon={<DownloadRoundedIcon />}
+                    onClick={() => handleExport(definition, "csv")}
+                    disabled={definition.loading}
+                    sx={outlinedActionButtonSx}
+                  >
+                    Export CSV
+                  </Button>
+                ) : null}
+                {canExportExcel ? (
+                  <Button
+                    variant="contained"
+                    startIcon={<DownloadRoundedIcon />}
+                    onClick={() => handleExport(definition, "excel")}
+                    disabled={definition.loading}
+                    sx={filledActionButtonSx}
+                  >
+                    Export Excel
+                  </Button>
+                ) : null}
               </Stack>
             </Stack>
           </Paper>

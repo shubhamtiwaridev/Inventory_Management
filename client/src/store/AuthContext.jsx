@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { getMe, loginUser, logoutUser, registerUser } from "../api/auth";
@@ -27,7 +28,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() =>
     getAuthToken() ? getStoredAuthUser() : null,
   );
-  const [authLoading, setAuthLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(() => !!getAuthToken());
+  const restoreSessionPromiseRef = useRef(null);
 
   const clearAuth = useCallback(() => {
     clearStoredAuthSession();
@@ -72,37 +74,47 @@ export const AuthProvider = ({ children }) => {
   }, [clearAuth]);
 
   const restoreSession = useCallback(async () => {
-    setAuthLoading(true);
+    if (restoreSessionPromiseRef.current) {
+      return restoreSessionPromiseRef.current;
+    }
 
-    try {
+    restoreSessionPromiseRef.current = (async () => {
       const token = getAuthToken();
-
-      const cachedUser = getStoredAuthUser();
-      if (token && cachedUser) {
-        setUser(cachedUser);
-      }
-
-      let result = await fetchMe();
-
-      if (!token && !result?.user) {
+      if (!token) {
         clearAuth();
+        setAuthLoading(false);
+        restoreSessionPromiseRef.current = null;
         return;
       }
 
-      if (token && !result?.user && !result?.shouldLogout) {
-        result = await fetchMe();
-      }
+      setAuthLoading(true);
 
-      if (result?.shouldLogout) {
-        try {
-          await logoutUser();
-        } catch {
-          // ignore logout cleanup error
+      try {
+        const cachedUser = getStoredAuthUser();
+        if (cachedUser) {
+          setUser(cachedUser);
         }
+
+        let result = await fetchMe();
+
+        if (!result?.user && !result?.shouldLogout) {
+          result = await fetchMe();
+        }
+
+        if (result?.shouldLogout) {
+          try {
+            await logoutUser();
+          } catch {
+            // ignore logout cleanup error
+          }
+        }
+      } finally {
+        setAuthLoading(false);
+        restoreSessionPromiseRef.current = null;
       }
-    } finally {
-      setAuthLoading(false);
-    }
+    })();
+
+    return restoreSessionPromiseRef.current;
   }, [clearAuth, fetchMe]);
 
   useEffect(() => {

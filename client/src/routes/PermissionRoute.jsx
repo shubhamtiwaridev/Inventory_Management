@@ -1,6 +1,5 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../store/AuthContext.jsx";
-import FullPageLoader from "../components/FullPageLoader.jsx";
 import {
   getFirstAccessibleSidebarPath,
   hasVisibleSidebarAccess,
@@ -17,12 +16,7 @@ const PermissionRoute = ({
   const { user, authLoading } = useAuth();
 
   if (authLoading) {
-    return (
-      <FullPageLoader
-        title="Loading permissions"
-        subtitle="We are checking which pages are available for your account."
-      />
-    );
+    return null;
   }
 
   const hasAccess = requireModuleAccess

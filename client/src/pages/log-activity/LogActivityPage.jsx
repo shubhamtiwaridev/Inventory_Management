@@ -2,7 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Box, Button, Stack } from "@mui/material";
 import MachineMaintenanceListView from "../machine-maintenance/components/MachineMaintenanceListView.jsx";
 import { brand } from "../machine-maintenance/components/machineMaintenanceUi.jsx";
-import { deleteLogActivity, getLogActivities } from "./logActivityApi.js";
+import {
+  ACTIVITY_LOG_CREATED_EVENT,
+  deleteLogActivity,
+  getLogActivities,
+} from "./logActivityApi.js";
 
 const logActivityColumns = [
   { key: "userEmail", label: "User Email", width: "240px" },
@@ -138,6 +142,24 @@ const LogActivityPage = () => {
 
   useEffect(() => {
     fetchRows();
+  }, [fetchRows]);
+
+  useEffect(() => {
+    const handleActivityLogCreated = () => {
+      fetchRows();
+    };
+
+    window.addEventListener(
+      ACTIVITY_LOG_CREATED_EVENT,
+      handleActivityLogCreated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        ACTIVITY_LOG_CREATED_EVENT,
+        handleActivityLogCreated,
+      );
+    };
   }, [fetchRows]);
 
   useEffect(() => {

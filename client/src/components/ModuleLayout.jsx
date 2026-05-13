@@ -1,7 +1,8 @@
 import { Box } from "@mui/material";
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../store/AuthContext.jsx";
+import { useAppNavigate } from "../hooks/useAppNavigate.jsx";
 import SideBar from "../pages/mainpages/SideBar.jsx";
 
 const brand = {
@@ -14,7 +15,7 @@ const ModuleLayout = ({
   lockPageScroll = false,
 }) => {
   const { canViewTeam } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 

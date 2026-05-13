@@ -1,6 +1,8 @@
 import { authFetch } from "../../api/authFetch";
 import { buildApiUrl } from "../../api/config";
 
+export const ACTIVITY_LOG_CREATED_EVENT = "activity-log-created";
+
 const getResponseList = (response) =>
   Array.isArray(response?.data)
     ? response.data

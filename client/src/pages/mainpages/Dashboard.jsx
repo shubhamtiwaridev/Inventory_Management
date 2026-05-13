@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import UserMenu from "../../components/UserMenu.jsx";
 import {
   Badge,
@@ -27,6 +26,7 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 
 import logo from "../../assets/decostyle-logo.png";
+import { useAppNavigate } from "../../hooks/useAppNavigate.jsx";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { getCards } from "../../pages/staffs/staffApi";
 import {
@@ -187,7 +187,7 @@ const createEmptyDashboardData = () => ({
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
 
   const [availableCards, setAvailableCards] = useState([]);
   const [cardsLoading, setCardsLoading] = useState(true);

@@ -10,6 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useAuth } from "../../store/AuthContext.jsx";
+import { preloadRouteModules } from "../../hooks/useAppNavigate.jsx";
 import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
 
 const brand = {
@@ -73,6 +74,13 @@ const SideBar = ({
     location.pathname,
     visibleSidebarItems,
   );
+  const handleRouteIntent = (path) => {
+    if (!path) {
+      return;
+    }
+
+    preloadRouteModules(path);
+  };
 
   return (
     <Box
@@ -170,6 +178,9 @@ const SideBar = ({
               fullWidth
               disableRipple
               onClick={() => navigate(item.path)}
+              onMouseEnter={() => handleRouteIntent(item.path)}
+              onFocus={() => handleRouteIntent(item.path)}
+              onTouchStart={() => handleRouteIntent(item.path)}
               sx={{
                 justifyContent: collapsed ? "center" : "flex-start",
                 borderRadius: 3,

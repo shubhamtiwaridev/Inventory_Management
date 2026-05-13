@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
-import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import ModuleLayout from "../../components/ModuleLayout";
 import { inventorySidebarItems } from "../../components/sidebars/inventorySidebarItems";
+import {
+  preloadRouteModules,
+  useAppNavigate,
+} from "../../hooks/useAppNavigate.jsx";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
 import MachineMaintenanceListView from "../machine-maintenance/components/MachineMaintenanceListView.jsx";
@@ -206,7 +210,7 @@ const InventoryOverview = () => {
 
 const InventoryPage = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { user } = useAuth();
 
   const allowedSidebarItems = useMemo(
@@ -274,6 +278,9 @@ const InventoryPage = ({ children }) => {
                   <Button
                     key={action.label}
                     onClick={() => navigate(action.path)}
+                    onMouseEnter={() => preloadRouteModules(action.path)}
+                    onFocus={() => preloadRouteModules(action.path)}
+                    onTouchStart={() => preloadRouteModules(action.path)}
                     sx={tabButtonSx(active)}
                   >
                     <Box className="tab-icon">{action.icon}</Box>

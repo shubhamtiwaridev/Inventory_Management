@@ -8,6 +8,13 @@ let dashboardSummaryCache = {
   data: null,
 };
 
+export const clearDashboardSummaryCache = () => {
+  dashboardSummaryCache = {
+    expiresAt: 0,
+    data: null,
+  };
+};
+
 const request = async (path, options = {}) => {
   const response = await authFetch(buildApiUrl(path), options);
   const data = await response.json().catch(() => ({}));
@@ -32,6 +39,12 @@ const cloneSummary = (data = {}) => ({
     : [],
   breakdownAssets: Array.isArray(data.breakdownAssets)
     ? data.breakdownAssets.map((item) => ({ ...item }))
+    : [],
+  recentStaffUsers: Array.isArray(data.recentStaffUsers)
+    ? data.recentStaffUsers.map((item) => ({ ...item }))
+    : [],
+  inventoryBalancesPreview: Array.isArray(data.inventoryBalancesPreview)
+    ? data.inventoryBalancesPreview.map((item) => ({ ...item }))
     : [],
   latestLogs: Array.isArray(data.latestLogs)
     ? data.latestLogs.map((item) => ({ ...item }))

@@ -2,9 +2,13 @@ import { useMemo } from "react";
 import { useAuth } from "../../store/AuthContext.jsx";
 import { getVisibleSidebarItemsForUser } from "../../utils/permissions.js";
 import { Box, Button, Paper, Stack } from "@mui/material";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import ModuleLayout from "../../components/ModuleLayout";
 import { machineMaintenanceSidebarItems } from "../../components/sidebars/machineMaintenanceSidebarItems";
+import {
+  preloadRouteModules,
+  useAppNavigate,
+} from "../../hooks/useAppNavigate.jsx";
 
 const matchesPath = (pathname, targetPath) =>
   pathname === targetPath || pathname.startsWith(`${targetPath}/`);
@@ -74,7 +78,7 @@ const isComplientRoute = (pathname) =>
 
 const MachineMaintenancePage = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useAppNavigate();
   const { user } = useAuth();
 
   const allowedSidebarItems = useMemo(
@@ -130,6 +134,9 @@ const MachineMaintenancePage = ({ children }) => {
                   <Button
                     key={action.label}
                     onClick={() => navigate(action.path)}
+                    onMouseEnter={() => preloadRouteModules(action.path)}
+                    onFocus={() => preloadRouteModules(action.path)}
+                    onTouchStart={() => preloadRouteModules(action.path)}
                     sx={tabButtonSx(active)}
                   >
                     <Box className="tab-icon">{action.icon}</Box>

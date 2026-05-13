@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import InsertDriveFileRoundedIcon from "@mui/icons-material/InsertDriveFileRounded";
 import ImageRoundedIcon from "@mui/icons-material/ImageRounded";
 import PictureAsPdfRoundedIcon from "@mui/icons-material/PictureAsPdfRounded";
@@ -32,6 +33,7 @@ import {
 import {
   deleteUploadCenterFile,
   getUploadCenterFiles,
+  updateUploadCenterFile,
   uploadFilesToUploadCenter,
 } from "./inventoryUploadCenterApi.js";
 
@@ -86,6 +88,10 @@ const InventoryUploadCenterPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [description, setDescription] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+  const [editingFile, setEditingFile] = useState(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingDescription, setEditingDescription] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const fileInputRef = useRef(null);
 
   const totalFiles = useMemo(() => files.length, [files]);
@@ -194,6 +200,44 @@ const InventoryUploadCenterPage = () => {
         type: "error",
         message: error.message || "Failed to delete file",
       });
+    }
+  };
+
+  const handleOpenEditDialog = (file) => {
+    setEditingFile(file);
+    setEditingDescription(file.description || "");
+    setEditDialogOpen(true);
+    setFeedback({ type: "", message: "" });
+  };
+
+  const handleCloseEditDialog = () => {
+    if (savingEdit) return;
+    setEditingFile(null);
+    setEditingDescription("");
+    setEditDialogOpen(false);
+  };
+
+  const handleSaveDescription = async () => {
+    if (!editingFile?.id) return;
+
+    try {
+      setSavingEdit(true);
+      await updateUploadCenterFile(editingFile.id, {
+        description: editingDescription,
+      });
+      await loadFiles();
+      handleCloseEditDialog();
+      setFeedback({
+        type: "success",
+        message: "File description updated successfully.",
+      });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error.message || "Failed to update file description",
+      });
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -320,6 +364,14 @@ const InventoryUploadCenterPage = () => {
                 </Box>
 
                 <Stack direction="row" spacing={0.5}>
+                  <IconButton
+                    onClick={() => handleOpenEditDialog(file)}
+                    sx={actionIconButtonSx}
+                  >
+                    <EditRoundedIcon
+                      sx={{ fontSize: 18, color: brand.primaryDark }}
+                    />
+                  </IconButton>
                   <IconButton
                     component="a"
                     href={fileUrl}
@@ -481,6 +533,51 @@ const InventoryUploadCenterPage = () => {
             sx={filledActionButtonSx}
           >
             {uploading ? "Uploading..." : "Upload"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={editDialogOpen}
+        onClose={handleCloseEditDialog}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: brand.text }}>
+          Edit File Description
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1.5 }}>
+          <Stack spacing={2}>
+            <Typography sx={{ color: brand.textSoft, fontSize: "0.92rem" }}>
+              {editingFile?.originalName || ""}
+            </Typography>
+            <TextField
+              label="Description"
+              value={editingDescription}
+              onChange={(event) => setEditingDescription(event.target.value)}
+              multiline
+              minRows={4}
+              fullWidth
+              placeholder="Write a short description"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={handleCloseEditDialog}
+            variant="outlined"
+            disabled={savingEdit}
+            sx={outlinedActionButtonSx}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveDescription}
+            variant="contained"
+            disabled={savingEdit}
+            sx={filledActionButtonSx}
+          >
+            {savingEdit ? "Saving..." : "Save"}
           </Button>
         </DialogActions>
       </Dialog>

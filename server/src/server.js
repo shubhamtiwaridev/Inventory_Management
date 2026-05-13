@@ -33,6 +33,7 @@ import goodsListRoutes from "./modules/inventory/goods-list/goodsListRoute.js";
 import createStockTransactionRouter from "./modules/inventory/stock-transaction/stockTransactionRoute.js";
 import uploadCenterRoutes from "./modules/inventory/upload-center/uploadCenterRoute.js";
 import warehouseRoutes from "./modules/inventory/warehouse/warehouseRoute.js";
+import dashboardRoutes from "./modules/dashboard/dashboardRoute.js";
 
 dotenv.config();
 connectDB();
@@ -91,6 +92,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/staff-types", staffTypeRoutes);
 app.use("/api/staff-page", staffPageRoutes);
 app.use("/api/cards", cardRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/inventory/goods-list", goodsListRoutes);
 app.use("/api/inventory/upload-center", uploadCenterRoutes);
 app.use("/api/inventory/warehouses", warehouseRoutes);

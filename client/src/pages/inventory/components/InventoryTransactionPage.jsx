@@ -97,7 +97,6 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
           id: item.goodsItemId,
           goodsCode: item.goodsCode || "",
           goodsDesc: item.goodsDesc || "",
-          goodsUnit: item.unit || "",
           availableQuantity: item.currentQuantity || 0,
           label: [item.goodsCode, item.goodsDesc].filter(Boolean).join(" - "),
         }));
@@ -107,7 +106,6 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
         id: item.id,
         goodsCode: item.goodsCode || "",
         goodsDesc: item.goodsDesc || "",
-        goodsUnit: item.goodsUnit || "",
         availableQuantity: "",
         label: [item.goodsCode, item.goodsDesc].filter(Boolean).join(" - "),
       }));
@@ -199,7 +197,6 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
       { key: "warehouseName", label: "Warehouse", width: 180 },
       { key: "partnerName", label: config.partnerLabel, width: 180 },
       { key: "quantity", label: "Quantity", width: 120, nowrap: true },
-      { key: "unit", label: "Unit", width: 120, nowrap: true },
       {
         key: "transactionDate",
         label: config.dateLabel,
@@ -513,14 +510,6 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
               <TextField
                 label="Goods Desc"
                 value={selectedGoodsItem?.goodsDesc || ""}
-                fullWidth
-                disabled
-                sx={textFieldStyles}
-              />
-
-              <TextField
-                label="Unit"
-                value={selectedGoodsItem?.goodsUnit || ""}
                 fullWidth
                 disabled
                 sx={textFieldStyles}

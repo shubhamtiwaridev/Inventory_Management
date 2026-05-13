@@ -4,7 +4,9 @@ import Warehouse from "../warehouse/warehouseModel.js";
 import StockTransaction from "./stockTransactionModel.js";
 
 const STOCK_TRANSACTION_SELECT_FIELDS =
-  "transactionType entryNo goodsItemId warehouseId goodsCode goodsDesc warehouseName unit quantity partnerName transactionDate status notes createdBy createdAt updatedAt";
+  "transactionType entryNo goodsItemId warehouseId goodsCode goodsDesc warehouseName quantity partnerName transactionDate status notes createdBy createdAt updatedAt";
+const DEPRECATED_TRANSACTION_FIELDS = ["unit"];
+const DEPRECATED_TRANSACTION_FIELD_UNSET = { unit: "" };
 
 const pad = (value) => String(value).padStart(2, "0");
 const normalizeValue = (value) => String(value || "").trim();
@@ -50,7 +52,6 @@ const mapTransactionItem = (item) => ({
   goodsDesc: item.goodsDesc || "",
   warehouseName: item.warehouseName || "",
   quantity: String(item.quantity ?? ""),
-  unit: item.unit || "",
   partnerName: item.partnerName || "",
   transactionDate: item.transactionDate || "",
   status: item.status || "Pending",
@@ -102,7 +103,6 @@ const buildGoodsSnapshot = (goodsItem) => ({
   goodsItemId: goodsItem._id,
   goodsCode: normalizeValue(goodsItem.goodsCode),
   goodsDesc: normalizeValue(goodsItem.goodsDesc),
-  unit: normalizeValue(goodsItem.goodsUnit),
 });
 
 const buildWarehouseSnapshot = (warehouse) => ({
@@ -129,7 +129,7 @@ const getNextEntryNo = async (transactionType) => {
 
 const getValidatedGoodsItem = async (goodsItemId) => {
   return GoodsList.findById(goodsItemId)
-    .select("goodsCode goodsDesc goodsUnit")
+    .select("goodsCode goodsDesc")
     .lean();
 };
 
@@ -159,7 +159,6 @@ const getBalanceAggregationPipeline = (match = {}) => [
       goodsCode: { $first: "$goodsCode" },
       goodsDesc: { $first: "$goodsDesc" },
       warehouseName: { $first: "$warehouseName" },
-      unit: { $first: "$unit" },
       inboundQuantity: {
         $sum: {
           $cond: [{ $eq: ["$transactionType", "inbound"] }, "$quantity", 0],
@@ -180,7 +179,6 @@ const getBalanceAggregationPipeline = (match = {}) => [
       goodsCode: 1,
       goodsDesc: 1,
       warehouseName: 1,
-      unit: 1,
       inboundQuantity: 1,
       outboundQuantity: 1,
       currentQuantity: { $subtract: ["$inboundQuantity", "$outboundQuantity"] },
@@ -188,7 +186,7 @@ const getBalanceAggregationPipeline = (match = {}) => [
   },
 ];
 
-const getAggregatedBalances = async (match = {}) => {
+export const getAggregatedBalances = async (match = {}) => {
   return StockTransaction.aggregate(getBalanceAggregationPipeline(match));
 };
 
@@ -198,11 +196,23 @@ const mapBalanceItem = (item) => ({
   goodsCode: item.goodsCode || "",
   goodsDesc: item.goodsDesc || "",
   warehouseName: item.warehouseName || "",
-  unit: item.unit || "",
   inboundQuantity: Number(item.inboundQuantity || 0),
   outboundQuantity: Number(item.outboundQuantity || 0),
   currentQuantity: Number(item.currentQuantity || 0),
 });
+
+const removeDeprecatedTransactionFields = async () => {
+  await StockTransaction.updateMany(
+    {
+      $or: DEPRECATED_TRANSACTION_FIELDS.map((field) => ({
+        [field]: { $exists: true },
+      })),
+    },
+    {
+      $unset: DEPRECATED_TRANSACTION_FIELD_UNSET,
+    },
+  );
+};
 
 const getAvailableOutboundBalance = async ({
   goodsItemId,
@@ -234,6 +244,7 @@ const getAvailableOutboundBalance = async ({
 
 export const getStockTransactions = async (req, res) => {
   try {
+    await removeDeprecatedTransactionFields();
     const transactionType = getTransactionType(req);
     const items = await StockTransaction.find({ transactionType })
       .select(STOCK_TRANSACTION_SELECT_FIELDS)
@@ -254,6 +265,7 @@ export const getStockTransactions = async (req, res) => {
 
 export const getAvailableOutboundItems = async (req, res) => {
   try {
+    await removeDeprecatedTransactionFields();
     const items = (await getAggregatedBalances())
       .filter((item) => Number(item.currentQuantity || 0) > 0)
       .map(mapBalanceItem)
@@ -277,6 +289,7 @@ export const getAvailableOutboundItems = async (req, res) => {
 
 export const getInventorySummary = async (req, res) => {
   try {
+    await removeDeprecatedTransactionFields();
     const summaryRows = (await getAggregatedBalances())
       .map(mapBalanceItem)
       .sort((left, right) =>
@@ -316,6 +329,7 @@ export const getInventorySummary = async (req, res) => {
 
 export const createStockTransaction = async (req, res) => {
   try {
+    await removeDeprecatedTransactionFields();
     const transactionType = getTransactionType(req);
     const payload = normalizeTransactionPayload(req.body);
     const validationError = getValidationError(payload);
@@ -391,6 +405,7 @@ export const createStockTransaction = async (req, res) => {
 
 export const updateStockTransaction = async (req, res) => {
   try {
+    await removeDeprecatedTransactionFields();
     const transactionType = getTransactionType(req);
     const payload = normalizeTransactionPayload(req.body);
     const validationError = getValidationError(payload);

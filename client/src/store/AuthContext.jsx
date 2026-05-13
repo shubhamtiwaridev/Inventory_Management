@@ -90,7 +90,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (token && !result?.user && !result?.shouldLogout) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
         result = await fetchMe();
       }
 

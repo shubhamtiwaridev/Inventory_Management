@@ -33,6 +33,18 @@ export const uploadFilesToUploadCenter = async ({
   });
 };
 
+export const updateUploadCenterFile = async (id, payload = {}) => {
+  const response = await request(`/inventory/upload-center/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  return response?.data;
+};
+
 export const deleteUploadCenterFile = async (id) => {
   const response = await request(`/inventory/upload-center/${id}`, {
     method: "DELETE",

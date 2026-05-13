@@ -18,7 +18,6 @@ import {
 
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import NotificationsNoneRoundedIcon from "@mui/icons-material/NotificationsNoneRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
 import BuildCircleRoundedIcon from "@mui/icons-material/BuildCircleRounded";
@@ -29,27 +28,13 @@ import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
 
 import logo from "../../assets/decostyle-logo.png";
 import { useAuth } from "../../store/AuthContext.jsx";
-import { getCards, getStaffUsers } from "../../pages/staffs/staffApi";
+import { getCards } from "../../pages/staffs/staffApi";
 import {
   getVisibleDashboardCardsForUser,
   isSidebarFeatureVisible,
 } from "../../utils/permissions.js";
-import {
-  getAssets,
-  getComplients,
-  getSpares,
-} from "../machine-maintenance/components/machineMaintenanceApi.js";
-import {
-  createLogActivity,
-  getLogActivityCount,
-  getLogActivities,
-} from "../log-activity/logActivityApi.js";
-import { getGoodsListItems } from "../inventory/components/inventoryGoodsListApi.js";
-import {
-  getInventorySummary,
-  getInventoryTransactions,
-} from "../inventory/components/inventoryTransactionApi.js";
-import { getWarehouses } from "../inventory/components/inventoryWarehouseApi.js";
+import { createLogActivity } from "../log-activity/logActivityApi.js";
+import { getDashboardSummary } from "./dashboardApi.js";
 
 const brand = {
   primary: "#106C6B",
@@ -79,6 +64,14 @@ const dashboardFallbackCards = [
     subtitleTone: "info",
   },
 ];
+
+const dashboardCardOrder = {
+  "machine-maintenance": 1,
+  inventory: 2,
+  spares: 3,
+  staff: 4,
+  "log-activity": 5,
+};
 
 const softCardSx = {
   borderRadius: 4,
@@ -157,182 +150,85 @@ const getSubtitleColor = (kind) => {
   return "#374151";
 };
 
+const createEmptyDashboardData = () => ({
+  counts: {
+    breakdownAssets: 0,
+    lowStockSpares: 0,
+    totalComplaints: 0,
+    openComplaints: 0,
+    totalStaffUsers: 0,
+    activeStaffUsers: 0,
+    pendingStaffUsers: 0,
+    logActivities: 0,
+    goodsItems: 0,
+    warehouses: 0,
+    inventoryItems: 0,
+    inventoryCurrentQuantity: 0,
+  },
+  recentComplaints: [],
+  complaintCategories: [],
+  lowStockSpares: [],
+  breakdownAssets: [],
+  latestLogs: [],
+});
+
 const Dashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const [availableCards, setAvailableCards] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [cardsLoading, setCardsLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [dashboardSearch, setDashboardSearch] = useState("");
-  const [dashboardData, setDashboardData] = useState({
-    assets: [],
-    spares: [],
-    complaints: [],
-    staffUsers: [],
-    logs: [],
-    logCount: 0,
-    goodsItems: [],
-    warehouses: [],
-    inboundTransactions: [],
-    outboundTransactions: [],
-    inventorySummary: {
-      totals: {
-        inboundQuantity: 0,
-        outboundQuantity: 0,
-        currentQuantity: 0,
-      },
-      items: [],
-    },
-  });
+  const [dashboardData, setDashboardData] = useState(createEmptyDashboardData);
 
   useEffect(() => {
-    const loadDashboard = async () => {
+    let isActive = true;
+
+    const loadCards = async () => {
       try {
-        const [
-          cardsResult,
-          assetsResult,
-          sparesResult,
-          complaintsResult,
-          staffResult,
-          logCountResult,
-          logsResult,
-          goodsItemsResult,
-          warehousesResult,
-          inboundResult,
-          outboundResult,
-          inventorySummaryResult,
-        ] = await Promise.allSettled([
-          getCards(),
-          getAssets({ skipCache: true }),
-          getSpares(),
-          getComplients(),
-          getStaffUsers(),
-          getLogActivityCount(),
-          getLogActivities({ limit: 20 }),
-          getGoodsListItems(),
-          getWarehouses(),
-          getInventoryTransactions("inbound"),
-          getInventoryTransactions("outbound"),
-          getInventorySummary(),
-        ]);
+        const cardsResult = await getCards();
 
-        const cards =
-          cardsResult.status === "fulfilled" &&
-          Array.isArray(cardsResult.value?.data)
-            ? cardsResult.value.data
-            : [];
-        const assets =
-          assetsResult.status === "fulfilled" &&
-          Array.isArray(assetsResult.value?.data)
-            ? assetsResult.value.data
-            : [];
-        const spares =
-          sparesResult.status === "fulfilled" &&
-          Array.isArray(sparesResult.value?.data)
-            ? sparesResult.value.data
-            : [];
-        const complaints =
-          complaintsResult.status === "fulfilled" &&
-          Array.isArray(complaintsResult.value?.data)
-            ? complaintsResult.value.data
-            : [];
-        const staffUsers =
-          staffResult.status === "fulfilled" &&
-          Array.isArray(staffResult.value?.users)
-            ? staffResult.value.users
-            : [];
-        const logs =
-          logsResult.status === "fulfilled" && Array.isArray(logsResult.value)
-            ? logsResult.value
-            : [];
-        const logCount =
-          logCountResult.status === "fulfilled"
-            ? Number(logCountResult.value || 0)
-            : 0;
-        const goodsItems =
-          goodsItemsResult.status === "fulfilled" &&
-          Array.isArray(goodsItemsResult.value)
-            ? goodsItemsResult.value
-            : [];
-        const warehouses =
-          warehousesResult.status === "fulfilled" &&
-          Array.isArray(warehousesResult.value)
-            ? warehousesResult.value
-            : [];
-        const inboundTransactions =
-          inboundResult.status === "fulfilled" &&
-          Array.isArray(inboundResult.value)
-            ? inboundResult.value
-            : [];
-        const outboundTransactions =
-          outboundResult.status === "fulfilled" &&
-          Array.isArray(outboundResult.value)
-            ? outboundResult.value
-            : [];
-        const inventorySummary =
-          inventorySummaryResult.status === "fulfilled"
-            ? {
-                totals: inventorySummaryResult.value?.totals || {
-                  inboundQuantity: 0,
-                  outboundQuantity: 0,
-                  currentQuantity: 0,
-                },
-                items: Array.isArray(inventorySummaryResult.value?.items)
-                  ? inventorySummaryResult.value.items
-                  : [],
-              }
-            : {
-                totals: {
-                  inboundQuantity: 0,
-                  outboundQuantity: 0,
-                  currentQuantity: 0,
-                },
-                items: [],
-              };
+        if (!isActive) return;
 
+        const cards = Array.isArray(cardsResult?.data) ? cardsResult.data : [];
         setAvailableCards(mergeCardsWithFallbacks(cards));
-        setDashboardData({
-          assets,
-          spares,
-          complaints,
-          staffUsers,
-          logs,
-          logCount,
-          goodsItems,
-          warehouses,
-          inboundTransactions,
-          outboundTransactions,
-          inventorySummary,
-        });
       } catch (error) {
-        console.error("Failed to load dashboard data:", error);
+        console.error("Failed to load dashboard cards:", error);
+
+        if (!isActive) return;
         setAvailableCards(mergeCardsWithFallbacks([]));
-        setDashboardData({
-          assets: [],
-          spares: [],
-          complaints: [],
-          staffUsers: [],
-          logs: [],
-          logCount: 0,
-          goodsItems: [],
-          warehouses: [],
-          inboundTransactions: [],
-          outboundTransactions: [],
-          inventorySummary: {
-            totals: {
-              inboundQuantity: 0,
-              outboundQuantity: 0,
-              currentQuantity: 0,
-            },
-            items: [],
-          },
-        });
       } finally {
-        setLoading(false);
+        if (isActive) {
+          setCardsLoading(false);
+        }
       }
     };
 
-    loadDashboard();
+    const loadDashboardMetrics = async () => {
+      try {
+        const summary = await getDashboardSummary();
+
+        if (!isActive) return;
+        setDashboardData(summary);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+
+        if (!isActive) return;
+        setDashboardData(createEmptyDashboardData());
+      } finally {
+        if (isActive) {
+          setMetricsLoading(false);
+        }
+      }
+    };
+
+    loadCards();
+    loadDashboardMetrics();
+
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const isSuperadmin = useMemo(
@@ -358,40 +254,6 @@ const Dashboard = () => {
     [searchKeyword],
   );
 
-  const breakdownAssets = useMemo(
-    () =>
-      dashboardData.assets.filter(
-        (item) =>
-          String(item?.status || "")
-            .trim()
-            .toLowerCase() === "breakdown",
-      ),
-    [dashboardData.assets],
-  );
-
-  const lowStockSpares = useMemo(
-    () =>
-      dashboardData.spares.filter((item) => {
-        const currentStock = Number(item?.currentStock || 0);
-        const minQty = Number(item?.minQty || 0);
-        const reorderLevel = Number(item?.reorderLevel || 0);
-        const threshold = Math.max(minQty, reorderLevel);
-        return threshold > 0 && currentStock <= threshold;
-      }),
-    [dashboardData.spares],
-  );
-
-  const openComplaints = useMemo(
-    () =>
-      dashboardData.complaints.filter((item) => {
-        const status = String(item?.status || "")
-          .trim()
-          .toLowerCase();
-        return status !== "closed" && status !== "resolved";
-      }),
-    [dashboardData.complaints],
-  );
-
   const visibleDashboardCards = useMemo(
     () => getVisibleDashboardCardsForUser(availableCards, user),
     [availableCards, user],
@@ -406,40 +268,34 @@ const Dashboard = () => {
   );
 
   const dashboardCardMetrics = useMemo(() => {
-    const activeStaffCount = dashboardData.staffUsers.filter(
-      (item) => item?.isVerified !== false,
-    ).length;
-    const pendingStaffCount = dashboardData.staffUsers.length - activeStaffCount;
-    const inventoryTotals = dashboardData.inventorySummary?.totals || {
-      inboundQuantity: 0,
-      outboundQuantity: 0,
-      currentQuantity: 0,
-    };
-    const inventoryItemsCount = Array.isArray(dashboardData.inventorySummary?.items)
-      ? dashboardData.inventorySummary.items.length
-      : 0;
-    const inventoryValue = Number(inventoryTotals.currentQuantity || 0);
-    const goodsCount = dashboardData.goodsItems.length;
-    const warehouseCount = dashboardData.warehouses.length;
-    const inboundCount = dashboardData.inboundTransactions.length;
-    const outboundCount = dashboardData.outboundTransactions.length;
+    const counts = dashboardData.counts || {};
+    const openComplaintsCount = Number(counts.openComplaints || 0);
+    const breakdownAssetsCount = Number(counts.breakdownAssets || 0);
+    const lowStockSparesCount = Number(counts.lowStockSpares || 0);
+    const activeStaffCount = Number(counts.activeStaffUsers || 0);
+    const pendingStaffCount = Number(counts.pendingStaffUsers || 0);
+    const inventoryItemsCount = Number(counts.inventoryItems || 0);
+    const inventoryValue = Number(counts.inventoryCurrentQuantity || 0);
+    const goodsCount = Number(counts.goodsItems || 0);
+    const warehouseCount = Number(counts.warehouses || 0);
+    const logCount = Number(counts.logActivities || 0);
 
     return {
       "machine-maintenance": {
-        value: String(openComplaints.length),
-        subtitle: `${breakdownAssets.length} breakdown issues`,
-        subtitleTone: openComplaints.length > 0 ? "warning" : "success",
+        value: String(openComplaintsCount),
+        subtitle: `${breakdownAssetsCount} breakdown issues`,
+        subtitleTone: openComplaintsCount > 0 ? "warning" : "success",
       },
       spares: {
-        value: String(lowStockSpares.length),
+        value: String(lowStockSparesCount),
         subtitle: "Minimum quantity alerts",
-        subtitleTone: lowStockSpares.length > 0 ? "error" : "success",
+        subtitleTone: lowStockSparesCount > 0 ? "error" : "success",
       },
       inventory: {
         value: String(inventoryValue),
         subtitle:
           inventoryItemsCount > 0
-            ? `${inboundCount} inbound, ${outboundCount} outbound, ${warehouseCount} warehouses`
+            ? `${inventoryItemsCount} stock balances across ${warehouseCount} warehouses`
             : `${goodsCount} goods items available`,
         subtitleTone: "success",
       },
@@ -452,26 +308,17 @@ const Dashboard = () => {
         subtitleTone: pendingStaffCount > 0 ? "warning" : "success",
       },
       "log-activity": {
-        value: String(dashboardData.logCount),
+        value: String(logCount),
         subtitle:
-          dashboardData.logCount > 0
-            ? `${dashboardData.logs.length} recent logs loaded`
+          logCount > 0
+            ? `${dashboardData.latestLogs.length} recent logs loaded`
             : "No activity logs found",
         subtitleTone: "info",
       },
     };
   }, [
-    dashboardData.logCount,
-    dashboardData.logs.length,
-    dashboardData.goodsItems.length,
-    dashboardData.inboundTransactions.length,
-    dashboardData.inventorySummary,
-    dashboardData.outboundTransactions.length,
-    dashboardData.staffUsers,
-    dashboardData.warehouses.length,
-    openComplaints.length,
-    breakdownAssets.length,
-    lowStockSpares.length,
+    dashboardData.counts,
+    dashboardData.latestLogs.length,
   ]);
 
   const visibleStats = useMemo(() => {
@@ -479,22 +326,35 @@ const Dashboard = () => {
       .filter((card) =>
         matchesDashboardSearch(card.name, card.title, card.subtitle, card.path),
       )
+      .sort((left, right) => {
+        const leftOrder = dashboardCardOrder[left.name] || Number.MAX_SAFE_INTEGER;
+        const rightOrder =
+          dashboardCardOrder[right.name] || Number.MAX_SAFE_INTEGER;
+
+        if (leftOrder !== rightOrder) {
+          return leftOrder - rightOrder;
+        }
+
+        return String(left.title || "").localeCompare(String(right.title || ""));
+      })
       .map((card) => {
         const metrics = dashboardCardMetrics[card.name] || {};
 
         return {
           title: card.title,
-          value: metrics.value || "0",
+          value: metricsLoading ? "--" : metrics.value || "0",
           subtitle: metrics.subtitle || card.subtitle,
           subtitleTone: metrics.subtitleTone || card.subtitleTone,
           icon: getIconComponent(card.icon),
           iconBg: card.iconBg,
           iconColor: card.iconColor,
           path: card.path,
+          isLoading: metricsLoading,
         };
       });
   }, [
     dashboardCardMetrics,
+    metricsLoading,
     matchesDashboardSearch,
     visibleDashboardCards,
   ]);
@@ -539,8 +399,8 @@ const Dashboard = () => {
 
   const complaintRows = useMemo(
     () =>
-      (canViewComplaintSection ? dashboardData.complaints : []).slice(0, 5).map((item) => ({
-        id: item?._id,
+      (canViewComplaintSection ? dashboardData.recentComplaints : []).map((item) => ({
+        id: item?.id,
         complaintCode: item?.complaintCode || "-",
         complaintTitle: item?.complaintTitle || "-",
         section: sectionLabelMap[item?.section] || item?.section || "-",
@@ -548,26 +408,25 @@ const Dashboard = () => {
         issueDate: formatDateTime(item?.issueDate),
         createdBy: item?.createdBy || "-",
       })),
-    [canViewComplaintSection, dashboardData.complaints],
+    [canViewComplaintSection, dashboardData.recentComplaints],
   );
 
   const complaintCategories = useMemo(() => {
     if (!canViewComplaintSection) return [];
 
-    const total = dashboardData.complaints.length || 1;
-    const counts = dashboardData.complaints.reduce((acc, item) => {
-      const key = sectionLabelMap[item?.section] || "Other";
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {});
+    const total = Number(dashboardData.counts?.totalComplaints || 0) || 1;
 
-    return Object.entries(counts).map(([name, count], index) => ({
-      name,
-      units: `${count} complaints`,
-      progress: Math.max(5, Math.round((count / total) * 100)),
+    return dashboardData.complaintCategories.map((item, index) => ({
+      name: sectionLabelMap[item?.section] || item?.section || "Other",
+      units: `${Number(item?.count || 0)} complaints`,
+      progress: Math.max(5, Math.round((Number(item?.count || 0) / total) * 100)),
       color: categoryPalette[index % categoryPalette.length],
     }));
-  }, [canViewComplaintSection, dashboardData.complaints]);
+  }, [
+    canViewComplaintSection,
+    dashboardData.complaintCategories,
+    dashboardData.counts?.totalComplaints,
+  ]);
 
   const quickActions = useMemo(
     () => [
@@ -612,9 +471,9 @@ const Dashboard = () => {
       "/machine-maintenance/spare-master/list",
       "List of Spares",
     )
-      ? lowStockSpares.slice(0, 3).map((item) => ({
+      ? dashboardData.lowStockSpares.map((item) => ({
           title: item?.spareName || item?.spareCode || "Low Stock Spare",
-          message: `Current stock ${item?.currentStock || 0} is at or below minimum ${item?.minQty || 0}`,
+          message: `Current stock ${item?.currentStock || 0} is at or below minimum ${Math.max(Number(item?.minQty || 0), Number(item?.reorderLevel || 0))}`,
           bg: "#FFF8ED",
           border: "#F4E0BE",
           iconColor: "#D97706",
@@ -625,27 +484,27 @@ const Dashboard = () => {
       "/machine-maintenance/consume/breakdown-list",
       "Breakdown List",
     )
-      ? breakdownAssets.slice(0, 2).map((item) => ({
-      title: item?.assetName || item?.assetCode || "Breakdown Machine",
-      message: `${item?.department || "Department"} | ${item?.plant || "Plant"} is in breakdown`,
-      bg: "#FFF1EE",
-      border: "#F6D7D1",
-      iconColor: "#C2410C",
+      ? dashboardData.breakdownAssets.map((item) => ({
+          title: item?.assetName || item?.assetCode || "Breakdown Machine",
+          message: `${item?.department || "Department"} | ${item?.plant || "Plant"} is in breakdown`,
+          bg: "#FFF1EE",
+          border: "#F6D7D1",
+          iconColor: "#C2410C",
         }))
       : [];
 
     return [...spareAlerts, ...breakdownAlerts].slice(0, 4);
-  }, [breakdownAssets, canAccessFeature, lowStockSpares]);
+  }, [canAccessFeature, dashboardData.breakdownAssets, dashboardData.lowStockSpares]);
 
   const latestUpdates = useMemo(
     () =>
-      (canViewLogUpdatesSection ? dashboardData.logs : []).slice(0, 4).map((item, index) => ({
+      (canViewLogUpdatesSection ? dashboardData.latestLogs : []).map((item, index) => ({
         rank: `#${index + 1}`,
-        name: item.targetName !== "-" ? item.targetName : item.page,
-        sold: `${item.action} | ${item.time}`,
-        change: item.userName !== "-" ? item.userName : item.role,
+        name: item.targetName || item.page || "-",
+        sold: `${item.action || "-"} | ${formatDateTime(item.createdAt)}`,
+        change: item.userName || item.role || "-",
       })),
-    [canViewLogUpdatesSection, dashboardData.logs],
+    [canViewLogUpdatesSection, dashboardData.latestLogs],
   );
 
   const filteredOrders = useMemo(() => {
@@ -698,8 +557,6 @@ const Dashboard = () => {
     filteredQuickActions.length > 0 ||
     filteredAlerts.length > 0 ||
     filteredTopProducts.length > 0;
-
-  const firstQuickAction = visibleQuickActions[0] || null;
 
   const initials = useMemo(() => {
     const name = user?.name ? user.name.trim() : "";
@@ -827,42 +684,6 @@ const Dashboard = () => {
                 }}
               />
 
-              {firstQuickAction ? (
-                <IconButton
-                  onClick={() => navigate(firstQuickAction.path)}
-                  sx={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 3,
-                    backgroundColor: "#FFFFFF",
-                    border: `1px solid ${brand.border}`,
-                    boxShadow: brand.shadow,
-                    "&:hover": {
-                      backgroundColor: "#F7F9FB",
-                    },
-                  }}
-                >
-                  <AddRoundedIcon sx={{ color: brand.primary }} />
-                </IconButton>
-              ) : null}
-
-              {canViewAlertsSection ? (
-                <IconButton
-                  sx={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: 3,
-                    backgroundColor: "#FFF8ED",
-                    border: "1px solid rgba(217, 119, 6, 0.18)",
-                    boxShadow: brand.shadow,
-                  }}
-                >
-                  <Badge badgeContent={filteredAlerts.length} color="error">
-                    <NotificationsNoneRoundedIcon sx={{ color: "#D97706" }} />
-                  </Badge>
-                </IconButton>
-              ) : null}
-
               <UserMenu
                 user={user}
                 initials={initials}
@@ -901,14 +722,15 @@ const Dashboard = () => {
               gridTemplateColumns: {
                 xs: "1fr",
                 sm: "repeat(2, 1fr)",
-                xl: "repeat(4, 1fr)",
+                lg: "repeat(5, minmax(0, 1fr))",
               },
               gap: 2,
               mb: 2.5,
             }}
           >
-            {loading ? (
-              Array.from({ length: 4 }).map((_, index) => (
+            {cardsLoading ? (
+              Array.from({ length: dashboardFallbackCards.length }).map(
+                (_, index) => (
                 <Paper
                   key={index}
                   elevation={0}
@@ -924,7 +746,8 @@ const Dashboard = () => {
                 >
                   <LinearProgress sx={{ width: "60%" }} />
                 </Paper>
-              ))
+                ),
+              )
             ) : visibleStats.length === 0 ? (
               <Paper
                 elevation={0}
@@ -1019,6 +842,21 @@ const Dashboard = () => {
                           color: getSubtitleColor(item.subtitleTone),
                         }}
                       />
+
+                      {item.isLoading ? (
+                        <LinearProgress
+                          sx={{
+                            mt: 1,
+                            height: 4,
+                            borderRadius: 999,
+                            backgroundColor: "#E9EEF2",
+                            "& .MuiLinearProgress-bar": {
+                              borderRadius: 999,
+                              backgroundColor: brand.primaryLight,
+                            },
+                          }}
+                        />
+                      ) : null}
                     </Box>
                   </Stack>
                 </Paper>

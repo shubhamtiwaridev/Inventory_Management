@@ -40,11 +40,6 @@ const stockTransactionSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    unit: {
-      type: String,
-      trim: true,
-      default: "",
-    },
     quantity: {
       type: Number,
       required: true,

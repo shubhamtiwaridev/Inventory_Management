@@ -6,6 +6,7 @@ import { protect } from "../../../middleware/authMiddleware.js";
 import {
   deleteUploadCenterFile,
   getUploadCenterFiles,
+  updateUploadCenterFile,
   uploadCenterFiles,
 } from "./uploadCenterController.js";
 
@@ -48,6 +49,7 @@ router.use(protect);
 
 router.get("/", getUploadCenterFiles);
 router.post("/", upload.array("files", 20), uploadCenterFiles);
+router.put("/:id", updateUploadCenterFile);
 router.delete("/:id", deleteUploadCenterFile);
 
 export default router;

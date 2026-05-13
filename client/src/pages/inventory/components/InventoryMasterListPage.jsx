@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Box,
@@ -6,11 +6,10 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import UploadFileRoundedIcon from "@mui/icons-material/UploadFileRounded";
 import MachineMaintenanceListView from "../../machine-maintenance/components/MachineMaintenanceListView.jsx";
 import { inventorySidebarItems } from "../../../components/sidebars/inventorySidebarItems.jsx";
@@ -25,10 +24,7 @@ import {
   getFirstAccessibleSidebarPath,
   isSidebarFeatureVisible,
 } from "../../../utils/permissions.js";
-import {
-  cloneInventoryMasterRows,
-  inventoryMasterConfigs,
-} from "./inventoryGoodsListData.js";
+import { inventoryMasterConfigs } from "./inventoryGoodsListData.js";
 import {
   createGoodsListItem,
   deleteGoodsListItem,
@@ -37,55 +33,10 @@ import {
   updateGoodsListItem,
 } from "./inventoryGoodsListApi.js";
 
-const configKeyMap = {
-  list: "goodsList",
-  units: "units",
-  class: "class",
-  color: "color",
-  brand: "brand",
-  specs: "specs",
-  origin: "origin",
+const permissionConfig = {
+  path: "/inventory/goodslist/list",
+  label: "Goods List",
 };
-
-const permissionConfigMap = {
-  list: {
-    path: "/inventory/goodslist/list",
-    label: "Goods List",
-  },
-  units: {
-    path: "/inventory/goodslist/units",
-    label: "Unit",
-  },
-  class: {
-    path: "/inventory/goodslist/class",
-    label: "Class",
-  },
-  color: {
-    path: "/inventory/goodslist/color",
-    label: "Color",
-  },
-  brand: {
-    path: "/inventory/goodslist/brand",
-    label: "Brand",
-  },
-  specs: {
-    path: "/inventory/goodslist/specs",
-    label: "Specs",
-  },
-  origin: {
-    path: "/inventory/goodslist/origin",
-    label: "Origin",
-  },
-};
-
-const GOODS_LIST_DERIVED_CONFIGS = [
-  { key: "units", field: "goodsUnit" },
-  { key: "class", field: "goodsClass" },
-  { key: "color", field: "goodsColor" },
-  { key: "brand", field: "goodsBrand" },
-  { key: "specs", field: "goodsSpecs" },
-  { key: "origin", field: "goodsOrigin" },
-];
 
 const getNowStamp = () => {
   const date = new Date();
@@ -137,46 +88,11 @@ const findDuplicateGoodsRow = (rows = [], payload = {}, editingId = null) => {
   });
 };
 
-const buildDerivedRowsFromGoodsItems = (goodsItems = []) =>
-  GOODS_LIST_DERIVED_CONFIGS.reduce((acc, { key, field }) => {
-    const seenValues = new Set();
-
-    acc[key] = goodsItems.reduce((rows, item, index) => {
-      const value = String(item?.[field] || "").trim();
-
-      if (!value) return rows;
-
-      const normalizedValue = normalizeDuplicateValue(value);
-
-      if (seenValues.has(normalizedValue)) return rows;
-      seenValues.add(normalizedValue);
-
-      rows.push({
-        id: `${key}-${normalizedValue}-${index}`,
-        [field]: value,
-        createdBy: item?.createdBy || "System",
-        createdAt: item?.createdAt || "-",
-        updatedAt: item?.updatedAt || "-",
-      });
-
-      return rows;
-    }, []);
-
-    return acc;
-  }, {});
-
 const InventoryMasterListPage = () => {
   const { user } = useAuth();
-  const { tabKey } = useParams();
-  const configKey = configKeyMap[tabKey] || "goodsList";
-  const isGoodsListTab = configKey === "goodsList";
-  const permissionConfig =
-    permissionConfigMap[tabKey] || permissionConfigMap.list;
-  const config = inventoryMasterConfigs[configKey];
+  const config = inventoryMasterConfigs.goodsList;
 
-  const [masterRows, setMasterRows] = useState(() =>
-    cloneInventoryMasterRows(),
-  );
+  const [rows, setRows] = useState([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   const [formValues, setFormValues] = useState(() => getDefaultValues(config));
@@ -191,26 +107,18 @@ const InventoryMasterListPage = () => {
     permissionConfig.label,
   );
 
-  const rows = masterRows[configKey] || [];
-
   const showFeedback = useCallback((type, message) => {
     setFeedback({ type, message });
-  }, []);
-
-  const syncGoodsInventoryRows = useCallback((goodsItems = []) => {
-    setMasterRows((prev) => ({
-      ...prev,
-      goodsList: goodsItems,
-      ...buildDerivedRowsFromGoodsItems(goodsItems),
-    }));
   }, []);
 
   const fetchGoodsRows = useCallback(async ({ skipCache = false } = {}) => {
     try {
       setLoadingRows(true);
       const goodsItems = await getGoodsListItems({ skipCache });
-      syncGoodsInventoryRows(goodsItems);
-      setFeedback((prev) => (prev.type === "error" ? { type: "", message: "" } : prev));
+      setRows(goodsItems);
+      setFeedback((prev) =>
+        prev.type === "error" ? { type: "", message: "" } : prev,
+      );
     } catch (error) {
       showFeedback(
         "error",
@@ -219,30 +127,25 @@ const InventoryMasterListPage = () => {
     } finally {
       setLoadingRows(false);
     }
-  }, [showFeedback, syncGoodsInventoryRows]);
-
-  const optionMap = useMemo(() => {
-    const options = {};
-
-    (config.fields || []).forEach((field) => {
-      if (!field.selectFrom) return;
-
-      const sourceConfig = inventoryMasterConfigs[field.selectFrom];
-      const sourceRows = masterRows[field.selectFrom] || [];
-      const valueKey = sourceConfig?.primaryValueKey;
-
-      options[field.name] = sourceRows
-        .map((row) => row[valueKey])
-        .filter(Boolean)
-        .filter((value, index, array) => array.indexOf(value) === index);
-    });
-
-    return options;
-  }, [config.fields, masterRows]);
+  }, [showFeedback]);
 
   useEffect(() => {
     fetchGoodsRows();
   }, [fetchGoodsRows]);
+
+  useEffect(() => {
+    if (!feedback.message) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => {
+      setFeedback({ type: "", message: "" });
+    }, 10000);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [feedback]);
 
   if (!canAccessFeature) {
     return (
@@ -286,34 +189,17 @@ const InventoryMasterListPage = () => {
   };
 
   const handleDelete = async (row) => {
-    if (isGoodsListTab) {
-      try {
-        await deleteGoodsListItem(row.id);
-        await fetchGoodsRows({ skipCache: true });
-        showFeedback("success", "Goods item deleted successfully.");
-      } catch (error) {
-        showFeedback("error", error.message || "Failed to delete goods item");
-      }
-
-      return;
+    try {
+      await deleteGoodsListItem(row.id);
+      await fetchGoodsRows({ skipCache: true });
+      showFeedback("success", "Goods item deleted successfully.");
+    } catch (error) {
+      showFeedback("error", error.message || "Failed to delete goods item");
     }
-
-    setMasterRows((prev) => ({
-      ...prev,
-      [configKey]: (prev[configKey] || []).filter((item) => item.id !== row.id),
-    }));
   };
 
   const handleRefresh = async () => {
-    if (isGoodsListTab) {
-      await fetchGoodsRows({ skipCache: true });
-      return;
-    }
-
-    setMasterRows((prev) => ({
-      ...prev,
-      [configKey]: cloneInventoryMasterRows()[configKey] || [],
-    }));
+    await fetchGoodsRows({ skipCache: true });
   };
 
   const handleSubmit = async (event) => {
@@ -332,72 +218,43 @@ const InventoryMasterListPage = () => {
       return;
     }
 
-    if (isGoodsListTab) {
-      const duplicateRow = findDuplicateGoodsRow(
-        rows,
-        formValues,
-        editingRow?.id || null,
-      );
+    const duplicateRow = findDuplicateGoodsRow(
+      rows,
+      formValues,
+      editingRow?.id || null,
+    );
 
-      if (duplicateRow) {
-        showFeedback(
-          "error",
-          "Duplicate goods item found. Goods Code, SKU, Barcode, and Item Name must stay unique.",
-        );
-        return;
-      }
+    if (duplicateRow) {
+      showFeedback(
+        "error",
+        "Duplicate goods item found. Goods Code, SKU, Barcode, and Item Name must stay unique.",
+      );
+      return;
     }
 
     const timestamp = getNowStamp();
 
-    if (isGoodsListTab) {
-      try {
-        if (editingRow) {
-          await updateGoodsListItem(editingRow.id, formValues);
-          showFeedback("success", "Goods item updated successfully.");
-        } else {
-          await createGoodsListItem(formValues);
-          showFeedback("success", "Goods item created successfully.");
-        }
-
-        await fetchGoodsRows({ skipCache: true });
-        closeDialog();
-      } catch (error) {
-        showFeedback("error", error.message || "Failed to save goods item");
+    try {
+      if (editingRow) {
+        await updateGoodsListItem(editingRow.id, {
+          ...formValues,
+          updatedAt: timestamp,
+        });
+        showFeedback("success", "Goods item updated successfully.");
+      } else {
+        await createGoodsListItem({
+          ...formValues,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        });
+        showFeedback("success", "Goods item created successfully.");
       }
 
-      return;
+      await fetchGoodsRows({ skipCache: true });
+      closeDialog();
+    } catch (error) {
+      showFeedback("error", error.message || "Failed to save goods item");
     }
-
-    if (editingRow) {
-      setMasterRows((prev) => ({
-        ...prev,
-        [configKey]: (prev[configKey] || []).map((item) =>
-          item.id === editingRow.id
-            ? {
-                ...item,
-                ...formValues,
-                updatedAt: timestamp,
-              }
-            : item,
-        ),
-      }));
-    } else {
-      const newRow = {
-        id: Date.now(),
-        ...formValues,
-        createdBy: "Admin",
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      };
-
-      setMasterRows((prev) => ({
-        ...prev,
-        [configKey]: [newRow, ...(prev[configKey] || [])],
-      }));
-    }
-
-    closeDialog();
   };
 
   const handleOpenImport = () => {
@@ -472,19 +329,17 @@ const InventoryMasterListPage = () => {
         onDelete={handleDelete}
         primaryButtonLabel={config.primaryButtonLabel}
         onPrimaryAction={openAddDialog}
-        showDownloadButton={!isGoodsListTab}
+        showDownloadButton={false}
         toolbarActions={
-          isGoodsListTab ? (
-            <Button
-              variant="contained"
-              startIcon={<UploadFileRoundedIcon />}
-              onClick={handleOpenImport}
-              disabled={importing || loadingRows}
-              sx={filledActionButtonSx}
-            >
-              {importing ? "Importing..." : "Import Excel"}
-            </Button>
-          ) : null
+          <Button
+            variant="contained"
+            startIcon={<UploadFileRoundedIcon />}
+            onClick={handleOpenImport}
+            disabled={importing || loadingRows}
+            sx={filledActionButtonSx}
+          >
+            {importing ? "Importing..." : "Import Excel"}
+          </Button>
         }
       />
 
@@ -538,8 +393,6 @@ const InventoryMasterListPage = () => {
               }}
             >
               {(config.fields || []).map((field) => {
-                const isSelect = Boolean(field.selectFrom);
-                const fieldOptions = optionMap[field.name] || [];
                 const isGoodsDesc = field.name === "goodsDesc";
 
                 return (
@@ -553,20 +406,11 @@ const InventoryMasterListPage = () => {
                     required={field.required}
                     error={Boolean(formErrors[field.name])}
                     helperText={formErrors[field.name] || " "}
-                    select={isSelect}
                     multiline={isGoodsDesc ? false : field.multiline}
                     minRows={isGoodsDesc ? undefined : field.minRows}
                     fullWidth
                     sx={textFieldStyles}
-                  >
-                    {isSelect
-                      ? fieldOptions.map((option) => (
-                          <MenuItem key={option} value={option}>
-                            {option}
-                          </MenuItem>
-                        ))
-                      : null}
-                  </TextField>
+                  />
                 );
               })}
             </Box>

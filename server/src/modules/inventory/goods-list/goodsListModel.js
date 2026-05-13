@@ -17,36 +17,6 @@ const goodsListSchema = new mongoose.Schema(
       trim: true,
       default: "",
     },
-    goodsUnit: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    goodsClass: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    goodsBrand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    goodsColor: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    goodsSpecs: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    goodsOrigin: {
-      type: String,
-      trim: true,
-      default: "",
-    },
     goodsSku: {
       type: String,
       trim: true,

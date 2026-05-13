@@ -1,55 +1,118 @@
+import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { GlobalStyles } from "@mui/material";
 
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import PermissionRoute from "./routes/PermissionRoute.jsx";
 import PublicRoute from "./routes/PublicRoute.jsx";
+import FullPageLoader from "./components/FullPageLoader.jsx";
 
-import Register from "./pages/auth/Register.jsx";
-import Login from "./pages/auth/Login.jsx";
-import ForgetPassword from "./pages/auth/ForgetPassword.jsx";
+const Register = lazy(() => import("./pages/auth/Register.jsx"));
+const Login = lazy(() => import("./pages/auth/Login.jsx"));
+const ForgetPassword = lazy(() => import("./pages/auth/ForgetPassword.jsx"));
 
-import Dashboard from "./pages/mainpages/Dashboard.jsx";
+const Dashboard = lazy(() => import("./pages/mainpages/Dashboard.jsx"));
 
-import StaffPage from "./pages/staffs/StaffPage.jsx";
-import StaffList from "./pages/staffs/StaffList.jsx";
-import StaffType from "./pages/staffs/StaffType.jsx";
+const StaffPage = lazy(() => import("./pages/staffs/StaffPage.jsx"));
+const StaffList = lazy(() => import("./pages/staffs/StaffList.jsx"));
+const StaffType = lazy(() => import("./pages/staffs/StaffType.jsx"));
 
-import MachineMaintenancePage from "./pages/machine-maintenance/MachineMaintenancePage.jsx";
-import SparesPage from "./pages/spares/SparesPage.jsx";
-import InventoryPage from "./pages/inventory/InventoryPage.jsx";
+const MachineMaintenancePage = lazy(
+  () => import("./pages/machine-maintenance/MachineMaintenancePage.jsx"),
+);
+const SparesPage = lazy(() => import("./pages/spares/SparesPage.jsx"));
+const InventoryPage = lazy(() => import("./pages/inventory/InventoryPage.jsx"));
 import { inventorySidebarItems } from "./components/sidebars/inventorySidebarItems.jsx";
 import { machineMaintenanceSidebarItems } from "./components/sidebars/machineMaintenanceSidebarItems.jsx";
 import { sparesSidebarItems } from "./components/sidebars/sparesSidebarItems.jsx";
 
-import AssetListPage from "./pages/machine-maintenance/assets/AssetListPage.jsx";
-import SpareListPage from "./pages/machine-maintenance/assets/SpareListPage.jsx";
-import TaskListPage from "./pages/machine-maintenance/assets/TaskListPage.jsx";
-import UserListPage from "./pages/machine-maintenance/assets/UserListPage.jsx";
-import VendorListPage from "./pages/machine-maintenance/assets/VendorListPage.jsx";
-import BreakdownListPage from "./pages/machine-maintenance/assets/BreakdownListPage.jsx";
-import ConsumeEntryPage from "./pages/machine-maintenance/assets/ConsumeEntryPage.jsx";
-import ComplaintAssetsPage from "./pages/machine-maintenance/complient/ComplaintAssetsPage.jsx";
-import ComplaintSparePage from "./pages/machine-maintenance/complient/ComplaintSparePage.jsx";
-import ComplaintTaskMasterPage from "./pages/machine-maintenance/complient/ComplaintTaskMasterPage.jsx";
-import ComplaintVendorPage from "./pages/machine-maintenance/complient/ComplaintVendorPage.jsx";
+const AssetListPage = lazy(
+  () => import("./pages/machine-maintenance/assets/AssetListPage.jsx"),
+);
+const SpareListPage = lazy(
+  () => import("./pages/machine-maintenance/assets/SpareListPage.jsx"),
+);
+const TaskListPage = lazy(
+  () => import("./pages/machine-maintenance/assets/TaskListPage.jsx"),
+);
+const UserListPage = lazy(
+  () => import("./pages/machine-maintenance/assets/UserListPage.jsx"),
+);
+const VendorListPage = lazy(
+  () => import("./pages/machine-maintenance/assets/VendorListPage.jsx"),
+);
+const BreakdownListPage = lazy(
+  () => import("./pages/machine-maintenance/assets/BreakdownListPage.jsx"),
+);
+const ConsumeEntryPage = lazy(
+  () => import("./pages/machine-maintenance/assets/ConsumeEntryPage.jsx"),
+);
+const ComplaintAssetsPage = lazy(
+  () => import("./pages/machine-maintenance/complient/ComplaintAssetsPage.jsx"),
+);
+const ComplaintSparePage = lazy(
+  () => import("./pages/machine-maintenance/complient/ComplaintSparePage.jsx"),
+);
+const ComplaintTaskMasterPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/complient/ComplaintTaskMasterPage.jsx"),
+);
+const ComplaintVendorPage = lazy(
+  () => import("./pages/machine-maintenance/complient/ComplaintVendorPage.jsx"),
+);
 
-import DepartmentListPage from "./pages/machine-maintenance/configure/DepartmentListPage.jsx";
-import ShiftTimingListPage from "./pages/machine-maintenance/configure/ShiftTimingListPage.jsx";
-import PlantSiteListPage from "./pages/machine-maintenance/configure/PlantSiteListPage.jsx";
-import StatusListPage from "./pages/machine-maintenance/configure/StatusListPage.jsx";
-import CriticalLevelListPage from "./pages/machine-maintenance/configure/CriticalLevelListPage.jsx";
-import UnitOfMeasureListPage from "./pages/machine-maintenance/configure/UnitOfMeasureListPage.jsx";
-import TaskCategoryListPage from "./pages/machine-maintenance/configure/TaskCategoryListPage.jsx";
-import FrequencyListPage from "./pages/machine-maintenance/configure/FrequencyListPage.jsx";
-import ContractTypeListPage from "./pages/machine-maintenance/configure/ContractTypeListPage.jsx";
+const DepartmentListPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/configure/DepartmentListPage.jsx"),
+);
+const ShiftTimingListPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/configure/ShiftTimingListPage.jsx"),
+);
+const PlantSiteListPage = lazy(
+  () => import("./pages/machine-maintenance/configure/PlantSiteListPage.jsx"),
+);
+const StatusListPage = lazy(
+  () => import("./pages/machine-maintenance/configure/StatusListPage.jsx"),
+);
+const CriticalLevelListPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/configure/CriticalLevelListPage.jsx"),
+);
+const UnitOfMeasureListPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/configure/UnitOfMeasureListPage.jsx"),
+);
+const TaskCategoryListPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/configure/TaskCategoryListPage.jsx"),
+);
+const FrequencyListPage = lazy(
+  () => import("./pages/machine-maintenance/configure/FrequencyListPage.jsx"),
+);
+const ContractTypeListPage = lazy(
+  () =>
+    import("./pages/machine-maintenance/configure/ContractTypeListPage.jsx"),
+);
 
-import InventoryMasterListPage from "./pages/inventory/components/InventoryMasterListPage.jsx";
-import InventoryTransactionPage from "./pages/inventory/components/InventoryTransactionPage.jsx";
-import InventoryWarehousePage from "./pages/inventory/components/InventoryWarehousePage.jsx";
-import InventoryUploadCenterPage from "./pages/inventory/components/InventoryUploadCenterPage.jsx";
-import InventoryDownloadCenterPage from "./pages/inventory/components/InventoryDownloadCenterPage.jsx";
-import LogActivityPage from "./pages/log-activity/LogActivityPage.jsx";
+const InventoryMasterListPage = lazy(
+  () => import("./pages/inventory/components/InventoryMasterListPage.jsx"),
+);
+const InventoryTransactionPage = lazy(
+  () => import("./pages/inventory/components/InventoryTransactionPage.jsx"),
+);
+const InventoryWarehousePage = lazy(
+  () => import("./pages/inventory/components/InventoryWarehousePage.jsx"),
+);
+const InventoryUploadCenterPage = lazy(
+  () => import("./pages/inventory/components/InventoryUploadCenterPage.jsx"),
+);
+const InventoryDownloadCenterPage = lazy(
+  () => import("./pages/inventory/components/InventoryDownloadCenterPage.jsx"),
+);
+const LogActivityPage = lazy(
+  () => import("./pages/log-activity/LogActivityPage.jsx"),
+);
 
 const withPermissionRoute = (
   element,
@@ -81,43 +144,51 @@ function App() {
           },
         }}
       />
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-
-        <Route element={<PublicRoute />}>
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgetPassword />} />
-        </Route>
-
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/orders" element={<Dashboard />} />
-          <Route path="/suppliers" element={<Dashboard />} />
-          <Route path="/warehouses" element={<Dashboard />} />
-          <Route path="/categories" element={<Dashboard />} />
-          <Route path="/reports" element={<Dashboard />} />
-
-          <Route path="/staff" element={<StaffPage />} />
-          <Route path="/staff-list" element={<StaffList />} />
-          <Route path="/staff-type" element={<StaffType />} />
-          <Route path="/log-activity" element={<LogActivityPage />} />
-
-          <Route
-            path="/machine-maintenance"
-            element={
-              <PermissionRoute
-                sidebarItems={machineMaintenanceSidebarItems}
-                requireModuleAccess
-              >
-                <MachineMaintenancePage />
-              </PermissionRoute>
-            }
-          >
-          <Route
-            index
-            element={<Navigate to="/machine-maintenance/assets/list" replace />}
+      <Suspense
+        fallback={
+          <FullPageLoader
+            title="Loading page"
+            subtitle="We are downloading only the files needed for this screen."
           />
+        }
+      >
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          <Route element={<PublicRoute />}>
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgetPassword />} />
+          </Route>
+
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/orders" element={<Dashboard />} />
+            <Route path="/suppliers" element={<Dashboard />} />
+            <Route path="/warehouses" element={<Dashboard />} />
+            <Route path="/categories" element={<Dashboard />} />
+            <Route path="/reports" element={<Dashboard />} />
+
+            <Route path="/staff" element={<StaffPage />} />
+            <Route path="/staff-list" element={<StaffList />} />
+            <Route path="/staff-type" element={<StaffType />} />
+            <Route path="/log-activity" element={<LogActivityPage />} />
+
+            <Route
+              path="/machine-maintenance"
+              element={
+                <PermissionRoute
+                  sidebarItems={machineMaintenanceSidebarItems}
+                  requireModuleAccess
+                >
+                  <MachineMaintenancePage />
+                </PermissionRoute>
+              }
+            >
+              <Route
+                index
+                element={<Navigate to="/machine-maintenance/assets/list" replace />}
+              />
 
           <Route
             path="assets/list"
@@ -410,105 +481,107 @@ function App() {
               "Contract Type",
             )}
           />
-          </Route>
+            </Route>
 
-          <Route
-            path="/spares"
-            element={
-              <PermissionRoute
-                sidebarItems={sparesSidebarItems}
-                requireModuleAccess
-              >
-                <SparesPage />
-              </PermissionRoute>
-            }
-          />
-
-          <Route
-            path="/inventory/*"
-            element={
-              <PermissionRoute
-                sidebarItems={inventorySidebarItems}
-                requireModuleAccess
-              >
-                <InventoryPage />
-              </PermissionRoute>
-            }
-          >
             <Route
-              path="inbound"
+              path="/spares"
               element={
                 <PermissionRoute
-                  sidebarItems={inventorySidebarItems}
-                  featurePath="/inventory/inbound"
-                  featureLabel="Inbound"
+                  sidebarItems={sparesSidebarItems}
+                  requireModuleAccess
                 >
-                  <InventoryTransactionPage type="inbound" />
+                  <SparesPage />
                 </PermissionRoute>
               }
             />
+
             <Route
-              path="outbound"
-              element={
-                <PermissionRoute
-                  sidebarItems={inventorySidebarItems}
-                  featurePath="/inventory/outbound"
-                  featureLabel="Outbound"
-                >
-                  <InventoryTransactionPage type="outbound" />
-                </PermissionRoute>
-              }
-            />
-            <Route
-              path="goodslist/:tabKey"
+              path="/inventory/*"
               element={
                 <PermissionRoute
                   sidebarItems={inventorySidebarItems}
                   requireModuleAccess
                 >
-                  <InventoryMasterListPage />
+                  <InventoryPage />
                 </PermissionRoute>
               }
-            />
-            <Route
-              path="warehouses"
-              element={
-                <PermissionRoute
-                  sidebarItems={inventorySidebarItems}
-                  featurePath="/inventory/warehouses"
-                  featureLabel="Warehouses"
-                >
-                  <InventoryWarehousePage />
-                </PermissionRoute>
-              }
-            />
-            <Route
-              path="upload-center"
-              element={
-                <PermissionRoute
-                  sidebarItems={inventorySidebarItems}
-                  featurePath="/inventory/upload-center"
-                  featureLabel="Upload Center"
-                >
-                  <InventoryUploadCenterPage />
-                </PermissionRoute>
-              }
-            />
-            <Route
-              path="download-center"
-              element={
-                <PermissionRoute
-                  sidebarItems={inventorySidebarItems}
-                  featurePath="/inventory/download-center"
-                  featureLabel="Download Center"
-                >
-                  <InventoryDownloadCenterPage />
-                </PermissionRoute>
-              }
-            />
+            >
+              <Route
+                path="inbound"
+                element={
+                  <PermissionRoute
+                    sidebarItems={inventorySidebarItems}
+                    featurePath="/inventory/inbound"
+                    featureLabel="Inbound"
+                  >
+                    <InventoryTransactionPage type="inbound" />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="outbound"
+                element={
+                  <PermissionRoute
+                    sidebarItems={inventorySidebarItems}
+                    featurePath="/inventory/outbound"
+                    featureLabel="Outbound"
+                  >
+                    <InventoryTransactionPage type="outbound" />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="goodslist/list"
+                element={
+                  <PermissionRoute
+                    sidebarItems={inventorySidebarItems}
+                    featurePath="/inventory/goodslist/list"
+                    featureLabel="Goods List"
+                  >
+                    <InventoryMasterListPage />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="warehouses"
+                element={
+                  <PermissionRoute
+                    sidebarItems={inventorySidebarItems}
+                    featurePath="/inventory/warehouses"
+                    featureLabel="Warehouses"
+                  >
+                    <InventoryWarehousePage />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="upload-center"
+                element={
+                  <PermissionRoute
+                    sidebarItems={inventorySidebarItems}
+                    featurePath="/inventory/upload-center"
+                    featureLabel="Upload Center"
+                  >
+                    <InventoryUploadCenterPage />
+                  </PermissionRoute>
+                }
+              />
+              <Route
+                path="download-center"
+                element={
+                  <PermissionRoute
+                    sidebarItems={inventorySidebarItems}
+                    featurePath="/inventory/download-center"
+                    featureLabel="Download Center"
+                  >
+                    <InventoryDownloadCenterPage />
+                  </PermissionRoute>
+                }
+              />
+            </Route>
           </Route>
-        </Route>
-      </Routes>
+        </Routes>
+      </Suspense>
     </>
   );
 }

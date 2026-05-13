@@ -6,12 +6,6 @@ const LEGACY_DEFAULT_GOODS_FILTERS = [
     goodsCode: "GD-001",
     goodsDesc: "PVC Ceiling Panel Premium White",
     goodsSupplier: "Shree Supplier",
-    goodsUnit: "Nos",
-    goodsClass: "Panel",
-    goodsBrand: "Decostyle",
-    goodsColor: "White",
-    goodsSpecs: "8mm x 250mm x 5.95m",
-    goodsOrigin: "India",
     createdBy: "System",
     updatedBy: "System",
   },
@@ -19,21 +13,13 @@ const LEGACY_DEFAULT_GOODS_FILTERS = [
     goodsCode: "GD-002",
     goodsDesc: "Wall Cladding Sheet Teak Finish",
     goodsSupplier: "Mahalaxmi Traders",
-    goodsUnit: "Sheet",
-    goodsClass: "Cladding",
-    goodsBrand: "Prime",
-    goodsColor: "Teak",
-    goodsSpecs: "10mm x 200mm x 2.9m",
-    goodsOrigin: "India",
     createdBy: "System",
     updatedBy: "System",
   },
 ];
 
-const REQUIRED_FIELDS = [
-  "goodsCode",
-  "goodsDesc",
-  "goodsSupplier",
+const REQUIRED_FIELDS = ["goodsCode", "goodsDesc", "goodsSupplier"];
+const DEPRECATED_GOODS_FIELDS = [
   "goodsUnit",
   "goodsClass",
   "goodsBrand",
@@ -41,6 +27,9 @@ const REQUIRED_FIELDS = [
   "goodsSpecs",
   "goodsOrigin",
 ];
+const DEPRECATED_GOODS_FIELD_UNSET = Object.fromEntries(
+  DEPRECATED_GOODS_FIELDS.map((field) => [field, ""]),
+);
 
 const EXCEL_FIELD_MAP = {
   goodscode: "goodsCode",
@@ -59,18 +48,6 @@ const EXCEL_FIELD_MAP = {
   description: "goodsDesc",
   goodssupplier: "goodsSupplier",
   supplier: "goodsSupplier",
-  goodsunit: "goodsUnit",
-  unit: "goodsUnit",
-  goodsclass: "goodsClass",
-  class: "goodsClass",
-  goodsbrand: "goodsBrand",
-  brand: "goodsBrand",
-  goodscolor: "goodsColor",
-  color: "goodsColor",
-  goodsspecs: "goodsSpecs",
-  specs: "goodsSpecs",
-  goodsorigin: "goodsOrigin",
-  origin: "goodsOrigin",
   goodsbarcode: "goodsBarcode",
   barcode: "goodsBarcode",
 };
@@ -97,26 +74,10 @@ const EXCEL_COLUMN_FIELD_ORDER = [
   "goodsCode",
   "goodsDesc",
   "goodsSupplier",
-  "goodsUnit",
-  "goodsClass",
-  "goodsBrand",
-  "goodsColor",
-  "goodsSpecs",
-  "goodsOrigin",
   "goodsSku",
   "goodsBarcode",
 ];
 const IMPORT_PLACEHOLDER_CODE_PREFIX = "__IMPORT_PLACEHOLDER__";
-const LEGACY_REPORT_HEADER_SIGNATURE = {
-  goodsDesc: ["nameofitem"],
-  goodsSupplier: ["closingstock"],
-  goodsUnit: ["purcorderspending", "purchorderspending", "purchaseorderspending"],
-  goodsClass: ["saleordersdue", "salesordersdue"],
-  goodsBrand: ["nettavailable", "netavailable"],
-  goodsColor: ["reorderlevel", "reorderqty"],
-  goodsSpecs: ["shortfall"],
-  goodsOrigin: ["minreorderqty", "minimumreorderqty", "ordertobeplaced"],
-};
 const QUANTITY_LIKE_VALUE_PATTERN =
   /^[\d,]+(?:\.\d+)?(?:\s*[a-zA-Z.%/()-]+(?:\s*[a-zA-Z.%/()-]+)*)?$/;
 
@@ -158,12 +119,6 @@ const isQuantityLikeValue = (value) => {
   return Boolean(normalized) && QUANTITY_LIKE_VALUE_PATTERN.test(normalized);
 };
 
-const isLegacyReportHeaderItem = (item = {}) =>
-  Object.entries(LEGACY_REPORT_HEADER_SIGNATURE).every(([field, expectedKeys]) => {
-    const value = normalizeKey(item?.[field] || "");
-    return !value || expectedKeys.includes(value);
-  });
-
 const looksLikeDescriptiveGoodsCode = (value) => {
   const normalized = normalizeDisplayText(value);
 
@@ -175,32 +130,13 @@ const looksLikeDescriptiveGoodsCode = (value) => {
 };
 
 const sanitizeLegacyImportedItem = (item = {}) => {
-  if (isLegacyReportHeaderItem(item)) {
-    return null;
-  }
-
   const goodsCode = normalizeDisplayText(item.goodsCode);
   const goodsDesc = normalizeDisplayText(item.goodsDesc);
   const goodsSupplier = normalizeDisplayText(item.goodsSupplier);
-  const goodsUnit = normalizeDisplayText(item.goodsUnit);
-  const goodsClass = normalizeDisplayText(item.goodsClass);
-  const goodsBrand = normalizeDisplayText(item.goodsBrand);
-  const goodsColor = normalizeDisplayText(item.goodsColor);
-  const goodsSpecs = normalizeDisplayText(item.goodsSpecs);
-  const goodsOrigin = normalizeDisplayText(item.goodsOrigin);
   const goodsSku = normalizeDisplayText(item.goodsSku);
   const goodsBarcode = normalizeDisplayText(item.goodsBarcode);
 
-  const auxiliaryValues = [
-    goodsDesc,
-    goodsSupplier,
-    goodsUnit,
-    goodsClass,
-    goodsBrand,
-    goodsColor,
-    goodsSpecs,
-    goodsOrigin,
-  ].filter(Boolean);
+  const auxiliaryValues = [goodsDesc, goodsSupplier].filter(Boolean);
 
   const hasOnlyQuantityAuxiliaryValues =
     auxiliaryValues.length > 0 &&
@@ -212,12 +148,6 @@ const sanitizeLegacyImportedItem = (item = {}) => {
       goodsCode,
       goodsDesc,
       goodsSupplier: "",
-      goodsUnit: "",
-      goodsClass: "",
-      goodsBrand: "",
-      goodsColor: "",
-      goodsSpecs: "",
-      goodsOrigin: "",
       goodsSku,
       goodsBarcode,
     };
@@ -229,12 +159,6 @@ const sanitizeLegacyImportedItem = (item = {}) => {
       goodsCode: "",
       goodsDesc: goodsCode,
       goodsSupplier: "",
-      goodsUnit: "",
-      goodsClass: "",
-      goodsBrand: "",
-      goodsColor: "",
-      goodsSpecs: "",
-      goodsOrigin: "",
       goodsSku,
       goodsBarcode,
     };
@@ -245,12 +169,6 @@ const sanitizeLegacyImportedItem = (item = {}) => {
     goodsCode,
     goodsDesc,
     goodsSupplier,
-    goodsUnit,
-    goodsClass,
-    goodsBrand,
-    goodsColor,
-    goodsSpecs,
-    goodsOrigin,
     goodsSku,
     goodsBarcode,
   };
@@ -261,12 +179,6 @@ const mapGoodsItem = (item) => ({
   goodsCode: isPlaceholderGoodsCode(item.goodsCode) ? "" : item.goodsCode || "",
   goodsDesc: item.goodsDesc || "",
   goodsSupplier: item.goodsSupplier || "",
-  goodsUnit: item.goodsUnit || "",
-  goodsClass: item.goodsClass || "",
-  goodsBrand: item.goodsBrand || "",
-  goodsColor: item.goodsColor || "",
-  goodsSpecs: item.goodsSpecs || "",
-  goodsOrigin: item.goodsOrigin || "",
   goodsSku: item.goodsSku || "",
   goodsBarcode: item.goodsBarcode || "",
   createdBy: item.createdBy || "System",
@@ -278,12 +190,6 @@ const normalizeGoodsPayload = (payload = {}) => ({
   goodsCode: normalizeValue(payload.goodsCode),
   goodsDesc: normalizeValue(payload.goodsDesc),
   goodsSupplier: normalizeValue(payload.goodsSupplier),
-  goodsUnit: normalizeValue(payload.goodsUnit),
-  goodsClass: normalizeValue(payload.goodsClass),
-  goodsBrand: normalizeValue(payload.goodsBrand),
-  goodsColor: normalizeValue(payload.goodsColor),
-  goodsSpecs: normalizeValue(payload.goodsSpecs),
-  goodsOrigin: normalizeValue(payload.goodsOrigin),
   goodsSku: normalizeValue(payload.goodsSku),
   goodsBarcode: normalizeValue(payload.goodsBarcode),
 });
@@ -359,12 +265,6 @@ const hasImportableGoodsData = (payload = {}) =>
     payload.goodsCode,
     payload.goodsDesc,
     payload.goodsSupplier,
-    payload.goodsUnit,
-    payload.goodsClass,
-    payload.goodsBrand,
-    payload.goodsColor,
-    payload.goodsSpecs,
-    payload.goodsOrigin,
     payload.goodsSku,
     payload.goodsBarcode,
   ].some((value) => normalizeValue(value));
@@ -419,6 +319,19 @@ const removeLegacyDefaultGoodsItems = async () => {
   });
 };
 
+const removeDeprecatedGoodsFields = async () => {
+  await GoodsList.updateMany(
+    {
+      $or: DEPRECATED_GOODS_FIELDS.map((field) => ({
+        [field]: { $exists: true },
+      })),
+    },
+    {
+      $unset: DEPRECATED_GOODS_FIELD_UNSET,
+    },
+  );
+};
+
 const isLikelyHeaderRow = (row = []) => {
   const normalizedRow = row.map((value) => normalizeValue(value)).filter(Boolean);
 
@@ -470,6 +383,7 @@ const parseWorksheetRows = (fileBuffer) => {
 
 export const getGoodsItems = async (req, res) => {
   try {
+    await removeDeprecatedGoodsFields();
     const items = await GoodsList.find().sort({ createdAt: -1 }).lean();
 
     return res.status(200).json({
@@ -490,6 +404,7 @@ export const getGoodsItems = async (req, res) => {
 export const createGoodsItem = async (req, res) => {
   try {
     await removeLegacyDefaultGoodsItems();
+    await removeDeprecatedGoodsFields();
 
     const payload = normalizeGoodsPayload(req.body);
     const validationError = getValidationError(payload);
@@ -531,6 +446,7 @@ export const createGoodsItem = async (req, res) => {
 
 export const updateGoodsItem = async (req, res) => {
   try {
+    await removeDeprecatedGoodsFields();
     const payload = normalizeGoodsPayload(req.body);
     const validationError = getValidationError(payload);
 
@@ -605,6 +521,7 @@ export const deleteGoodsItem = async (req, res) => {
 export const importGoodsItemsFromExcel = async (req, res) => {
   try {
     await removeLegacyDefaultGoodsItems();
+    await removeDeprecatedGoodsFields();
 
     if (!req.file?.buffer) {
       return res.status(400).json({

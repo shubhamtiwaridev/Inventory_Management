@@ -132,7 +132,6 @@ const InventoryOverview = () => {
     { key: "goodsCode", label: "Goods Code", width: 150, nowrap: true },
     { key: "goodsDesc", label: "Goods Desc", width: 240 },
     { key: "warehouseName", label: "Warehouse", width: 180 },
-    { key: "unit", label: "Unit", width: 120, nowrap: true },
     {
       key: "inboundQuantity",
       label: "Inbound Qty",

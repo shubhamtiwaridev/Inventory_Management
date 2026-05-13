@@ -112,6 +112,42 @@ export const uploadCenterFiles = async (req, res) => {
   }
 };
 
+export const updateUploadCenterFile = async (req, res) => {
+  try {
+    const description = String(req.body?.description || "").trim();
+
+    const item = await UploadCenterFile.findByIdAndUpdate(
+      req.params.id,
+      {
+        description,
+        updatedBy: getUserName(req),
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).lean();
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Uploaded file not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Uploaded file updated successfully",
+      data: mapUploadCenterFile(item),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update uploaded file",
+    });
+  }
+};
+
 export const deleteUploadCenterFile = async (req, res) => {
   try {
     const item = await UploadCenterFile.findByIdAndDelete(req.params.id).lean();

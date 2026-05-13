@@ -33,6 +33,33 @@ const cardSx = {
   boxShadow: brand.shadow,
 };
 
+const defaultDatasets = {
+  goodsList: [],
+  warehouses: [],
+  inbound: [],
+  outbound: [],
+  inventorySummary: [],
+};
+
+const defaultDatasetMeta = {
+  goodsList: { loading: false, loaded: false },
+  warehouses: { loading: false, loaded: false },
+  inbound: { loading: false, loaded: false },
+  outbound: { loading: false, loaded: false },
+  inventorySummary: { loading: false, loaded: false },
+};
+
+const datasetLoaders = {
+  goodsList: ({ skipCache = false } = {}) => getGoodsListItems({ skipCache }),
+  warehouses: () => getWarehouses(),
+  inbound: () => getInventoryTransactions("inbound"),
+  outbound: () => getInventoryTransactions("outbound"),
+  inventorySummary: async ({ skipCache = false } = {}) => {
+    const summary = await getInventorySummary({ skipCache });
+    return Array.isArray(summary?.items) ? summary.items : [];
+  },
+};
+
 const downloadDefinitions = [
   {
     key: "goodsList",
@@ -108,60 +135,91 @@ const downloadDefinitions = [
 ];
 
 const InventoryDownloadCenterPage = () => {
-  const [datasets, setDatasets] = useState({
-    goodsList: [],
-    warehouses: [],
-    inbound: [],
-    outbound: [],
-    inventorySummary: [],
-  });
+  const [datasets, setDatasets] = useState(defaultDatasets);
+  const [datasetMeta, setDatasetMeta] = useState(defaultDatasetMeta);
   const [feedback, setFeedback] = useState({ type: "", message: "" });
-  const [loading, setLoading] = useState(false);
 
   const datasetDefinitions = useMemo(
     () =>
       downloadDefinitions.map((definition) => ({
         ...definition,
         rows: datasets[definition.key] || [],
+        loading: datasetMeta[definition.key]?.loading || false,
+        loaded: datasetMeta[definition.key]?.loaded || false,
       })),
-    [datasets],
+    [datasetMeta, datasets],
   );
 
-  const loadDatasets = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [goodsRows, warehouseRows, inboundRows, outboundRows, summary] =
-        await Promise.all([
-          getGoodsListItems(),
-          getWarehouses(),
-          getInventoryTransactions("inbound"),
-          getInventoryTransactions("outbound"),
-          getInventorySummary(),
-        ]);
+  const isAnyDatasetLoading = useMemo(
+    () => Object.values(datasetMeta).some((meta) => meta?.loading),
+    [datasetMeta],
+  );
 
-      setDatasets({
-        goodsList: goodsRows,
-        warehouses: warehouseRows,
-        inbound: inboundRows,
-        outbound: outboundRows,
-        inventorySummary: Array.isArray(summary?.items) ? summary.items : [],
-      });
+  const loadDataset = useCallback(async (key, { skipCache = false } = {}) => {
+    const loader = datasetLoaders[key];
+
+    if (!loader) {
+      return [];
+    }
+
+    try {
+      setDatasetMeta((prev) => ({
+        ...prev,
+        [key]: {
+          ...(prev[key] || {}),
+          loading: true,
+        },
+      }));
+
+      const rows = await loader({ skipCache });
+
+      setDatasets((prev) => ({
+        ...prev,
+        [key]: Array.isArray(rows) ? rows : [],
+      }));
+      setDatasetMeta((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          loaded: true,
+        },
+      }));
       setFeedback((prev) =>
         prev.type === "error" ? { type: "", message: "" } : prev,
       );
+
+      return Array.isArray(rows) ? rows : [];
     } catch (error) {
+      setDatasetMeta((prev) => ({
+        ...prev,
+        [key]: {
+          ...(prev[key] || {}),
+          loading: false,
+        },
+      }));
       setFeedback({
         type: "error",
-        message: error.message || "Failed to load download center datasets",
+        message: error.message || `Failed to load ${key} dataset`,
       });
-    } finally {
-      setLoading(false);
+
+      return [];
     }
   }, []);
 
-  useEffect(() => {
-    loadDatasets();
-  }, [loadDatasets]);
+  const loadDatasets = useCallback(async () => {
+    const loadedKeys = downloadDefinitions
+      .map((definition) => definition.key)
+      .filter((key) => datasetMeta[key]?.loaded);
+
+    const keysToRefresh =
+      loadedKeys.length > 0
+        ? loadedKeys
+        : downloadDefinitions.map((definition) => definition.key);
+
+    await Promise.allSettled(
+      keysToRefresh.map((key) => loadDataset(key, { skipCache: true })),
+    );
+  }, [datasetMeta, loadDataset]);
 
   useEffect(() => {
     if (!feedback.message) {
@@ -177,8 +235,12 @@ const InventoryDownloadCenterPage = () => {
     };
   }, [feedback]);
 
-  const handleExport = (definition, format) => {
-    if (!definition.rows.length) {
+  const handleExport = async (definition, format) => {
+    const rows = definition.loaded
+      ? definition.rows
+      : await loadDataset(definition.key);
+
+    if (!rows.length) {
       setFeedback({
         type: "error",
         message: `No ${definition.label} records available for download`,
@@ -187,9 +249,9 @@ const InventoryDownloadCenterPage = () => {
     }
 
     if (format === "excel") {
-      exportRowsToExcel(definition.rows, definition.columns, definition.baseName);
+      exportRowsToExcel(rows, definition.columns, definition.baseName);
     } else {
-      exportRowsToCsv(definition.rows, definition.columns, definition.baseName);
+      exportRowsToCsv(rows, definition.columns, definition.baseName);
     }
 
     setFeedback({
@@ -226,10 +288,10 @@ const InventoryDownloadCenterPage = () => {
           <Button
             variant="outlined"
             onClick={loadDatasets}
-            disabled={loading}
+            disabled={isAnyDatasetLoading}
             sx={outlinedActionButtonSx}
           >
-            {loading ? "Refreshing..." : "Refresh Datasets"}
+            {isAnyDatasetLoading ? "Refreshing..." : "Refresh Datasets"}
           </Button>
         </Stack>
       </Paper>
@@ -254,7 +316,13 @@ const InventoryDownloadCenterPage = () => {
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
                 <Chip
-                  label={`Rows: ${definition.rows.length}`}
+                  label={
+                    definition.loading
+                      ? "Loading..."
+                      : definition.loaded
+                        ? `Rows: ${definition.rows.length}`
+                        : "Rows: --"
+                  }
                   sx={{
                     borderRadius: 2.5,
                     backgroundColor: brand.soft,
@@ -266,7 +334,7 @@ const InventoryDownloadCenterPage = () => {
                   variant="outlined"
                   startIcon={<DownloadRoundedIcon />}
                   onClick={() => handleExport(definition, "csv")}
-                  disabled={loading || definition.rows.length === 0}
+                  disabled={definition.loading}
                   sx={outlinedActionButtonSx}
                 >
                   Export CSV
@@ -275,7 +343,7 @@ const InventoryDownloadCenterPage = () => {
                   variant="contained"
                   startIcon={<DownloadRoundedIcon />}
                   onClick={() => handleExport(definition, "excel")}
-                  disabled={loading || definition.rows.length === 0}
+                  disabled={definition.loading}
                   sx={filledActionButtonSx}
                 >
                   Export Excel

@@ -44,6 +44,21 @@ const pageCardSx = {
   boxShadow: brand.shadow,
 };
 
+const hideScrollbarSx = {
+  scrollbarWidth: "none",
+  "&::-webkit-scrollbar": {
+    display: "none",
+  },
+};
+
+const blurActiveElement = () => {
+  const activeElement = document.activeElement;
+
+  if (activeElement instanceof HTMLElement) {
+    activeElement.blur();
+  }
+};
+
 const formatFileSize = (value = 0) => {
   const size = Number(value || 0);
 
@@ -125,7 +140,7 @@ const InventoryUploadCenterPage = () => {
 
     const timerId = window.setTimeout(() => {
       setFeedback({ type: "", message: "" });
-    }, 10000);
+    }, 5000);
 
     return () => {
       window.clearTimeout(timerId);
@@ -133,6 +148,7 @@ const InventoryUploadCenterPage = () => {
   }, [feedback]);
 
   const resetUploadDialog = () => {
+    blurActiveElement();
     setUploadDialogOpen(false);
     setSelectedFiles([]);
     setDescription("");
@@ -140,6 +156,7 @@ const InventoryUploadCenterPage = () => {
   };
 
   const handleOpenPicker = () => {
+    blurActiveElement();
     setFeedback({ type: "", message: "" });
     setUploadDialogOpen(true);
   };
@@ -204,6 +221,7 @@ const InventoryUploadCenterPage = () => {
   };
 
   const handleOpenEditDialog = (file) => {
+    blurActiveElement();
     setEditingFile(file);
     setEditingDescription(file.description || "");
     setEditDialogOpen(true);
@@ -212,6 +230,7 @@ const InventoryUploadCenterPage = () => {
 
   const handleCloseEditDialog = () => {
     if (savingEdit) return;
+    blurActiveElement();
     setEditingFile(null);
     setEditingDescription("");
     setEditDialogOpen(false);
@@ -242,7 +261,7 @@ const InventoryUploadCenterPage = () => {
   };
 
   return (
-    <Stack spacing={3} sx={{ flex: 1, minHeight: 0 }}>
+    <Stack spacing={3} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
       {feedback.message ? (
         <Alert
           severity={feedback.type === "success" ? "success" : "error"}
@@ -302,155 +321,166 @@ const InventoryUploadCenterPage = () => {
 
       <Box
         sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 2,
-          alignItems: "stretch",
-          alignContent: "flex-start",
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+          pr: { xs: 0, sm: 0.5 },
+          ...hideScrollbarSx,
         }}
       >
-        {files.map((file) => {
-          const fileUrl = buildServerUrl(file.url || "");
-          const isImage = file.fileKind === "image";
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 2,
+            alignItems: "stretch",
+            alignContent: "flex-start",
+          }}
+        >
+          {files.map((file) => {
+            const fileUrl = buildServerUrl(file.url || "");
+            const isImage = file.fileKind === "image";
 
-          return (
-            <Paper
-              key={file.id}
-              elevation={0}
-              sx={{
-                ...pageCardSx,
-                p: 2,
-                display: "flex",
-                flexDirection: "column",
-                boxSizing: "border-box",
-                width: { xs: "100%", sm: 240 },
-                minHeight: 236,
-              }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="flex-start"
-                spacing={1}
+            return (
+              <Paper
+                key={file.id}
+                elevation={0}
+                sx={{
+                  ...pageCardSx,
+                  p: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  boxSizing: "border-box",
+                  width: { xs: "100%", sm: 240 },
+                  minHeight: 236,
+                }}
               >
-                <Box
-                  sx={{
-                    width: 52,
-                    height: 52,
-                    borderRadius: 3,
-                    backgroundColor: brand.soft,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    flexShrink: 0,
-                  }}
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="flex-start"
+                  spacing={1}
                 >
-                  {isImage ? (
-                    <Box
-                      component="img"
-                      src={fileUrl}
-                      alt={file.originalName}
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
-                  ) : (
-                    getFileIcon(file)
-                  )}
-                </Box>
+                  <Box
+                    sx={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 3,
+                      backgroundColor: brand.soft,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isImage ? (
+                      <Box
+                        component="img"
+                        src={fileUrl}
+                        alt={file.originalName}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : (
+                      getFileIcon(file)
+                    )}
+                  </Box>
 
-                <Stack direction="row" spacing={0.5}>
-                  <IconButton
-                    onClick={() => handleOpenEditDialog(file)}
-                    sx={actionIconButtonSx}
-                  >
-                    <EditRoundedIcon
-                      sx={{ fontSize: 18, color: brand.primaryDark }}
-                    />
-                  </IconButton>
-                  <IconButton
-                    component="a"
-                    href={fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={actionIconButtonSx}
-                  >
-                    <OpenInNewRoundedIcon
-                      sx={{ fontSize: 18, color: brand.primaryDark }}
-                    />
-                  </IconButton>
-                  <IconButton
-                    onClick={() => handleDelete(file)}
-                    sx={actionIconButtonSx}
-                  >
-                    <DeleteOutlineRoundedIcon
-                      sx={{ fontSize: 18, color: brand.danger }}
-                    />
-                  </IconButton>
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton
+                      onClick={() => handleOpenEditDialog(file)}
+                      sx={actionIconButtonSx}
+                    >
+                      <EditRoundedIcon
+                        sx={{ fontSize: 18, color: brand.primaryDark }}
+                      />
+                    </IconButton>
+                    <IconButton
+                      component="a"
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={actionIconButtonSx}
+                    >
+                      <OpenInNewRoundedIcon
+                        sx={{ fontSize: 18, color: brand.primaryDark }}
+                      />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleDelete(file)}
+                      sx={actionIconButtonSx}
+                    >
+                      <DeleteOutlineRoundedIcon
+                        sx={{ fontSize: 18, color: brand.danger }}
+                      />
+                    </IconButton>
+                  </Stack>
                 </Stack>
-              </Stack>
 
-              <Box sx={{ mt: 2, minWidth: 0 }}>
-                <Typography
-                  sx={{
-                    fontWeight: 800,
-                    color: brand.text,
-                    lineHeight: 1.35,
-                    wordBreak: "break-word",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {file.originalName}
-                </Typography>
-                {file.description ? (
+                <Box sx={{ mt: 2, minWidth: 0 }}>
                   <Typography
                     sx={{
-                      mt: 1,
-                      color: brand.textSoft,
-                      fontSize: "0.92rem",
-                      lineHeight: 1.45,
+                      fontWeight: 800,
+                      color: brand.text,
+                      lineHeight: 1.35,
                       wordBreak: "break-word",
                       display: "-webkit-box",
-                      WebkitLineClamp: 3,
+                      WebkitLineClamp: 2,
                       WebkitBoxOrient: "vertical",
                       overflow: "hidden",
                     }}
                   >
-                    {file.description}
+                    {file.originalName}
                   </Typography>
-                ) : null}
-              </Box>
+                  {file.description ? (
+                    <Typography
+                      sx={{
+                        mt: 1,
+                        color: brand.textSoft,
+                        fontSize: "0.92rem",
+                        lineHeight: 1.45,
+                        wordBreak: "break-word",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {file.description}
+                    </Typography>
+                  ) : null}
+                </Box>
 
-              <Stack spacing={0.65} sx={{ mt: "auto", pt: 2 }}>
-                <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
-                  Size: {formatFileSize(file.sizeBytes)}
-                </Typography>
-                <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
-                  Uploaded by: {file.createdBy || "System"}
-                </Typography>
-                <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
-                  Uploaded at: {file.createdAt || "-"}
-                </Typography>
-              </Stack>
-            </Paper>
-          );
-        })}
+                <Stack spacing={0.65} sx={{ mt: "auto", pt: 2 }}>
+                  <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
+                    Size: {formatFileSize(file.sizeBytes)}
+                  </Typography>
+                  <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
+                    Uploaded by: {file.createdBy || "System"}
+                  </Typography>
+                  <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
+                    Uploaded at: {file.createdAt || "-"}
+                  </Typography>
+                </Stack>
+              </Paper>
+            );
+          })}
+        </Box>
+
+        {!loading && files.length === 0 ? (
+          <Paper elevation={0} sx={{ ...pageCardSx, mt: 0 }}>
+            <Typography sx={{ color: brand.textSoft }}>
+              No uploaded files found.
+            </Typography>
+          </Paper>
+        ) : null}
       </Box>
-
-      {!loading && files.length === 0 ? (
-        <Paper elevation={0} sx={pageCardSx}>
-          <Typography sx={{ color: brand.textSoft }}>
-            No uploaded files found.
-          </Typography>
-        </Paper>
-      ) : null}
 
       <Dialog
         open={uploadDialogOpen}

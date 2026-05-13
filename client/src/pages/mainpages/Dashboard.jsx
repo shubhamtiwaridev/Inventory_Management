@@ -106,6 +106,19 @@ const getIconComponent = (iconName) => {
   return icons[iconName] || <BadgeRoundedIcon />;
 };
 
+const getCardNavigationPath = (card = {}) => {
+  const cardName = String(card?.name || "")
+    .trim()
+    .toLowerCase();
+  const cardPath = String(card?.path || "").trim();
+
+  if (cardName === "inventory" || cardPath === "/inventory") {
+    return "/inventory/inbound";
+  }
+
+  return cardPath;
+};
+
 const mergeCardsWithFallbacks = (cards = []) => {
   const cardMap = new Map();
 
@@ -348,7 +361,7 @@ const Dashboard = () => {
           icon: getIconComponent(card.icon),
           iconBg: card.iconBg,
           iconColor: card.iconColor,
-          path: card.path,
+          path: getCardNavigationPath(card),
           isLoading: metricsLoading,
         };
       });

@@ -45,7 +45,7 @@ const seedCards = async () => {
       {
         name: "inventory",
         title: "Inventory",
-        path: "/inventory",
+        path: "/inventory/inbound",
         icon: "Inventory2RoundedIcon",
         iconBg: "#EEF8F7",
         iconColor: "#0C5A58",

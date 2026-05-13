@@ -153,7 +153,10 @@ const sanitizeLegacyImportedItem = (item = {}) => {
     };
   }
 
-  if (looksLikeDescriptiveGoodsCode(goodsCode) && hasOnlyQuantityAuxiliaryValues) {
+  if (
+    looksLikeDescriptiveGoodsCode(goodsCode) &&
+    hasOnlyQuantityAuxiliaryValues
+  ) {
     return {
       ...item,
       goodsCode: "",
@@ -231,7 +234,9 @@ const normalizeExcelArrayRow = (row = []) => {
 };
 
 const materializeMergedWorksheetCells = (worksheet) => {
-  const merges = Array.isArray(worksheet?.["!merges"]) ? worksheet["!merges"] : [];
+  const merges = Array.isArray(worksheet?.["!merges"])
+    ? worksheet["!merges"]
+    : [];
 
   merges.forEach((merge) => {
     const startCellAddress = xlsx.utils.encode_cell(merge.s);
@@ -243,7 +248,10 @@ const materializeMergedWorksheetCells = (worksheet) => {
 
     for (let rowIndex = merge.s.r; rowIndex <= merge.e.r; rowIndex += 1) {
       for (let colIndex = merge.s.c; colIndex <= merge.e.c; colIndex += 1) {
-        const cellAddress = xlsx.utils.encode_cell({ r: rowIndex, c: colIndex });
+        const cellAddress = xlsx.utils.encode_cell({
+          r: rowIndex,
+          c: colIndex,
+        });
 
         if (!worksheet[cellAddress]) {
           worksheet[cellAddress] = {
@@ -280,7 +288,10 @@ const getValidationError = (payload = {}) => {
 };
 
 const getImportValidationError = (payload = {}) => {
-  if (!normalizeValue(payload.goodsCode) && !normalizeValue(payload.goodsDesc)) {
+  if (
+    !normalizeValue(payload.goodsCode) &&
+    !normalizeValue(payload.goodsDesc)
+  ) {
     return "Missing item identifier";
   }
 
@@ -333,12 +344,14 @@ const removeDeprecatedGoodsFields = async () => {
 };
 
 const isLikelyHeaderRow = (row = []) => {
-  const normalizedRow = row.map((value) => normalizeValue(value)).filter(Boolean);
+  const normalizedRow = row
+    .map((value) => normalizeValue(value))
+    .filter(Boolean);
 
   if (normalizedRow.length === 0) return false;
 
-  const matchedHeaderCount = normalizedRow.filter(
-    (value) => KNOWN_EXCEL_HEADER_KEYS.has(normalizeKey(value)),
+  const matchedHeaderCount = normalizedRow.filter((value) =>
+    KNOWN_EXCEL_HEADER_KEYS.has(normalizeKey(value)),
   ).length;
 
   return matchedHeaderCount >= Math.min(3, normalizedRow.length);
@@ -359,13 +372,15 @@ const parseWorksheetRows = (fileBuffer) => {
     blankrows: false,
   });
 
-  const nonEmptyRows = rows.filter((row) =>
-    Array.isArray(row) && row.some((value) => normalizeValue(value)),
+  const nonEmptyRows = rows.filter(
+    (row) => Array.isArray(row) && row.some((value) => normalizeValue(value)),
   );
 
   if (nonEmptyRows.length === 0) return [];
 
-  const headerRowIndex = nonEmptyRows.findIndex((row) => isLikelyHeaderRow(row));
+  const headerRowIndex = nonEmptyRows.findIndex((row) =>
+    isLikelyHeaderRow(row),
+  );
 
   if (headerRowIndex !== -1) {
     const headers = nonEmptyRows[headerRowIndex];
@@ -373,7 +388,9 @@ const parseWorksheetRows = (fileBuffer) => {
 
     return dataRows.map((row) =>
       normalizeExcelRow(
-        Object.fromEntries(headers.map((header, index) => [header, row[index]])),
+        Object.fromEntries(
+          headers.map((header, index) => [header, row[index]]),
+        ),
       ),
     );
   }
@@ -589,7 +606,9 @@ export const importGoodsItemsFromExcel = async (req, res) => {
     let insertedItems = [];
 
     if (rowsToInsert.length > 0) {
-      insertedItems = await GoodsList.insertMany(rowsToInsert, { ordered: false });
+      insertedItems = await GoodsList.insertMany(rowsToInsert, {
+        ordered: false,
+      });
     }
 
     const allItems = await GoodsList.find().sort({ createdAt: -1 }).lean();

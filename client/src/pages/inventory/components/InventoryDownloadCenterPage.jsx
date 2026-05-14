@@ -28,6 +28,7 @@ import {
   exportRowsToCsv,
   exportRowsToExcel,
 } from "./inventoryDownloadUtils.js";
+import { logInventoryActivity } from "./inventoryActivityLogger.js";
 
 const cardSx = {
   p: 3,
@@ -260,6 +261,21 @@ const InventoryDownloadCenterPage = () => {
     } else {
       exportRowsToCsv(rows, definition.columns, definition.baseName);
     }
+
+    logInventoryActivity({
+      action: "Downloaded",
+      page: "Download Center",
+      resource: "Download",
+      targetName: `${definition.label} ${String(format || "").toUpperCase()}`.trim(),
+      endpoint: location.pathname,
+      details: {
+        source: "download-center",
+        datasetKey: definition.key,
+        datasetLabel: definition.label,
+        format: String(format || "").toLowerCase(),
+        rowCount: rows.length,
+      },
+    });
 
     setFeedback({
       type: "success",

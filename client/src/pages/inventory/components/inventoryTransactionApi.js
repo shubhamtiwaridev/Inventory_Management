@@ -2,6 +2,26 @@ import { authFetch } from "../../../api/authFetch.js";
 import { buildApiUrl } from "../../../api/config.js";
 
 const INVENTORY_SUMMARY_CACHE_TTL_MS = 30 * 1000;
+const INVENTORY_TRANSACTION_CACHE_TTL_MS = 30 * 1000;
+const AVAILABLE_OUTBOUND_CACHE_TTL_MS = 30 * 1000;
+const DEFAULT_EMPTY_ITEMS = [];
+
+let inventoryTransactionCache = {
+  inbound: {
+    expiresAt: 0,
+    items: null,
+  },
+  outbound: {
+    expiresAt: 0,
+    items: null,
+  },
+};
+
+let availableOutboundItemsCache = {
+  expiresAt: 0,
+  items: null,
+};
+
 let inventorySummaryCache = {
   expiresAt: 0,
   data: null,
@@ -25,6 +45,37 @@ const cloneInventorySummary = (data = {}) => ({
     : [],
 });
 
+const cloneItems = (items = DEFAULT_EMPTY_ITEMS) =>
+  Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
+
+const invalidateInventoryTransactionCache = (type) => {
+  if (type && inventoryTransactionCache[type]) {
+    inventoryTransactionCache[type] = {
+      expiresAt: 0,
+      items: null,
+    };
+    return;
+  }
+
+  inventoryTransactionCache = {
+    inbound: {
+      expiresAt: 0,
+      items: null,
+    },
+    outbound: {
+      expiresAt: 0,
+      items: null,
+    },
+  };
+};
+
+const invalidateAvailableOutboundItemsCache = () => {
+  availableOutboundItemsCache = {
+    expiresAt: 0,
+    items: null,
+  };
+};
+
 const invalidateInventorySummaryCache = () => {
   inventorySummaryCache = {
     expiresAt: 0,
@@ -32,9 +83,24 @@ const invalidateInventorySummaryCache = () => {
   };
 };
 
-export const getInventoryTransactions = async (type) => {
+export const getInventoryTransactions = async (type, { skipCache = false } = {}) => {
+  const cacheKey = type === "outbound" ? "outbound" : "inbound";
+
+  if (
+    !skipCache &&
+    inventoryTransactionCache[cacheKey]?.items &&
+    inventoryTransactionCache[cacheKey].expiresAt > Date.now()
+  ) {
+    return cloneItems(inventoryTransactionCache[cacheKey].items);
+  }
+
   const response = await request(`/inventory/${type}`);
-  return Array.isArray(response?.data) ? response.data : [];
+  const items = Array.isArray(response?.data) ? response.data : [];
+  inventoryTransactionCache[cacheKey] = {
+    expiresAt: Date.now() + INVENTORY_TRANSACTION_CACHE_TTL_MS,
+    items: cloneItems(items),
+  };
+  return items;
 };
 
 export const createInventoryTransaction = async (type, payload) => {
@@ -46,6 +112,8 @@ export const createInventoryTransaction = async (type, payload) => {
     body: JSON.stringify(payload),
   });
 
+  invalidateInventoryTransactionCache(type);
+  invalidateAvailableOutboundItemsCache();
   invalidateInventorySummaryCache();
   return response?.data;
 };
@@ -59,6 +127,8 @@ export const updateInventoryTransaction = async (type, id, payload) => {
     body: JSON.stringify(payload),
   });
 
+  invalidateInventoryTransactionCache(type);
+  invalidateAvailableOutboundItemsCache();
   invalidateInventorySummaryCache();
   return response?.data;
 };
@@ -68,13 +138,28 @@ export const deleteInventoryTransaction = async (type, id) => {
     method: "DELETE",
   });
 
+  invalidateInventoryTransactionCache(type);
+  invalidateAvailableOutboundItemsCache();
   invalidateInventorySummaryCache();
   return response?.data;
 };
 
-export const getAvailableOutboundItems = async () => {
+export const getAvailableOutboundItems = async ({ skipCache = false } = {}) => {
+  if (
+    !skipCache &&
+    availableOutboundItemsCache.items &&
+    availableOutboundItemsCache.expiresAt > Date.now()
+  ) {
+    return cloneItems(availableOutboundItemsCache.items);
+  }
+
   const response = await request("/inventory/outbound/available-items");
-  return Array.isArray(response?.data) ? response.data : [];
+  const items = Array.isArray(response?.data) ? response.data : [];
+  availableOutboundItemsCache = {
+    expiresAt: Date.now() + AVAILABLE_OUTBOUND_CACHE_TTL_MS,
+    items: cloneItems(items),
+  };
+  return items;
 };
 
 export const getInventorySummary = async ({ skipCache = false } = {}) => {

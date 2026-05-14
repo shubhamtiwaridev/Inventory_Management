@@ -30,6 +30,7 @@ const DEPRECATED_GOODS_FIELDS = [
 const DEPRECATED_GOODS_FIELD_UNSET = Object.fromEntries(
   DEPRECATED_GOODS_FIELDS.map((field) => [field, ""]),
 );
+let deprecatedGoodsCleanupPromise = null;
 
 const EXCEL_FIELD_MAP = {
   goodscode: "goodsCode",
@@ -343,6 +344,19 @@ const removeDeprecatedGoodsFields = async () => {
   );
 };
 
+const ensureDeprecatedGoodsFieldsRemoved = async () => {
+  if (!deprecatedGoodsCleanupPromise) {
+    deprecatedGoodsCleanupPromise = removeDeprecatedGoodsFields().catch(
+      (error) => {
+        deprecatedGoodsCleanupPromise = null;
+        throw error;
+      },
+    );
+  }
+
+  await deprecatedGoodsCleanupPromise;
+};
+
 const isLikelyHeaderRow = (row = []) => {
   const normalizedRow = row
     .map((value) => normalizeValue(value))
@@ -400,7 +414,7 @@ const parseWorksheetRows = (fileBuffer) => {
 
 export const getGoodsItems = async (req, res) => {
   try {
-    await removeDeprecatedGoodsFields();
+    await ensureDeprecatedGoodsFieldsRemoved();
     const items = await GoodsList.find().sort({ createdAt: -1 }).lean();
 
     return res.status(200).json({
@@ -421,7 +435,7 @@ export const getGoodsItems = async (req, res) => {
 export const createGoodsItem = async (req, res) => {
   try {
     await removeLegacyDefaultGoodsItems();
-    await removeDeprecatedGoodsFields();
+    await ensureDeprecatedGoodsFieldsRemoved();
 
     const payload = normalizeGoodsPayload(req.body);
     const validationError = getValidationError(payload);
@@ -463,7 +477,7 @@ export const createGoodsItem = async (req, res) => {
 
 export const updateGoodsItem = async (req, res) => {
   try {
-    await removeDeprecatedGoodsFields();
+    await ensureDeprecatedGoodsFieldsRemoved();
     const payload = normalizeGoodsPayload(req.body);
     const validationError = getValidationError(payload);
 
@@ -538,7 +552,7 @@ export const deleteGoodsItem = async (req, res) => {
 export const importGoodsItemsFromExcel = async (req, res) => {
   try {
     await removeLegacyDefaultGoodsItems();
-    await removeDeprecatedGoodsFields();
+    await ensureDeprecatedGoodsFieldsRemoved();
 
     if (!req.file?.buffer) {
       return res.status(400).json({

@@ -39,6 +39,7 @@ import {
   updateUploadCenterFile,
   uploadFilesToUploadCenter,
 } from "./inventoryUploadCenterApi.js";
+import { logInventoryActivity } from "./inventoryActivityLogger.js";
 
 const pageCardSx = {
   p: 3,
@@ -268,6 +269,22 @@ const InventoryUploadCenterPage = () => {
     }
   };
 
+  const handleOpenFile = (file, fileUrl) => {
+    logInventoryActivity({
+      action: "Opened",
+      page: "Upload Center",
+      resource: "File",
+      targetName: file?.originalName || "Uploaded File",
+      endpoint: file?.relativePath || fileUrl || location.pathname,
+      details: {
+        source: "upload-center",
+        fileId: file?.id || "",
+        fileKind: file?.fileKind || "",
+        fileName: file?.originalName || "",
+      },
+    });
+  };
+
   return (
     <Stack spacing={3} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
       {feedback.message ? (
@@ -418,6 +435,7 @@ const InventoryUploadCenterPage = () => {
                       href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => handleOpenFile(file, fileUrl)}
                       sx={actionIconButtonSx}
                     >
                       <OpenInNewRoundedIcon

@@ -32,6 +32,11 @@ const RESOURCE_LABELS = {
   "log-activities": "Log Activity",
   inventory: "Inventory",
   "goods-list": "Goods List",
+  "upload-center": "Upload Center",
+  "download-center": "Download Center",
+  warehouses: "Warehouse",
+  inbound: "Inbound",
+  outbound: "Outbound",
   "import-excel": "Import Excel",
 };
 
@@ -100,6 +105,13 @@ const getBusinessSegments = (endpoint = "") =>
   );
 
 const getResourceSegment = (businessSegments = []) => {
+  if (
+    businessSegments[0] === "inventory" &&
+    businessSegments[1] === "upload-center"
+  ) {
+    return "file";
+  }
+
   const ignored = new Set(["api", "auth", "machine-maintenance", "configure"]);
 
   for (let index = businessSegments.length - 1; index >= 0; index -= 1) {
@@ -183,6 +195,11 @@ const getPageName = ({ businessSegments = [], req, responseBody }) => {
 
   if (businessSegments[0] === "inventory") {
     if (businessSegments[1] === "goods-list") return "Goods List";
+    if (businessSegments[1] === "upload-center") return "Upload Center";
+    if (businessSegments[1] === "download-center") return "Download Center";
+    if (businessSegments[1] === "warehouses") return "Warehouses";
+    if (businessSegments[1] === "inbound") return "Inbound";
+    if (businessSegments[1] === "outbound") return "Outbound";
   }
 
   return getModuleName(businessSegments);
@@ -229,6 +246,15 @@ const getDisplayName = (...records) => {
     "name",
     "title",
     "email",
+    "originalName",
+    "storedName",
+    "entryNo",
+    "goodsDesc",
+    "goodsCode",
+    "goodsSku",
+    "goodsBarcode",
+    "warehouseName",
+    "warehouseCode",
     "assetName",
     "assetCode",
     "spareName",
@@ -262,6 +288,39 @@ const getDisplayName = (...records) => {
         return String(value).trim();
       }
     }
+  }
+
+  return "";
+};
+
+const getUploadFileNames = (req) =>
+  (Array.isArray(req?.files) ? req.files : [])
+    .map((file) => String(file?.originalname || file?.filename || "").trim())
+    .filter(Boolean);
+
+const getUploadTargetName = (req) => {
+  const fileNames = getUploadFileNames(req);
+
+  if (fileNames.length === 0) return "";
+  if (fileNames.length === 1) return fileNames[0];
+
+  return `${fileNames[0]} +${fileNames.length - 1} more`;
+};
+
+const getInventoryRequestTargetName = ({ req, businessSegments = [] }) => {
+  if (
+    businessSegments[0] === "inventory" &&
+    businessSegments[1] === "goods-list" &&
+    businessSegments.includes("import-excel")
+  ) {
+    return String(req?.file?.originalname || req?.file?.filename || "").trim();
+  }
+
+  if (
+    businessSegments[0] === "inventory" &&
+    businessSegments[1] === "upload-center"
+  ) {
+    return getUploadTargetName(req);
   }
 
   return "";
@@ -354,7 +413,9 @@ export const createLogActivityFromRequest = async ({
     responseBody?.user ||
     responseBody?.permissions ||
     null;
-  const targetName = getDisplayName(responseData, req.body);
+  const targetName =
+    getDisplayName(responseData, req.body) ||
+    getInventoryRequestTargetName({ req, businessSegments });
   const page = getPageName({ businessSegments, req, responseBody });
   const assignedCardNames = getAssignedCardNames(
     responseData,

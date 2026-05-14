@@ -1,6 +1,12 @@
 import { authFetch } from "../../../api/authFetch.js";
 import { buildApiUrl } from "../../../api/config.js";
 
+const WAREHOUSE_CACHE_TTL_MS = 60 * 1000;
+let warehouseCache = {
+  expiresAt: 0,
+  items: null,
+};
+
 const request = async (path, options = {}) => {
   const response = await authFetch(buildApiUrl(path), options);
   const data = await response.json().catch(() => ({}));
@@ -12,9 +18,31 @@ const request = async (path, options = {}) => {
   return data;
 };
 
-export const getWarehouses = async () => {
+const cloneItems = (items = []) => items.map((item) => ({ ...item }));
+
+const invalidateWarehouseCache = () => {
+  warehouseCache = {
+    expiresAt: 0,
+    items: null,
+  };
+};
+
+export const getWarehouses = async ({ skipCache = false } = {}) => {
+  if (
+    !skipCache &&
+    warehouseCache.items &&
+    warehouseCache.expiresAt > Date.now()
+  ) {
+    return cloneItems(warehouseCache.items);
+  }
+
   const response = await request("/inventory/warehouses");
-  return Array.isArray(response?.data) ? response.data : [];
+  const items = Array.isArray(response?.data) ? response.data : [];
+  warehouseCache = {
+    expiresAt: Date.now() + WAREHOUSE_CACHE_TTL_MS,
+    items: cloneItems(items),
+  };
+  return items;
 };
 
 export const createWarehouse = async (payload) => {
@@ -26,6 +54,7 @@ export const createWarehouse = async (payload) => {
     body: JSON.stringify(payload),
   });
 
+  invalidateWarehouseCache();
   return response?.data;
 };
 
@@ -38,6 +67,7 @@ export const updateWarehouse = async (id, payload) => {
     body: JSON.stringify(payload),
   });
 
+  invalidateWarehouseCache();
   return response?.data;
 };
 
@@ -46,5 +76,6 @@ export const deleteWarehouse = async (id) => {
     method: "DELETE",
   });
 
+  invalidateWarehouseCache();
   return response?.data;
 };

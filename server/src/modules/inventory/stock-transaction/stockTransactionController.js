@@ -7,6 +7,7 @@ const STOCK_TRANSACTION_SELECT_FIELDS =
   "transactionType entryNo goodsItemId warehouseId goodsCode goodsDesc warehouseName quantity partnerName transactionDate status notes createdBy createdAt updatedAt";
 const DEPRECATED_TRANSACTION_FIELDS = ["unit"];
 const DEPRECATED_TRANSACTION_FIELD_UNSET = { unit: "" };
+let deprecatedTransactionCleanupPromise = null;
 
 const pad = (value) => String(value).padStart(2, "0");
 const normalizeValue = (value) => String(value || "").trim();
@@ -214,6 +215,18 @@ const removeDeprecatedTransactionFields = async () => {
   );
 };
 
+const ensureDeprecatedTransactionFieldsRemoved = async () => {
+  if (!deprecatedTransactionCleanupPromise) {
+    deprecatedTransactionCleanupPromise = removeDeprecatedTransactionFields()
+      .catch((error) => {
+        deprecatedTransactionCleanupPromise = null;
+        throw error;
+      });
+  }
+
+  await deprecatedTransactionCleanupPromise;
+};
+
 const getAvailableOutboundBalance = async ({
   goodsItemId,
   warehouseId,
@@ -244,7 +257,7 @@ const getAvailableOutboundBalance = async ({
 
 export const getStockTransactions = async (req, res) => {
   try {
-    await removeDeprecatedTransactionFields();
+    await ensureDeprecatedTransactionFieldsRemoved();
     const transactionType = getTransactionType(req);
     const items = await StockTransaction.find({ transactionType })
       .select(STOCK_TRANSACTION_SELECT_FIELDS)
@@ -265,7 +278,7 @@ export const getStockTransactions = async (req, res) => {
 
 export const getAvailableOutboundItems = async (req, res) => {
   try {
-    await removeDeprecatedTransactionFields();
+    await ensureDeprecatedTransactionFieldsRemoved();
     const items = (await getAggregatedBalances())
       .filter((item) => Number(item.currentQuantity || 0) > 0)
       .map(mapBalanceItem)
@@ -289,7 +302,7 @@ export const getAvailableOutboundItems = async (req, res) => {
 
 export const getInventorySummary = async (req, res) => {
   try {
-    await removeDeprecatedTransactionFields();
+    await ensureDeprecatedTransactionFieldsRemoved();
     const summaryRows = (await getAggregatedBalances())
       .map(mapBalanceItem)
       .sort((left, right) =>
@@ -329,7 +342,7 @@ export const getInventorySummary = async (req, res) => {
 
 export const createStockTransaction = async (req, res) => {
   try {
-    await removeDeprecatedTransactionFields();
+    await ensureDeprecatedTransactionFieldsRemoved();
     const transactionType = getTransactionType(req);
     const payload = normalizeTransactionPayload(req.body);
     const validationError = getValidationError(payload);
@@ -405,7 +418,7 @@ export const createStockTransaction = async (req, res) => {
 
 export const updateStockTransaction = async (req, res) => {
   try {
-    await removeDeprecatedTransactionFields();
+    await ensureDeprecatedTransactionFieldsRemoved();
     const transactionType = getTransactionType(req);
     const payload = normalizeTransactionPayload(req.body);
     const validationError = getValidationError(payload);

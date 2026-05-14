@@ -86,6 +86,12 @@ stockTransactionSchema.index(
   { transactionType: 1, entryNo: 1 },
   { unique: true },
 );
+stockTransactionSchema.index({ transactionType: 1, createdAt: -1 });
+stockTransactionSchema.index({
+  goodsItemId: 1,
+  warehouseId: 1,
+  transactionType: 1,
+});
 stockTransactionSchema.index({ createdAt: -1 });
 
 const StockTransaction =

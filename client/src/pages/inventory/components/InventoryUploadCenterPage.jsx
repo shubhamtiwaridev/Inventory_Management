@@ -197,7 +197,11 @@ const InventoryUploadCenterPage = () => {
         files: selectedFiles,
         description,
       });
-      await loadFiles();
+      if (Array.isArray(response?.data) && response.data.length > 0) {
+        setFiles((prev) => [...response.data, ...prev]);
+      } else {
+        await loadFiles();
+      }
       resetUploadDialog();
       setFeedback({
         type: "success",
@@ -216,7 +220,7 @@ const InventoryUploadCenterPage = () => {
   const handleDelete = async (file) => {
     try {
       await deleteUploadCenterFile(file.id);
-      await loadFiles();
+      setFiles((prev) => prev.filter((item) => item.id !== file.id));
       setFeedback({
         type: "success",
         message: "File deleted successfully.",
@@ -250,11 +254,18 @@ const InventoryUploadCenterPage = () => {
 
     try {
       setSavingEdit(true);
-      await updateUploadCenterFile(editingFile.id, {
+      const updatedFile = await updateUploadCenterFile(editingFile.id, {
         description: editingDescription,
       });
-      await loadFiles();
-      handleCloseEditDialog();
+      if (updatedFile) {
+        setFiles((prev) =>
+          prev.map((file) => (file.id === editingFile.id ? updatedFile : file)),
+        );
+      }
+      blurActiveElement();
+      setEditingFile(null);
+      setEditingDescription("");
+      setEditDialogOpen(false);
       setFeedback({
         type: "success",
         message: "File description updated successfully.",

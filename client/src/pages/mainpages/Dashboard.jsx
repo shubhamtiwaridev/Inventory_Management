@@ -329,10 +329,7 @@ const Dashboard = () => {
         subtitleTone: "info",
       },
     };
-  }, [
-    dashboardData.counts,
-    dashboardData.latestLogs.length,
-  ]);
+  }, [dashboardData.counts, dashboardData.latestLogs.length]);
 
   const visibleStats = useMemo(() => {
     return visibleDashboardCards
@@ -340,7 +337,8 @@ const Dashboard = () => {
         matchesDashboardSearch(card.name, card.title, card.subtitle, card.path),
       )
       .sort((left, right) => {
-        const leftOrder = dashboardCardOrder[left.name] || Number.MAX_SAFE_INTEGER;
+        const leftOrder =
+          dashboardCardOrder[left.name] || Number.MAX_SAFE_INTEGER;
         const rightOrder =
           dashboardCardOrder[right.name] || Number.MAX_SAFE_INTEGER;
 
@@ -348,7 +346,9 @@ const Dashboard = () => {
           return leftOrder - rightOrder;
         }
 
-        return String(left.title || "").localeCompare(String(right.title || ""));
+        return String(left.title || "").localeCompare(
+          String(right.title || ""),
+        );
       })
       .map((card) => {
         const metrics = dashboardCardMetrics[card.name] || {};
@@ -412,15 +412,17 @@ const Dashboard = () => {
 
   const complaintRows = useMemo(
     () =>
-      (canViewComplaintSection ? dashboardData.recentComplaints : []).map((item) => ({
-        id: item?.id,
-        complaintCode: item?.complaintCode || "-",
-        complaintTitle: item?.complaintTitle || "-",
-        section: sectionLabelMap[item?.section] || item?.section || "-",
-        priority: item?.priority || "-",
-        issueDate: formatDateTime(item?.issueDate),
-        createdBy: item?.createdBy || "-",
-      })),
+      (canViewComplaintSection ? dashboardData.recentComplaints : []).map(
+        (item) => ({
+          id: item?.id,
+          complaintCode: item?.complaintCode || "-",
+          complaintTitle: item?.complaintTitle || "-",
+          section: sectionLabelMap[item?.section] || item?.section || "-",
+          priority: item?.priority || "-",
+          issueDate: formatDateTime(item?.issueDate),
+          createdBy: item?.createdBy || "-",
+        }),
+      ),
     [canViewComplaintSection, dashboardData.recentComplaints],
   );
 
@@ -432,7 +434,10 @@ const Dashboard = () => {
     return dashboardData.complaintCategories.map((item, index) => ({
       name: sectionLabelMap[item?.section] || item?.section || "Other",
       units: `${Number(item?.count || 0)} complaints`,
-      progress: Math.max(5, Math.round((Number(item?.count || 0) / total) * 100)),
+      progress: Math.max(
+        5,
+        Math.round((Number(item?.count || 0) / total) * 100),
+      ),
       color: categoryPalette[index % categoryPalette.length],
     }));
   }, [
@@ -507,16 +512,22 @@ const Dashboard = () => {
       : [];
 
     return [...spareAlerts, ...breakdownAlerts].slice(0, 4);
-  }, [canAccessFeature, dashboardData.breakdownAssets, dashboardData.lowStockSpares]);
+  }, [
+    canAccessFeature,
+    dashboardData.breakdownAssets,
+    dashboardData.lowStockSpares,
+  ]);
 
   const latestUpdates = useMemo(
     () =>
-      (canViewLogUpdatesSection ? dashboardData.latestLogs : []).map((item, index) => ({
-        rank: `#${index + 1}`,
-        name: item.targetName || item.page || "-",
-        sold: `${item.action || "-"} | ${formatDateTime(item.createdAt)}`,
-        change: item.userName || item.role || "-",
-      })),
+      (canViewLogUpdatesSection ? dashboardData.latestLogs : []).map(
+        (item, index) => ({
+          rank: `#${index + 1}`,
+          name: item.targetName || item.page || "-",
+          sold: `${item.action || "-"} | ${formatDateTime(item.createdAt)}`,
+          change: item.userName || item.role || "-",
+        }),
+      ),
     [canViewLogUpdatesSection, dashboardData.latestLogs],
   );
 
@@ -724,7 +735,8 @@ const Dashboard = () => {
                 variant="body2"
                 sx={{ color: brand.textSoft, mt: 0.5 }}
               >
-                Try searching module, complaint, spare alert, breakdown, or update.
+                Try searching module, complaint, spare alert, breakdown, or
+                update.
               </Typography>
             </Paper>
           ) : null}
@@ -744,21 +756,21 @@ const Dashboard = () => {
             {cardsLoading ? (
               Array.from({ length: dashboardFallbackCards.length }).map(
                 (_, index) => (
-                <Paper
-                  key={index}
-                  elevation={0}
-                  sx={{
-                    ...softCardSx,
-                    p: 2.25,
-                    boxShadow: brand.shadowStrong,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 120,
-                  }}
-                >
-                  <LinearProgress sx={{ width: "60%" }} />
-                </Paper>
+                  <Paper
+                    key={index}
+                    elevation={0}
+                    sx={{
+                      ...softCardSx,
+                      p: 2.25,
+                      boxShadow: brand.shadowStrong,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      height: 120,
+                    }}
+                  >
+                    <LinearProgress sx={{ width: "60%" }} />
+                  </Paper>
                 ),
               )
             ) : visibleStats.length === 0 ? (
@@ -886,237 +898,248 @@ const Dashboard = () => {
                 mb: 2.5,
               }}
             >
-            <Paper
-              elevation={0}
-              sx={{
-                ...softCardSx,
-                overflow: "hidden",
-                boxShadow: brand.shadowStrong,
-              }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ px: 2.25, py: 2 }}
+              <Paper
+                elevation={0}
+                sx={{
+                  ...softCardSx,
+                  overflow: "hidden",
+                  boxShadow: brand.shadowStrong,
+                }}
               >
-                <Typography fontWeight={800} sx={{ color: brand.text }}>
-                  Recent Complaints
-                </Typography>
-
-                <Button
-                  size="small"
-                  onClick={() => navigate("/machine-maintenance/complient/assets")}
-                  sx={{
-                    borderRadius: 3,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    backgroundColor: "#F4F6F8",
-                    color: brand.primary,
-                    px: 1.8,
-                    "&:hover": {
-                      backgroundColor: "#ECEFF3",
-                    },
-                  }}
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ px: 2.25, py: 2 }}
                 >
-                  View All
-                </Button>
-              </Stack>
+                  <Typography fontWeight={800} sx={{ color: brand.text }}>
+                    Recent Complaints
+                  </Typography>
 
-              <Box sx={{ overflowX: "auto" }}>
-                <Box sx={{ minWidth: 760 }}>
-                  <Box
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      navigate("/machine-maintenance/complient/assets")
+                    }
                     sx={{
-                      display: "grid",
-                      gridTemplateColumns: "1.1fr 1.6fr 1fr 0.8fr 1fr 0.9fr",
-                      gap: 2,
-                      px: 2.25,
-                      py: 1.5,
-                      bgcolor: "#FFFFFF",
-                      borderTop: `1px solid ${brand.border}`,
-                      borderBottom: `1px solid ${brand.border}`,
+                      borderRadius: 3,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      backgroundColor: "#F4F6F8",
+                      color: brand.primary,
+                      px: 1.8,
+                      "&:hover": {
+                        backgroundColor: "#ECEFF3",
+                      },
                     }}
                   >
-                    {[
-                      "COMPLAINT ID",
-                      "TITLE",
-                      "SECTION",
-                      "PRIORITY",
-                      "ISSUE DATE",
-                      "CREATED BY",
-                    ].map((head) => (
-                      <Typography
-                        key={head}
-                        variant="caption"
-                        sx={{
-                          color: brand.textSoft,
-                          fontWeight: 800,
-                          letterSpacing: 0.4,
-                        }}
-                      >
-                        {head}
-                      </Typography>
-                    ))}
-                  </Box>
+                    View All
+                  </Button>
+                </Stack>
 
-                  {filteredOrders.length === 0 ? (
+                <Box sx={{ overflowX: "auto" }}>
+                  <Box sx={{ minWidth: 760 }}>
                     <Box
                       sx={{
+                        display: "grid",
+                        gridTemplateColumns: "1.1fr 1.6fr 1fr 0.8fr 1fr 0.9fr",
+                        gap: 2,
                         px: 2.25,
-                        py: 3,
-                        textAlign: "center",
-                        backgroundColor: "#FFFFFF",
+                        py: 1.5,
+                        bgcolor: "#FFFFFF",
+                        borderTop: `1px solid ${brand.border}`,
+                        borderBottom: `1px solid ${brand.border}`,
                       }}
                     >
-                      <Typography
-                        sx={{ color: brand.textSoft, fontWeight: 700 }}
-                      >
-                        No complaints found
-                      </Typography>
+                      {[
+                        "COMPLAINT ID",
+                        "TITLE",
+                        "SECTION",
+                        "PRIORITY",
+                        "ISSUE DATE",
+                        "CREATED BY",
+                      ].map((head) => (
+                        <Typography
+                          key={head}
+                          variant="caption"
+                          sx={{
+                            color: brand.textSoft,
+                            fontWeight: 800,
+                            letterSpacing: 0.4,
+                          }}
+                        >
+                          {head}
+                        </Typography>
+                      ))}
                     </Box>
-                  ) : (
-                    filteredOrders.map((row, index) => (
+
+                    {filteredOrders.length === 0 ? (
                       <Box
-                        key={row.id}
                         sx={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "1.1fr 1.6fr 1fr 0.8fr 1fr 0.9fr",
-                          gap: 2,
                           px: 2.25,
-                          py: 1.75,
-                          borderBottom:
-                            index !== filteredOrders.length - 1
-                              ? `1px solid ${brand.border}`
-                              : "none",
-                          alignItems: "center",
+                          py: 3,
+                          textAlign: "center",
                           backgroundColor: "#FFFFFF",
-                          "&:hover": {
-                            backgroundColor: "#FAFBFC",
-                          },
                         }}
                       >
                         <Typography
+                          sx={{ color: brand.textSoft, fontWeight: 700 }}
+                        >
+                          No complaints found
+                        </Typography>
+                      </Box>
+                    ) : (
+                      filteredOrders.map((row, index) => (
+                        <Box
+                          key={row.id}
                           sx={{
-                            color: brand.primary,
-                            fontWeight: 700,
-                            fontSize: "0.92rem",
+                            display: "grid",
+                            gridTemplateColumns:
+                              "1.1fr 1.6fr 1fr 0.8fr 1fr 0.9fr",
+                            gap: 2,
+                            px: 2.25,
+                            py: 1.75,
+                            borderBottom:
+                              index !== filteredOrders.length - 1
+                                ? `1px solid ${brand.border}`
+                                : "none",
+                            alignItems: "center",
+                            backgroundColor: "#FFFFFF",
+                            "&:hover": {
+                              backgroundColor: "#FAFBFC",
+                            },
                           }}
                         >
-                          {row.complaintCode}
-                        </Typography>
+                          <Typography
+                            sx={{
+                              color: brand.primary,
+                              fontWeight: 700,
+                              fontSize: "0.92rem",
+                            }}
+                          >
+                            {row.complaintCode}
+                          </Typography>
 
-                        <Typography fontWeight={600} sx={{ color: brand.text }}>
-                          {row.complaintTitle}
-                        </Typography>
+                          <Typography
+                            fontWeight={600}
+                            sx={{ color: brand.text }}
+                          >
+                            {row.complaintTitle}
+                          </Typography>
 
-                        <Chip
-                          label={row.section}
-                          size="small"
+                          <Chip
+                            label={row.section}
+                            size="small"
+                            sx={{
+                              width: "fit-content",
+                              borderRadius: 2,
+                              bgcolor: "#F4F6F8",
+                              color: brand.textSoft,
+                              fontWeight: 600,
+                            }}
+                          />
+
+                          <Typography
+                            fontWeight={600}
+                            sx={{ color: brand.text }}
+                          >
+                            {row.priority}
+                          </Typography>
+
+                          <Typography
+                            fontWeight={600}
+                            sx={{ color: brand.textSoft }}
+                          >
+                            {row.issueDate}
+                          </Typography>
+
+                          <Typography
+                            fontWeight={700}
+                            sx={{ color: brand.text }}
+                          >
+                            {row.createdBy}
+                          </Typography>
+                        </Box>
+                      ))
+                    )}
+                  </Box>
+                </Box>
+              </Paper>
+
+              <Paper
+                elevation={0}
+                sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+              >
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  sx={{ mb: 2 }}
+                >
+                  <Typography fontWeight={800} sx={{ color: brand.text }}>
+                    Complaint by Section
+                  </Typography>
+
+                  <IconButton
+                    size="small"
+                    sx={{
+                      color: brand.textSoft,
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: brand.shadow,
+                    }}
+                  >
+                    <MoreVertRoundedIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+
+                <Stack spacing={2}>
+                  {filteredCategories.length === 0 ? (
+                    <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
+                      No complaint categories found
+                    </Typography>
+                  ) : (
+                    filteredCategories.map((item) => (
+                      <Box key={item.name}>
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          sx={{ mb: 0.8 }}
+                        >
+                          <Typography
+                            fontWeight={700}
+                            fontSize="0.92rem"
+                            sx={{ color: brand.text }}
+                          >
+                            {item.name}
+                          </Typography>
+
+                          <Typography
+                            variant="body2"
+                            sx={{ color: brand.textSoft }}
+                          >
+                            {item.units} | {item.progress}%
+                          </Typography>
+                        </Stack>
+
+                        <LinearProgress
+                          variant="determinate"
+                          value={item.progress}
                           sx={{
-                            width: "fit-content",
-                            borderRadius: 2,
-                            bgcolor: "#F4F6F8",
-                            color: brand.textSoft,
-                            fontWeight: 600,
+                            height: 7,
+                            borderRadius: 999,
+                            backgroundColor: "#E9EEF2",
+                            "& .MuiLinearProgress-bar": {
+                              borderRadius: 999,
+                              backgroundColor: item.color,
+                            },
                           }}
                         />
-
-                        <Typography fontWeight={600} sx={{ color: brand.text }}>
-                          {row.priority}
-                        </Typography>
-
-                        <Typography
-                          fontWeight={600}
-                          sx={{ color: brand.textSoft }}
-                        >
-                          {row.issueDate}
-                        </Typography>
-
-                        <Typography fontWeight={700} sx={{ color: brand.text }}>
-                          {row.createdBy}
-                        </Typography>
                       </Box>
                     ))
                   )}
-                </Box>
-              </Box>
-            </Paper>
-
-            <Paper
-              elevation={0}
-              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 2 }}
-              >
-                <Typography fontWeight={800} sx={{ color: brand.text }}>
-                  Complaint by Section
-                </Typography>
-
-                <IconButton
-                  size="small"
-                  sx={{
-                    color: brand.textSoft,
-                    backgroundColor: "#FFFFFF",
-                    boxShadow: brand.shadow,
-                  }}
-                >
-                  <MoreVertRoundedIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-
-              <Stack spacing={2}>
-                {filteredCategories.length === 0 ? (
-                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
-                    No complaint categories found
-                  </Typography>
-                ) : (
-                  filteredCategories.map((item) => (
-                    <Box key={item.name}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        sx={{ mb: 0.8 }}
-                      >
-                        <Typography
-                          fontWeight={700}
-                          fontSize="0.92rem"
-                          sx={{ color: brand.text }}
-                        >
-                          {item.name}
-                        </Typography>
-
-                        <Typography
-                          variant="body2"
-                          sx={{ color: brand.textSoft }}
-                        >
-                          {item.units} | {item.progress}%
-                        </Typography>
-                      </Stack>
-
-                      <LinearProgress
-                        variant="determinate"
-                        value={item.progress}
-                        sx={{
-                          height: 7,
-                          borderRadius: 999,
-                          backgroundColor: "#E9EEF2",
-                          "& .MuiLinearProgress-bar": {
-                            borderRadius: 999,
-                            backgroundColor: item.color,
-                          },
-                        }}
-                      />
-                    </Box>
-                  ))
-                )}
-              </Stack>
-            </Paper>
+                </Stack>
+              </Paper>
             </Box>
           ) : null}
 
@@ -1133,216 +1156,231 @@ const Dashboard = () => {
                 gap: 2,
               }}
             >
-            {visibleQuickActions.length > 0 ? (
-              <Paper
-              elevation={0}
-              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
-            >
-              <Typography fontWeight={800} sx={{ color: brand.text, mb: 2 }}>
-                Quick Actions
-              </Typography>
-
-              <Stack spacing={1.4}>
-                {filteredQuickActions.length === 0 ? (
-                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
-                    No actions found
+              {visibleQuickActions.length > 0 ? (
+                <Paper
+                  elevation={0}
+                  sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+                >
+                  <Typography
+                    fontWeight={800}
+                    sx={{ color: brand.text, mb: 2 }}
+                  >
+                    Quick Actions
                   </Typography>
-                ) : (
-                  filteredQuickActions.map((item) => (
-                    <Button
-                      key={item.title}
-                      fullWidth
-                      onClick={() => navigate(item.path)}
-                      sx={{
-                        justifyContent: "flex-start",
-                        p: 1.4,
-                        borderRadius: 3,
-                        border: `1px solid ${brand.border}`,
-                        backgroundColor: "#FFFFFF",
-                        color: brand.text,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        boxShadow: brand.shadow,
-                        "&:hover": {
-                          backgroundColor: "#F8FAFC",
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 2.5,
-                          bgcolor: item.iconBg,
-                          color: item.iconColor,
-                          display: "grid",
-                          placeItems: "center",
-                          mr: 1.5,
-                        }}
+
+                  <Stack spacing={1.4}>
+                    {filteredQuickActions.length === 0 ? (
+                      <Typography
+                        sx={{ color: brand.textSoft, fontWeight: 700 }}
                       >
-                        {item.icon}
-                      </Box>
-
-                      {item.title}
-                    </Button>
-                  ))
-                )}
-              </Stack>
-              </Paper>
-            ) : null}
-
-            {canViewAlertsSection ? (
-              <Paper
-              elevation={0}
-              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
-            >
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 2 }}
-              >
-                <Typography fontWeight={800} sx={{ color: brand.text }}>
-                  Critical Alerts
-                </Typography>
-
-                <Badge badgeContent={filteredAlerts.length} color="error">
-                  <WarningAmberRoundedIcon sx={{ color: brand.textSoft }} />
-                </Badge>
-              </Stack>
-
-              <Stack spacing={1.25}>
-                {filteredAlerts.length === 0 ? (
-                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
-                    No alerts found
-                  </Typography>
-                ) : (
-                  filteredAlerts.map((alert) => (
-                    <Box
-                      key={alert.title}
-                      sx={{
-                        p: 1.6,
-                        borderRadius: 3,
-                        backgroundColor: alert.bg,
-                        border: `1px solid ${alert.border}`,
-                      }}
-                    >
-                      <Stack
-                        direction="row"
-                        spacing={1.2}
-                        alignItems="flex-start"
-                      >
-                        <WarningAmberRoundedIcon
+                        No actions found
+                      </Typography>
+                    ) : (
+                      filteredQuickActions.map((item) => (
+                        <Button
+                          key={item.title}
+                          fullWidth
+                          onClick={() => navigate(item.path)}
                           sx={{
-                            color: alert.iconColor,
-                            mt: 0.15,
-                            fontSize: 18,
+                            justifyContent: "flex-start",
+                            p: 1.4,
+                            borderRadius: 3,
+                            border: `1px solid ${brand.border}`,
+                            backgroundColor: "#FFFFFF",
+                            color: brand.text,
+                            textTransform: "none",
+                            fontWeight: 700,
+                            boxShadow: brand.shadow,
+                            "&:hover": {
+                              backgroundColor: "#F8FAFC",
+                            },
                           }}
-                        />
-
-                        <Box>
-                          <Typography
-                            fontWeight={700}
-                            fontSize="0.95rem"
-                            sx={{ color: brand.text }}
-                          >
-                            {alert.title}
-                          </Typography>
-
-                          <Typography
-                            variant="body2"
-                            sx={{ color: brand.textSoft }}
-                          >
-                            {alert.message}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Box>
-                  ))
-                )}
-              </Stack>
-              </Paper>
-            ) : null}
-
-            {canViewLogUpdatesSection ? (
-              <Paper
-              elevation={0}
-              sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
-            >
-              <Typography fontWeight={800} sx={{ color: brand.text, mb: 2 }}>
-                Latest Updates
-              </Typography>
-
-              <Stack spacing={1.4}>
-                {filteredTopProducts.length === 0 ? (
-                  <Typography sx={{ color: brand.textSoft, fontWeight: 700 }}>
-                    No updates found
-                  </Typography>
-                ) : (
-                  filteredTopProducts.map((item, index) => (
-                    <Box key={`${item.rank}-${item.name}`}>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Stack
-                          direction="row"
-                          spacing={1.3}
-                          alignItems="center"
                         >
                           <Box
                             sx={{
-                              minWidth: 36,
+                              width: 36,
                               height: 36,
-                              px: 1,
                               borderRadius: 2.5,
-                              backgroundColor:
-                                index === 0 ? "#FFF3E8" : "#F4F6F8",
-                              color: index === 0 ? "#D97706" : brand.primary,
+                              bgcolor: item.iconBg,
+                              color: item.iconColor,
                               display: "grid",
                               placeItems: "center",
-                              fontWeight: 800,
-                              fontSize: "0.85rem",
+                              mr: 1.5,
                             }}
                           >
-                            {item.rank}
+                            {item.icon}
                           </Box>
 
-                          <Box>
-                            <Typography
-                              fontWeight={700}
-                              sx={{ color: brand.text }}
-                            >
-                              {item.name}
-                            </Typography>
+                          {item.title}
+                        </Button>
+                      ))
+                    )}
+                  </Stack>
+                </Paper>
+              ) : null}
 
-                            <Typography
-                              variant="body2"
-                              sx={{ color: brand.textSoft }}
-                            >
-                              {item.sold}
-                            </Typography>
-                          </Box>
-                        </Stack>
+              {canViewAlertsSection ? (
+                <Paper
+                  elevation={0}
+                  sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+                >
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography fontWeight={800} sx={{ color: brand.text }}>
+                      Critical Alerts
+                    </Typography>
 
-                        <Typography
-                          fontWeight={800}
-                          sx={{ color: brand.primary, fontSize: "0.92rem" }}
+                    <Badge badgeContent={filteredAlerts.length} color="error">
+                      <WarningAmberRoundedIcon sx={{ color: brand.textSoft }} />
+                    </Badge>
+                  </Stack>
+
+                  <Stack spacing={1.25}>
+                    {filteredAlerts.length === 0 ? (
+                      <Typography
+                        sx={{ color: brand.textSoft, fontWeight: 700 }}
+                      >
+                        No alerts found
+                      </Typography>
+                    ) : (
+                      filteredAlerts.map((alert) => (
+                        <Box
+                          key={alert.title}
+                          sx={{
+                            p: 1.6,
+                            borderRadius: 3,
+                            backgroundColor: alert.bg,
+                            border: `1px solid ${alert.border}`,
+                          }}
                         >
-                          {item.change}
-                        </Typography>
-                      </Stack>
+                          <Stack
+                            direction="row"
+                            spacing={1.2}
+                            alignItems="flex-start"
+                          >
+                            <WarningAmberRoundedIcon
+                              sx={{
+                                color: alert.iconColor,
+                                mt: 0.15,
+                                fontSize: 18,
+                              }}
+                            />
 
-                      {index !== filteredTopProducts.length - 1 ? (
-                        <Divider sx={{ mt: 1.4, borderColor: brand.border }} />
-                      ) : null}
-                    </Box>
-                  ))
-                )}
-              </Stack>
-              </Paper>
-            ) : null}
+                            <Box>
+                              <Typography
+                                fontWeight={700}
+                                fontSize="0.95rem"
+                                sx={{ color: brand.text }}
+                              >
+                                {alert.title}
+                              </Typography>
+
+                              <Typography
+                                variant="body2"
+                                sx={{ color: brand.textSoft }}
+                              >
+                                {alert.message}
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Box>
+                      ))
+                    )}
+                  </Stack>
+                </Paper>
+              ) : null}
+
+              {canViewLogUpdatesSection ? (
+                <Paper
+                  elevation={0}
+                  sx={{ ...softCardSx, p: 2.25, boxShadow: brand.shadowStrong }}
+                >
+                  <Typography
+                    fontWeight={800}
+                    sx={{ color: brand.text, mb: 2 }}
+                  >
+                    Latest Updates
+                  </Typography>
+
+                  <Stack spacing={1.4}>
+                    {filteredTopProducts.length === 0 ? (
+                      <Typography
+                        sx={{ color: brand.textSoft, fontWeight: 700 }}
+                      >
+                        No updates found
+                      </Typography>
+                    ) : (
+                      filteredTopProducts.map((item, index) => (
+                        <Box key={`${item.rank}-${item.name}`}>
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <Stack
+                              direction="row"
+                              spacing={1.3}
+                              alignItems="center"
+                            >
+                              <Box
+                                sx={{
+                                  minWidth: 36,
+                                  height: 36,
+                                  px: 1,
+                                  borderRadius: 2.5,
+                                  backgroundColor:
+                                    index === 0 ? "#FFF3E8" : "#F4F6F8",
+                                  color:
+                                    index === 0 ? "#D97706" : brand.primary,
+                                  display: "grid",
+                                  placeItems: "center",
+                                  fontWeight: 800,
+                                  fontSize: "0.85rem",
+                                }}
+                              >
+                                {item.rank}
+                              </Box>
+
+                              <Box>
+                                <Typography
+                                  fontWeight={700}
+                                  sx={{ color: brand.text }}
+                                >
+                                  {item.name}
+                                </Typography>
+
+                                <Typography
+                                  variant="body2"
+                                  sx={{ color: brand.textSoft }}
+                                >
+                                  {item.sold}
+                                </Typography>
+                              </Box>
+                            </Stack>
+
+                            <Typography
+                              fontWeight={800}
+                              sx={{ color: brand.primary, fontSize: "0.92rem" }}
+                            >
+                              {item.change}
+                            </Typography>
+                          </Stack>
+
+                          {index !== filteredTopProducts.length - 1 ? (
+                            <Divider
+                              sx={{ mt: 1.4, borderColor: brand.border }}
+                            />
+                          ) : null}
+                        </Box>
+                      ))
+                    )}
+                  </Stack>
+                </Paper>
+              ) : null}
             </Box>
           ) : null}
         </Box>

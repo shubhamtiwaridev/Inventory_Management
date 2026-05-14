@@ -27,6 +27,13 @@ const invalidateWarehouseCache = () => {
   };
 };
 
+const setWarehouseCache = (items = []) => {
+  warehouseCache = {
+    expiresAt: Date.now() + WAREHOUSE_CACHE_TTL_MS,
+    items: cloneItems(items),
+  };
+};
+
 export const getWarehouses = async ({ skipCache = false } = {}) => {
   if (
     !skipCache &&
@@ -38,10 +45,7 @@ export const getWarehouses = async ({ skipCache = false } = {}) => {
 
   const response = await request("/inventory/warehouses");
   const items = Array.isArray(response?.data) ? response.data : [];
-  warehouseCache = {
-    expiresAt: Date.now() + WAREHOUSE_CACHE_TTL_MS,
-    items: cloneItems(items),
-  };
+  setWarehouseCache(items);
   return items;
 };
 
@@ -54,8 +58,15 @@ export const createWarehouse = async (payload) => {
     body: JSON.stringify(payload),
   });
 
-  invalidateWarehouseCache();
-  return response?.data;
+  const item = response?.data || null;
+
+  if (item && Array.isArray(warehouseCache.items)) {
+    setWarehouseCache([item, ...warehouseCache.items]);
+  } else {
+    invalidateWarehouseCache();
+  }
+
+  return item;
 };
 
 export const updateWarehouse = async (id, payload) => {
@@ -67,8 +78,19 @@ export const updateWarehouse = async (id, payload) => {
     body: JSON.stringify(payload),
   });
 
-  invalidateWarehouseCache();
-  return response?.data;
+  const item = response?.data || null;
+
+  if (item && Array.isArray(warehouseCache.items)) {
+    setWarehouseCache(
+      warehouseCache.items.map((existingItem) =>
+        existingItem.id === id ? item : existingItem,
+      ),
+    );
+  } else {
+    invalidateWarehouseCache();
+  }
+
+  return item;
 };
 
 export const deleteWarehouse = async (id) => {
@@ -76,6 +98,15 @@ export const deleteWarehouse = async (id) => {
     method: "DELETE",
   });
 
-  invalidateWarehouseCache();
-  return response?.data;
+  const item = response?.data || null;
+
+  if (Array.isArray(warehouseCache.items)) {
+    setWarehouseCache(
+      warehouseCache.items.filter((existingItem) => existingItem.id !== id),
+    );
+  } else {
+    invalidateWarehouseCache();
+  }
+
+  return item;
 };

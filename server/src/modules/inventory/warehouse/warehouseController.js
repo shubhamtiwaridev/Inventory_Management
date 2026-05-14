@@ -48,21 +48,46 @@ const getValidationError = (payload = {}) => {
   return "";
 };
 
-const normalizeDuplicateValue = (value) =>
-  String(value || "")
-    .trim()
-    .toLowerCase();
+const escapeRegex = (value = "") =>
+  String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const buildDuplicateKeys = (payload = {}) =>
-  [
-    payload.warehouseCode &&
-      `code:${normalizeDuplicateValue(payload.warehouseCode)}`,
-    payload.warehouseName &&
-      `name:${normalizeDuplicateValue(payload.warehouseName)}`,
+const buildDuplicateQuery = (payload = {}, excludedId = null) => {
+  const conditions = [
+    payload.warehouseCode && {
+      warehouseCode: {
+        $regex: `^${escapeRegex(payload.warehouseCode)}$`,
+        $options: "i",
+      },
+    },
+    payload.warehouseName && {
+      warehouseName: {
+        $regex: `^${escapeRegex(payload.warehouseName)}$`,
+        $options: "i",
+      },
+    },
   ].filter(Boolean);
 
-const getExistingDuplicateKeySet = (items = []) =>
-  new Set(items.flatMap((item) => buildDuplicateKeys(item)));
+  if (conditions.length === 0) {
+    return null;
+  }
+
+  return {
+    ...(excludedId ? { _id: { $ne: excludedId } } : {}),
+    $or: conditions,
+  };
+};
+
+const findDuplicateWarehouse = async (payload = {}, excludedId = null) => {
+  const duplicateQuery = buildDuplicateQuery(payload, excludedId);
+
+  if (!duplicateQuery) {
+    return null;
+  }
+
+  return Warehouse.findOne(duplicateQuery)
+    .select("warehouseCode warehouseName")
+    .lean();
+};
 
 export const getWarehouses = async (req, res) => {
   try {
@@ -92,12 +117,9 @@ export const createWarehouse = async (req, res) => {
       return res.status(400).json({ success: false, message: validationError });
     }
 
-    const existingItems = await Warehouse.find({})
-      .select("warehouseCode warehouseName")
-      .lean();
-    const duplicateKeySet = getExistingDuplicateKeySet(existingItems);
+    const duplicateItem = await findDuplicateWarehouse(payload);
 
-    if (buildDuplicateKeys(payload).some((key) => duplicateKeySet.has(key))) {
+    if (duplicateItem) {
       return res.status(409).json({
         success: false,
         message: "Duplicate warehouse already exists",
@@ -132,37 +154,38 @@ export const updateWarehouse = async (req, res) => {
       return res.status(400).json({ success: false, message: validationError });
     }
 
-    const currentItem = await Warehouse.findById(req.params.id);
+    const duplicateItem = await findDuplicateWarehouse(payload, req.params.id);
 
-    if (!currentItem) {
-      return res.status(404).json({
-        success: false,
-        message: "Warehouse not found",
-      });
-    }
-
-    const existingItems = await Warehouse.find({ _id: { $ne: req.params.id } })
-      .select("warehouseCode warehouseName")
-      .lean();
-    const duplicateKeySet = getExistingDuplicateKeySet(existingItems);
-
-    if (buildDuplicateKeys(payload).some((key) => duplicateKeySet.has(key))) {
+    if (duplicateItem) {
       return res.status(409).json({
         success: false,
         message: "Duplicate warehouse already exists",
       });
     }
 
-    Object.assign(currentItem, payload, {
-      updatedBy: getUserName(req),
-    });
+    const item = await Warehouse.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...payload,
+        updatedBy: getUserName(req),
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    ).lean();
 
-    await currentItem.save();
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Warehouse not found",
+      });
+    }
 
     return res.status(200).json({
       success: true,
       message: "Warehouse updated successfully",
-      data: mapWarehouseItem(currentItem.toObject()),
+      data: mapWarehouseItem(item),
     });
   } catch (error) {
     return res.status(500).json({

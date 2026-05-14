@@ -190,7 +190,7 @@ export const updateComplient = async (req, res) => {
     payload.updatedBy = normalizeText(req.user?.name);
 
     const complient = await Complient.findByIdAndUpdate(req.params.id, payload, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 

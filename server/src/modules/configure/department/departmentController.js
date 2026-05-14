@@ -83,7 +83,7 @@ export const updateDepartment = async (req, res) => {
         department: departmentValue,
         createdBy: getUserName(req),
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
 
     if (!department) {

@@ -27,6 +27,13 @@ const invalidateGoodsListCache = () => {
   };
 };
 
+const setGoodsListCache = (items = []) => {
+  goodsListCache = {
+    expiresAt: Date.now() + GOODS_LIST_CACHE_TTL_MS,
+    items: cloneItems(items),
+  };
+};
+
 export const getGoodsListItems = async ({ skipCache = false } = {}) => {
   if (
     !skipCache &&
@@ -38,10 +45,7 @@ export const getGoodsListItems = async ({ skipCache = false } = {}) => {
 
   const response = await request("/inventory/goods-list");
   const items = Array.isArray(response?.data) ? response.data : [];
-  goodsListCache = {
-    expiresAt: Date.now() + GOODS_LIST_CACHE_TTL_MS,
-    items: cloneItems(items),
-  };
+  setGoodsListCache(items);
   return items;
 };
 
@@ -54,8 +58,15 @@ export const createGoodsListItem = async (payload) => {
     body: JSON.stringify(payload),
   });
 
-  invalidateGoodsListCache();
-  return response?.data;
+  const item = response?.data || null;
+
+  if (item && Array.isArray(goodsListCache.items)) {
+    setGoodsListCache([item, ...goodsListCache.items]);
+  } else {
+    invalidateGoodsListCache();
+  }
+
+  return item;
 };
 
 export const updateGoodsListItem = async (id, payload) => {
@@ -67,8 +78,19 @@ export const updateGoodsListItem = async (id, payload) => {
     body: JSON.stringify(payload),
   });
 
-  invalidateGoodsListCache();
-  return response?.data;
+  const item = response?.data || null;
+
+  if (item && Array.isArray(goodsListCache.items)) {
+    setGoodsListCache(
+      goodsListCache.items.map((existingItem) =>
+        existingItem.id === id ? item : existingItem,
+      ),
+    );
+  } else {
+    invalidateGoodsListCache();
+  }
+
+  return item;
 };
 
 export const deleteGoodsListItem = async (id) => {
@@ -76,8 +98,17 @@ export const deleteGoodsListItem = async (id) => {
     method: "DELETE",
   });
 
-  invalidateGoodsListCache();
-  return response?.data;
+  const item = response?.data || null;
+
+  if (Array.isArray(goodsListCache.items)) {
+    setGoodsListCache(
+      goodsListCache.items.filter((existingItem) => existingItem.id !== id),
+    );
+  } else {
+    invalidateGoodsListCache();
+  }
+
+  return item;
 };
 
 export const importGoodsListExcel = async (file) => {
@@ -89,6 +120,13 @@ export const importGoodsListExcel = async (file) => {
     body: formData,
   });
 
-  invalidateGoodsListCache();
+  const items = Array.isArray(response?.data) ? response.data : null;
+
+  if (items) {
+    setGoodsListCache(items);
+  } else {
+    invalidateGoodsListCache();
+  }
+
   return response;
 };

@@ -178,7 +178,7 @@ export const updateAsset = async (req, res) => {
     payload.machineImage = payload.machineImage || asset.machineImage;
 
     const updatedAsset = await Asset.findByIdAndUpdate(req.params.id, payload, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 

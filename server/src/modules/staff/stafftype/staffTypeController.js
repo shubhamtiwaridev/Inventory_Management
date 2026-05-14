@@ -127,7 +127,7 @@ export const updateStaffType = async (req, res) => {
         assignedCards: selectedCards,
         createdBy: getUserName(req),
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     ).populate("assignedCards", cardSelectFields);
 
     if (!staffType) {

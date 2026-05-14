@@ -77,6 +77,11 @@ const blurActiveElement = () => {
   }
 };
 
+const upsertRowAtTop = (rows = [], nextRow) => [
+  nextRow,
+  ...rows.filter((row) => row.id !== nextRow.id),
+];
+
 const InventoryTransactionPage = ({ type = "inbound" }) => {
   const config = transactionConfigs[type] || transactionConfigs.inbound;
   const [rows, setRows] = useState([]);
@@ -219,76 +224,52 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
       skipTransactionCache = false,
       skipAvailabilityCache = false,
     } = {}) => {
-    try {
-      setLoadingRows(true);
-      const requests = [
-        getInventoryTransactions(type, { skipCache: skipTransactionCache }),
-        getGoodsListItems({ skipCache: skipLookupCache }),
-        getWarehouses({ skipCache: skipLookupCache }),
-      ];
+      try {
+        setLoadingRows(true);
+        const requests = [
+          getInventoryTransactions(type, { skipCache: skipTransactionCache }),
+          getGoodsListItems({ skipCache: skipLookupCache }),
+          getWarehouses({ skipCache: skipLookupCache }),
+        ];
 
-      if (type === "outbound") {
-        requests.push(
-          getAvailableOutboundItems({ skipCache: skipAvailabilityCache }),
+        if (type === "outbound") {
+          requests.push(
+            getAvailableOutboundItems({ skipCache: skipAvailabilityCache }),
+          );
+        }
+
+        const [
+          transactionRows,
+          goodsListRows,
+          warehouseRows,
+          outboundAvailableItems = [],
+        ] = await Promise.all(requests);
+
+        setRows(transactionRows);
+        setGoodsItems(goodsListRows);
+        setWarehouseItems(warehouseRows);
+        setAvailableOutboundItems(outboundAvailableItems);
+        setFeedback((prev) =>
+          prev.type === "error" ? { type: "", message: "" } : prev,
         );
+      } catch (error) {
+        showFeedback(
+          "error",
+          error.message || `Failed to load ${config.title.toLowerCase()} records`,
+        );
+      } finally {
+        setLoadingRows(false);
       }
-
-      const [
-        transactionRows,
-        goodsListRows,
-        warehouseRows,
-        outboundAvailableItems = [],
-      ] = await Promise.all(requests);
-
-      setRows(transactionRows);
-      setGoodsItems(goodsListRows);
-      setWarehouseItems(warehouseRows);
-      setAvailableOutboundItems(outboundAvailableItems);
-      setFeedback((prev) =>
-        prev.type === "error" ? { type: "", message: "" } : prev,
-      );
-    } catch (error) {
-      showFeedback(
-        "error",
-        error.message || `Failed to load ${config.title.toLowerCase()} records`,
-      );
-    } finally {
-      setLoadingRows(false);
-    }
     },
     [config.title, showFeedback, type],
   );
 
-  const refreshRowsOnly = useCallback(async () => {
-    try {
-      setLoadingRows(true);
-      const requests = [getInventoryTransactions(type, { skipCache: true })];
+  const refreshAvailableOutboundItems = useCallback(async () => {
+    if (type !== "outbound") return;
 
-      if (type === "outbound") {
-        requests.push(getAvailableOutboundItems({ skipCache: true }));
-      }
-
-      const [transactionRows, outboundAvailableItems = []] =
-        await Promise.all(requests);
-
-      setRows(transactionRows);
-
-      if (type === "outbound") {
-        setAvailableOutboundItems(outboundAvailableItems);
-      }
-
-      setFeedback((prev) =>
-        prev.type === "error" ? { type: "", message: "" } : prev,
-      );
-    } catch (error) {
-      showFeedback(
-        "error",
-        error.message || `Failed to load ${config.title.toLowerCase()} records`,
-      );
-    } finally {
-      setLoadingRows(false);
-    }
-  }, [config.title, showFeedback, type]);
+    const items = await getAvailableOutboundItems({ skipCache: true });
+    setAvailableOutboundItems(items);
+  }, [type]);
 
   useEffect(() => {
     loadData();
@@ -373,7 +354,12 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
   const handleDelete = async (row) => {
     try {
       await deleteInventoryTransaction(type, row.id);
-      await refreshRowsOnly();
+      setRows((prev) => prev.filter((item) => item.id !== row.id));
+
+      if (type === "outbound") {
+        await refreshAvailableOutboundItems();
+      }
+
       showFeedback(
         "success",
         `${config.title} record deleted successfully.`,
@@ -434,20 +420,43 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
 
     try {
       if (editingRow) {
-        await updateInventoryTransaction(type, editingRow.id, payload);
+        const updatedItem = await updateInventoryTransaction(
+          type,
+          editingRow.id,
+          payload,
+        );
+
+        if (updatedItem) {
+          setRows((prev) =>
+            prev.map((row) => (row.id === editingRow.id ? updatedItem : row)),
+          );
+        }
+
+        if (type === "outbound") {
+          await refreshAvailableOutboundItems();
+        }
+
         showFeedback(
           "success",
           `${config.title} record updated successfully.`,
         );
       } else {
-        await createInventoryTransaction(type, payload);
+        const createdItem = await createInventoryTransaction(type, payload);
+
+        if (createdItem) {
+          setRows((prev) => upsertRowAtTop(prev, createdItem));
+        }
+
+        if (type === "outbound") {
+          await refreshAvailableOutboundItems();
+        }
+
         showFeedback(
           "success",
           `${config.title} record created successfully.`,
         );
       }
 
-      await refreshRowsOnly();
       closeDialog();
     } catch (error) {
       showFeedback(

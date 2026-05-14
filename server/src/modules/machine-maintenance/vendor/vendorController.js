@@ -162,7 +162,7 @@ export const updateVendor = async (req, res) => {
       req.params.id,
       payload,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       },
     );

@@ -48,6 +48,11 @@ const defaultFormValues = {
   description: "",
 };
 
+const upsertRowAtTop = (rows = [], nextRow) => [
+  nextRow,
+  ...rows.filter((row) => row.id !== nextRow.id),
+];
+
 const InventoryWarehousePage = () => {
   const [rows, setRows] = useState([]);
   const [loadingRows, setLoadingRows] = useState(false);
@@ -138,7 +143,7 @@ const InventoryWarehousePage = () => {
   const handleDelete = async (row) => {
     try {
       await deleteWarehouse(row.id);
-      await loadRows();
+      setRows((prev) => prev.filter((item) => item.id !== row.id));
       showFeedback("success", "Warehouse deleted successfully.");
     } catch (error) {
       showFeedback("error", error.message || "Failed to delete warehouse");
@@ -161,14 +166,21 @@ const InventoryWarehousePage = () => {
 
     try {
       if (editingRow) {
-        await updateWarehouse(editingRow.id, formValues);
+        const updatedItem = await updateWarehouse(editingRow.id, formValues);
+        if (updatedItem) {
+          setRows((prev) =>
+            prev.map((row) => (row.id === editingRow.id ? updatedItem : row)),
+          );
+        }
         showFeedback("success", "Warehouse updated successfully.");
       } else {
-        await createWarehouse(formValues);
+        const createdItem = await createWarehouse(formValues);
+        if (createdItem) {
+          setRows((prev) => upsertRowAtTop(prev, createdItem));
+        }
         showFeedback("success", "Warehouse created successfully.");
       }
 
-      await loadRows();
       closeDialog();
     } catch (error) {
       showFeedback("error", error.message || "Failed to save warehouse");

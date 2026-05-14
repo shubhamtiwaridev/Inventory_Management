@@ -144,7 +144,7 @@ export const updateUserAllocation = async (req, res) => {
       req.params.id,
       payload,
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       },
     );

@@ -83,7 +83,7 @@ export const updatePlantSite = async (req, res) => {
         plantSite: plantSiteValue,
         createdBy: getUserName(req),
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
 
     if (!plantSite) {

@@ -91,7 +91,7 @@ const createMasterController = (Model, fieldName, label) => {
           [fieldName]: fieldValue,
           createdBy: getUserName(req),
         },
-        { new: true, runValidators: true },
+        { returnDocument: "after", runValidators: true },
       );
 
       if (!item) {

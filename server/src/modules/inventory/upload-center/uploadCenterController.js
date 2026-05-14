@@ -89,17 +89,14 @@ export const uploadCenterFiles = async (req, res) => {
       updatedBy: getUserName(req),
     }));
 
-    await UploadCenterFile.insertMany(rowsToInsert, { ordered: false });
-
-    const items = await UploadCenterFile.find({})
-      .select(UPLOAD_CENTER_SELECT_FIELDS)
-      .sort({ createdAt: -1 })
-      .lean();
+    const insertedItems = await UploadCenterFile.insertMany(rowsToInsert, {
+      ordered: false,
+    });
 
     return res.status(201).json({
       success: true,
       message: "Files uploaded successfully",
-      data: items.map(mapUploadCenterFile),
+      data: insertedItems.map((item) => mapUploadCenterFile(item.toObject())),
       summary: {
         uploadedCount: rowsToInsert.length,
       },
@@ -123,7 +120,7 @@ export const updateUploadCenterFile = async (req, res) => {
         updatedBy: getUserName(req),
       },
       {
-        new: true,
+        returnDocument: "after",
         runValidators: true,
       },
     ).lean();

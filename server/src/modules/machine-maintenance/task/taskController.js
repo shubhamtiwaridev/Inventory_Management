@@ -167,7 +167,7 @@ export const updateTask = async (req, res) => {
     payload.updatedBy = normalizeText(req.user?.name);
 
     const updatedTask = await Task.findByIdAndUpdate(req.params.id, payload, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 

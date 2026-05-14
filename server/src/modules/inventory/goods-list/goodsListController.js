@@ -1,6 +1,8 @@
 import xlsx from "xlsx";
 import GoodsList from "./goodsListModel.js";
 
+const GOODS_LIST_SELECT_FIELDS =
+  "goodsCode goodsDesc goodsSupplier goodsSku goodsBarcode createdBy createdAt updatedAt";
 const LEGACY_DEFAULT_GOODS_FILTERS = [
   {
     goodsCode: "GD-001",
@@ -88,6 +90,8 @@ const normalizeKey = (value) =>
   normalizeValue(value)
     .toLowerCase()
     .replace(/[\s/_-]+/g, "");
+const escapeRegex = (value = "") =>
+  String(value || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const getUserName = (req) =>
   req.user?.name || req.user?.username || req.user?.email || "System";
@@ -323,6 +327,57 @@ const withImportPlaceholderCode = (payload = {}, rowIndex = 0) => {
 const getExistingDuplicateKeySet = (items = []) =>
   new Set(items.flatMap((item) => buildDuplicateKeys(item)));
 
+const buildDuplicateQuery = (payload = {}, excludedId = null) => {
+  const conditions = [
+    payload.goodsCode &&
+      !isPlaceholderGoodsCode(payload.goodsCode) && {
+        goodsCode: {
+          $regex: `^${escapeRegex(payload.goodsCode)}$`,
+          $options: "i",
+        },
+      },
+    payload.goodsSku && {
+      goodsSku: {
+        $regex: `^${escapeRegex(payload.goodsSku)}$`,
+        $options: "i",
+      },
+    },
+    payload.goodsBarcode && {
+      goodsBarcode: {
+        $regex: `^${escapeRegex(payload.goodsBarcode)}$`,
+        $options: "i",
+      },
+    },
+    payload.goodsDesc && {
+      goodsDesc: {
+        $regex: `^${escapeRegex(payload.goodsDesc)}$`,
+        $options: "i",
+      },
+    },
+  ].filter(Boolean);
+
+  if (conditions.length === 0) {
+    return null;
+  }
+
+  return {
+    ...(excludedId ? { _id: { $ne: excludedId } } : {}),
+    $or: conditions,
+  };
+};
+
+const findDuplicateGoodsItem = async (payload = {}, excludedId = null) => {
+  const duplicateQuery = buildDuplicateQuery(payload, excludedId);
+
+  if (!duplicateQuery) {
+    return null;
+  }
+
+  return GoodsList.findOne(duplicateQuery)
+    .select("goodsCode goodsSku goodsBarcode goodsDesc")
+    .lean();
+};
+
 const removeLegacyDefaultGoodsItems = async () => {
   if (LEGACY_DEFAULT_GOODS_FILTERS.length === 0) return;
 
@@ -415,7 +470,10 @@ const parseWorksheetRows = (fileBuffer) => {
 export const getGoodsItems = async (req, res) => {
   try {
     await ensureDeprecatedGoodsFieldsRemoved();
-    const items = await GoodsList.find().sort({ createdAt: -1 }).lean();
+    const items = await GoodsList.find()
+      .select(GOODS_LIST_SELECT_FIELDS)
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.status(200).json({
       success: true,
@@ -434,8 +492,10 @@ export const getGoodsItems = async (req, res) => {
 
 export const createGoodsItem = async (req, res) => {
   try {
-    await removeLegacyDefaultGoodsItems();
-    await ensureDeprecatedGoodsFieldsRemoved();
+    await Promise.all([
+      removeLegacyDefaultGoodsItems(),
+      ensureDeprecatedGoodsFieldsRemoved(),
+    ]);
 
     const payload = normalizeGoodsPayload(req.body);
     const validationError = getValidationError(payload);
@@ -444,12 +504,9 @@ export const createGoodsItem = async (req, res) => {
       return res.status(400).json({ success: false, message: validationError });
     }
 
-    const existingItems = await GoodsList.find()
-      .select("goodsCode goodsSku goodsBarcode goodsDesc")
-      .lean();
-    const duplicateKeySet = getExistingDuplicateKeySet(existingItems);
+    const duplicateItem = await findDuplicateGoodsItem(payload);
 
-    if (buildDuplicateKeys(payload).some((key) => duplicateKeySet.has(key))) {
+    if (duplicateItem) {
       return res.status(409).json({
         success: false,
         message: "Duplicate goods item already exists",
@@ -485,37 +542,38 @@ export const updateGoodsItem = async (req, res) => {
       return res.status(400).json({ success: false, message: validationError });
     }
 
-    const currentItem = await GoodsList.findById(req.params.id);
+    const duplicateItem = await findDuplicateGoodsItem(payload, req.params.id);
 
-    if (!currentItem) {
-      return res.status(404).json({
-        success: false,
-        message: "Goods item not found",
-      });
-    }
-
-    const existingItems = await GoodsList.find({ _id: { $ne: req.params.id } })
-      .select("goodsCode goodsSku goodsBarcode goodsDesc")
-      .lean();
-    const duplicateKeySet = getExistingDuplicateKeySet(existingItems);
-
-    if (buildDuplicateKeys(payload).some((key) => duplicateKeySet.has(key))) {
+    if (duplicateItem) {
       return res.status(409).json({
         success: false,
         message: "Duplicate goods item already exists",
       });
     }
 
-    Object.assign(currentItem, payload, {
-      updatedBy: getUserName(req),
-    });
+    const item = await GoodsList.findByIdAndUpdate(
+      req.params.id,
+      {
+        ...payload,
+        updatedBy: getUserName(req),
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    ).lean();
 
-    await currentItem.save();
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Goods item not found",
+      });
+    }
 
     return res.status(200).json({
       success: true,
       message: "Goods item updated successfully",
-      data: mapGoodsItem(currentItem.toObject()),
+      data: mapGoodsItem(item),
     });
   } catch (error) {
     return res.status(500).json({
@@ -551,8 +609,10 @@ export const deleteGoodsItem = async (req, res) => {
 
 export const importGoodsItemsFromExcel = async (req, res) => {
   try {
-    await removeLegacyDefaultGoodsItems();
-    await ensureDeprecatedGoodsFieldsRemoved();
+    await Promise.all([
+      removeLegacyDefaultGoodsItems(),
+      ensureDeprecatedGoodsFieldsRemoved(),
+    ]);
 
     if (!req.file?.buffer) {
       return res.status(400).json({
@@ -617,20 +677,16 @@ export const importGoodsItemsFromExcel = async (req, res) => {
       });
     }
 
-    let insertedItems = [];
-
-    if (rowsToInsert.length > 0) {
-      insertedItems = await GoodsList.insertMany(rowsToInsert, {
-        ordered: false,
-      });
-    }
-
-    const allItems = await GoodsList.find().sort({ createdAt: -1 }).lean();
+    const insertedItems = await GoodsList.insertMany(rowsToInsert, {
+      ordered: false,
+    });
 
     return res.status(200).json({
       success: true,
       message: "Excel import completed successfully",
-      data: allItems.map(mapGoodsItem),
+      data: insertedItems
+        .map((item) => mapGoodsItem(item.toObject()))
+        .reverse(),
       summary: {
         importedCount: rowsToInsert.length,
         skippedDuplicates,

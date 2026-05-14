@@ -160,7 +160,7 @@ export const updateSpare = async (req, res) => {
     payload.updatedBy = normalizeText(req.user?.name);
 
     const updatedSpare = await Spare.findByIdAndUpdate(req.params.id, payload, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
 

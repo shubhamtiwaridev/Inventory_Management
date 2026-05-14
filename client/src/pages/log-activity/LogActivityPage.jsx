@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import { Box, Button, Stack } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Box, Button, MenuItem, Stack, TextField } from "@mui/material";
 import MachineMaintenanceListView from "../machine-maintenance/components/MachineMaintenanceListView.jsx";
-import { brand } from "../machine-maintenance/components/machineMaintenanceUi.jsx";
+import {
+  brand,
+  textFieldStyles,
+} from "../machine-maintenance/components/machineMaintenanceUi.jsx";
 import {
   ACTIVITY_LOG_CREATED_EVENT,
   deleteLogActivity,
@@ -125,6 +128,35 @@ const LogActivityPage = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [actionFilter, setActionFilter] = useState("all");
+
+  const actionFilterOptions = useMemo(() => {
+    const uniqueActions = Array.from(
+      new Set(
+        rows
+          .map((row) => String(row.action || "").trim())
+          .filter(Boolean),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+
+    return [
+      { value: "all", label: "All Actions" },
+      ...uniqueActions.map((action) => ({
+        value: action.toLowerCase(),
+        label: action,
+      })),
+    ];
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
+    if (actionFilter === "all") {
+      return rows;
+    }
+
+    return rows.filter(
+      (row) => String(row.action || "").trim().toLowerCase() === actionFilter,
+    );
+  }, [actionFilter, rows]);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -192,11 +224,11 @@ const LogActivityPage = () => {
   };
 
   const handleExportCsv = () => {
-    exportRowsToCsv(rows, logActivityColumns);
+    exportRowsToCsv(filteredRows, logActivityColumns);
   };
 
   const handleExportExcel = () => {
-    exportRowsToExcel(rows, logActivityColumns);
+    exportRowsToExcel(filteredRows, logActivityColumns);
   };
 
   return (
@@ -217,17 +249,35 @@ const LogActivityPage = () => {
       <MachineMaintenanceListView
         title="Log Activity"
         columns={logActivityColumns}
-        rows={rows}
+        rows={filteredRows}
         actionColumnLabel="Delete"
         showPrimaryAction={false}
         showActions
         showDownloadButton={false}
         toolbarActions={
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+            <TextField
+              select
+              size="small"
+              label="Filter"
+              value={actionFilter}
+              onChange={(event) => setActionFilter(event.target.value)}
+              sx={{
+                minWidth: { xs: "100%", sm: 180 },
+                ...textFieldStyles,
+              }}
+            >
+              {actionFilterOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+
             <Button
               variant="outlined"
               onClick={handleExportCsv}
-              disabled={loading || rows.length === 0}
+              disabled={loading || filteredRows.length === 0}
               sx={{
                 borderRadius: 2.5,
                 textTransform: "none",
@@ -247,7 +297,7 @@ const LogActivityPage = () => {
             <Button
               variant="contained"
               onClick={handleExportExcel}
-              disabled={loading || rows.length === 0}
+              disabled={loading || filteredRows.length === 0}
               sx={{
                 borderRadius: 2.5,
                 textTransform: "none",

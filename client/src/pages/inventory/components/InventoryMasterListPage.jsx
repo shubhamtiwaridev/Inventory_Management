@@ -88,6 +88,11 @@ const findDuplicateGoodsRow = (rows = [], payload = {}, editingId = null) => {
   });
 };
 
+const upsertRowAtTop = (rows = [], nextRow) => [
+  nextRow,
+  ...rows.filter((row) => row.id !== nextRow.id),
+];
+
 const InventoryMasterListPage = () => {
   const { user } = useAuth();
   const config = inventoryMasterConfigs.goodsList;
@@ -191,7 +196,7 @@ const InventoryMasterListPage = () => {
   const handleDelete = async (row) => {
     try {
       await deleteGoodsListItem(row.id);
-      await fetchGoodsRows({ skipCache: true });
+      setRows((prev) => prev.filter((item) => item.id !== row.id));
       showFeedback("success", "Goods item deleted successfully.");
     } catch (error) {
       showFeedback("error", error.message || "Failed to delete goods item");
@@ -236,21 +241,28 @@ const InventoryMasterListPage = () => {
 
     try {
       if (editingRow) {
-        await updateGoodsListItem(editingRow.id, {
+        const updatedItem = await updateGoodsListItem(editingRow.id, {
           ...formValues,
           updatedAt: timestamp,
         });
+        if (updatedItem) {
+          setRows((prev) =>
+            prev.map((row) => (row.id === editingRow.id ? updatedItem : row)),
+          );
+        }
         showFeedback("success", "Goods item updated successfully.");
       } else {
-        await createGoodsListItem({
+        const createdItem = await createGoodsListItem({
           ...formValues,
           createdAt: timestamp,
           updatedAt: timestamp,
         });
+        if (createdItem) {
+          setRows((prev) => upsertRowAtTop(prev, createdItem));
+        }
         showFeedback("success", "Goods item created successfully.");
       }
 
-      await fetchGoodsRows({ skipCache: true });
       closeDialog();
     } catch (error) {
       showFeedback("error", error.message || "Failed to save goods item");
@@ -283,7 +295,11 @@ const InventoryMasterListPage = () => {
       const importedCount = summary.importedCount || 0;
       const skippedDuplicates = summary.skippedDuplicates || 0;
       const skippedInvalid = summary.skippedInvalid || 0;
-      await fetchGoodsRows({ skipCache: true });
+      if (Array.isArray(response?.data)) {
+        setRows(response.data);
+      } else {
+        await fetchGoodsRows({ skipCache: true });
+      }
 
       showFeedback(
         "success",

@@ -351,8 +351,10 @@ export const createStockTransaction = async (req, res) => {
       return res.status(400).json({ success: false, message: validationError });
     }
 
-    const goodsItem = await getValidatedGoodsItem(payload.goodsItemId);
-    const warehouse = await getValidatedWarehouse(payload.warehouseId);
+    const [goodsItem, warehouse] = await Promise.all([
+      getValidatedGoodsItem(payload.goodsItemId),
+      getValidatedWarehouse(payload.warehouseId),
+    ]);
 
     if (!goodsItem) {
       return res.status(400).json({
@@ -439,8 +441,10 @@ export const updateStockTransaction = async (req, res) => {
       });
     }
 
-    const goodsItem = await getValidatedGoodsItem(payload.goodsItemId);
-    const warehouse = await getValidatedWarehouse(payload.warehouseId);
+    const [goodsItem, warehouse] = await Promise.all([
+      getValidatedGoodsItem(payload.goodsItemId),
+      getValidatedWarehouse(payload.warehouseId),
+    ]);
 
     if (!goodsItem) {
       return res.status(400).json({

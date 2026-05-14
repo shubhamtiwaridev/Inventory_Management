@@ -181,7 +181,7 @@ export const updateCard = async (req, res) => {
                 path: path.trim(),
               }),
       },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     );
 
     if (!card) {
@@ -216,7 +216,7 @@ export const deleteCard = async (req, res) => {
     const card = await Card.findByIdAndUpdate(
       id,
       { isActive: false },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!card) {
@@ -246,7 +246,7 @@ export const activateCard = async (req, res) => {
     const card = await Card.findByIdAndUpdate(
       id,
       { isActive: true },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!card) {

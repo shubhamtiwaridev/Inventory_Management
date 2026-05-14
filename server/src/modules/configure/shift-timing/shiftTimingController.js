@@ -116,7 +116,7 @@ export const updateShiftTiming = async (req, res) => {
         ...payload,
         createdBy: existingRecord.createdBy || getUserName(req),
       },
-      { new: true, runValidators: true },
+      { returnDocument: "after", runValidators: true },
     );
 
     res.status(200).json({

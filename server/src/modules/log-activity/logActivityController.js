@@ -12,7 +12,7 @@ const parsePositiveInteger = (value, fallback) => {
 export const getLogActivities = async (req, res) => {
   try {
     const page = parsePositiveInteger(req.query.page, 1);
-    const limit = Math.min(parsePositiveInteger(req.query.limit, 100), 500);
+    const limit = parsePositiveInteger(req.query.limit, 100000);
     const skip = (page - 1) * limit;
     const search = String(req.query.search || "").trim();
     const filter = {};
@@ -121,7 +121,8 @@ export const createLogActivity = async (req, res) => {
 
     const log = await createManualLogActivity({
       userId: req.user?._id || null,
-      userName: req.user?.name || req.user?.username || req.user?.email || "Guest",
+      userName:
+        req.user?.name || req.user?.username || req.user?.email || "Guest",
       userEmail: req.user?.email || "",
       role: req.user?.roles || req.user?.role || "",
       action,

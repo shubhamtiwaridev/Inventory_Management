@@ -30,21 +30,88 @@ const getFileKind = (mimeType = "") => {
   return "file";
 };
 
-const mapUploadCenterFile = (item) => ({
-  id: String(item._id),
-  originalName: item.originalName || "",
-  storedName: item.storedName || "",
-  mimeType: item.mimeType || "application/octet-stream",
-  sizeBytes: Number(item.sizeBytes || 0),
-  extension: item.extension || "",
-  description: item.description || "",
-  relativePath: item.relativePath || "",
-  url: item.relativePath || "",
-  fileKind: getFileKind(item.mimeType || ""),
-  createdBy: item.createdBy || "System",
-  createdAt: formatDateTime(item.createdAt),
-  updatedAt: formatDateTime(item.updatedAt),
-});
+const normalizePublicPath = (value = "") => {
+  const normalized = String(value || "").replace(/\\/g, "/").trim();
+
+  if (!normalized) return "";
+  if (/^https?:\/\//i.test(normalized)) return normalized;
+  if (normalized.startsWith("/")) return normalized;
+  if (normalized.startsWith("uploads/")) return `/${normalized}`;
+
+  return `/${normalized.replace(/^\/+/, "")}`;
+};
+
+const buildPublicFileUrl = (req, value = "") => {
+  const normalizedPath = normalizePublicPath(value);
+
+  if (!normalizedPath || /^https?:\/\//i.test(normalizedPath)) {
+    return normalizedPath;
+  }
+
+  const forwardedProto = String(req?.get?.("x-forwarded-proto") || "")
+    .split(",")[0]
+    .trim();
+  const protocol = forwardedProto || req?.protocol || "https";
+  const host =
+    String(req?.get?.("x-forwarded-host") || "").trim() ||
+    String(req?.get?.("host") || "").trim();
+
+  if (!host) {
+    return normalizedPath;
+  }
+
+  return `${protocol}://${host}${normalizedPath}`;
+};
+
+const getAbsoluteFilePath = (relativePath = "") => {
+  const normalizedRelativePath = normalizePublicPath(relativePath).replace(
+    /^\/+/,
+    "",
+  );
+
+  if (!normalizedRelativePath) {
+    return "";
+  }
+
+  return path.resolve(process.cwd(), normalizedRelativePath);
+};
+
+const fileExists = async (relativePath = "") => {
+  const absolutePath = getAbsoluteFilePath(relativePath);
+
+  if (!absolutePath) {
+    return false;
+  }
+
+  try {
+    await fs.access(absolutePath);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const mapUploadCenterFile = async (item, req) => {
+  const relativePath = normalizePublicPath(item.relativePath || "");
+  const isAvailable = await fileExists(relativePath);
+
+  return {
+    id: String(item._id),
+    originalName: item.originalName || "",
+    storedName: item.storedName || "",
+    mimeType: item.mimeType || "application/octet-stream",
+    sizeBytes: Number(item.sizeBytes || 0),
+    extension: item.extension || "",
+    description: item.description || "",
+    relativePath,
+    url: isAvailable ? buildPublicFileUrl(req, relativePath) : "",
+    fileKind: getFileKind(item.mimeType || ""),
+    isAvailable,
+    createdBy: item.createdBy || "System",
+    createdAt: formatDateTime(item.createdAt),
+    updatedAt: formatDateTime(item.updatedAt),
+  };
+};
 
 export const getUploadCenterFiles = async (req, res) => {
   try {
@@ -55,7 +122,7 @@ export const getUploadCenterFiles = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data: items.map(mapUploadCenterFile),
+      data: await Promise.all(items.map((item) => mapUploadCenterFile(item, req))),
     });
   } catch (error) {
     return res.status(500).json({
@@ -96,7 +163,9 @@ export const uploadCenterFiles = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: "Files uploaded successfully",
-      data: insertedItems.map((item) => mapUploadCenterFile(item.toObject())),
+      data: await Promise.all(
+        insertedItems.map((item) => mapUploadCenterFile(item.toObject(), req)),
+      ),
       summary: {
         uploadedCount: rowsToInsert.length,
       },
@@ -135,7 +204,7 @@ export const updateUploadCenterFile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Uploaded file updated successfully",
-      data: mapUploadCenterFile(item),
+      data: await mapUploadCenterFile(item, req),
     });
   } catch (error) {
     return res.status(500).json({
@@ -167,7 +236,7 @@ export const deleteUploadCenterFile = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Uploaded file deleted successfully",
-      data: mapUploadCenterFile(item),
+      data: await mapUploadCenterFile(item, req),
     });
   } catch (error) {
     return res.status(500).json({

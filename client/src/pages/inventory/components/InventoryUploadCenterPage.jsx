@@ -379,6 +379,7 @@ const InventoryUploadCenterPage = () => {
           {files.map((file) => {
             const fileUrl = buildServerUrl(file.url || "");
             const isImage = file.fileKind === "image";
+            const isAvailable = file.isAvailable !== false;
 
             return (
               <Paper
@@ -413,7 +414,7 @@ const InventoryUploadCenterPage = () => {
                       flexShrink: 0,
                     }}
                   >
-                    {isImage ? (
+                    {isImage && isAvailable ? (
                       <Box
                         component="img"
                         src={fileUrl}
@@ -441,16 +442,27 @@ const InventoryUploadCenterPage = () => {
                         />
                       </IconButton>
                     ) : null}
-                    <IconButton
-                      component="a"
-                      href={fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => handleOpenFile(file, fileUrl)}
-                      sx={actionIconButtonSx}
-                    >
-                      <OpenInNewRoundedIcon
-                        sx={{ fontSize: 18, color: brand.primaryDark }}
+                      <IconButton
+                        component={isAvailable ? "a" : "button"}
+                        href={isAvailable ? fileUrl : undefined}
+                        target={isAvailable ? "_blank" : undefined}
+                        rel={isAvailable ? "noopener noreferrer" : undefined}
+                        onClick={() => {
+                          if (isAvailable) {
+                            handleOpenFile(file, fileUrl);
+                            return;
+                          }
+
+                          setFeedback({
+                            type: "error",
+                            message:
+                              "This file is no longer available on the server. Upload it again after a Render restart or redeploy.",
+                          });
+                        }}
+                        sx={actionIconButtonSx}
+                      >
+                        <OpenInNewRoundedIcon
+                          sx={{ fontSize: 18, color: brand.primaryDark }}
                       />
                     </IconButton>
                     {canDelete ? (
@@ -496,6 +508,18 @@ const InventoryUploadCenterPage = () => {
                       }}
                     >
                       {file.description}
+                    </Typography>
+                  ) : null}
+                  {!isAvailable ? (
+                    <Typography
+                      sx={{
+                        mt: 1,
+                        color: brand.danger,
+                        fontSize: "0.88rem",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      File unavailable on server
                     </Typography>
                   ) : null}
                 </Box>

@@ -29,7 +29,9 @@ const formatValue = (value) => {
 };
 
 const isMissingValue = (value) => {
-  const text = String(value ?? "").trim().toLowerCase();
+  const text = String(value ?? "")
+    .trim()
+    .toLowerCase();
   return !text || text === "-" || text === "guest";
 };
 
@@ -60,9 +62,11 @@ export const mapLogActivityRow = (item) => ({
   page: formatValue(item.page),
   resource: formatValue(item.resource),
   targetName: formatValue(item.targetName || item.details?.targetName),
-  assignedCards: Array.isArray(item.details?.assignedCards) && item.details.assignedCards.length > 0
-    ? item.details.assignedCards.join(", ")
-    : "-",
+  assignedCards:
+    Array.isArray(item.details?.assignedCards) &&
+    item.details.assignedCards.length > 0
+      ? item.details.assignedCards.join(", ")
+      : "-",
   endpoint: formatValue(item.endpoint),
   time: formatDateTime(item.createdAt),
 });
@@ -75,7 +79,10 @@ const canReuseActorForLogout = (candidate, logoutItem) => {
     .toLowerCase();
 
   if (action === "logged out" || action === "logout failed") return false;
-  if (isMissingValue(candidate.userName) && isMissingValue(candidate.userEmail)) {
+  if (
+    isMissingValue(candidate.userName) &&
+    isMissingValue(candidate.userEmail)
+  ) {
     return false;
   }
 
@@ -111,7 +118,9 @@ const resolveLogoutActor = (logs, index) => {
         userEmail: previousCandidate.userEmail,
         role: previousCandidate.role,
         targetName:
-          current.targetName || previousCandidate.userName || previousCandidate.userEmail,
+          current.targetName ||
+          previousCandidate.userName ||
+          previousCandidate.userEmail,
       };
     }
 
@@ -124,7 +133,9 @@ const resolveLogoutActor = (logs, index) => {
         userEmail: nextCandidate.userEmail,
         role: nextCandidate.role,
         targetName:
-          current.targetName || nextCandidate.userName || nextCandidate.userEmail,
+          current.targetName ||
+          nextCandidate.userName ||
+          nextCandidate.userEmail,
       };
     }
   }
@@ -143,7 +154,10 @@ const request = async (path, options = {}) => {
   return data;
 };
 
-export const getLogActivities = async ({ limit = 500, search = "" } = {}) => {
+export const getLogActivities = async ({
+  limit = 100000,
+  search = "",
+} = {}) => {
   const params = new URLSearchParams({ limit: String(limit) });
 
   if (search) {

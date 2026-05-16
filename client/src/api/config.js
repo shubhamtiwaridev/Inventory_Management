@@ -1,4 +1,5 @@
 const trimTrailingSlash = (value = "") => String(value).replace(/\/+$/, "");
+const isAbsoluteUrl = (value = "") => /^https?:\/\//i.test(String(value || ""));
 
 const normalizeBaseUrl = (value, fallback = "") => {
   const normalizedValue = trimTrailingSlash(value || "");
@@ -22,6 +23,10 @@ export const buildApiUrl = (path = "") => {
 };
 
 export const buildServerUrl = (path = "") => {
+  if (isAbsoluteUrl(path)) {
+    return String(path);
+  }
+
   const normalizedPath = String(path || "").startsWith("/") ? path : `/${path}`;
   return `${SERVER_BASE_URL}${normalizedPath}`;
 };

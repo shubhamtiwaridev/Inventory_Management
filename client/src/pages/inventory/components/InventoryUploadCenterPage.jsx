@@ -5,9 +5,10 @@ import {
   Button,
   Dialog,
   DialogActions,
+  IconButton,
   DialogContent,
   DialogTitle,
-  IconButton,
+  InputAdornment,
   Paper,
   Stack,
   TextField,
@@ -24,12 +25,15 @@ import MovieRoundedIcon from "@mui/icons-material/MovieRounded";
 import AudioFileRoundedIcon from "@mui/icons-material/AudioFileRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { buildServerUrl } from "../../../api/config.js";
 import {
   actionIconButtonSx,
   brand,
   filledActionButtonSx,
   outlinedActionButtonSx,
+  searchFieldSx,
 } from "../../machine-maintenance/components/machineMaintenanceUi.jsx";
 import { useAuth } from "../../../store/AuthContext.jsx";
 import { hasActionPermission } from "../../../utils/permissions.js";
@@ -86,14 +90,20 @@ const getFileIcon = (file) => {
     case "image":
       return <ImageRoundedIcon sx={{ fontSize: 34, color: brand.primary }} />;
     case "pdf":
-      return <PictureAsPdfRoundedIcon sx={{ fontSize: 34, color: "#C2410C" }} />;
+      return (
+        <PictureAsPdfRoundedIcon sx={{ fontSize: 34, color: "#C2410C" }} />
+      );
     case "video":
       return <MovieRoundedIcon sx={{ fontSize: 34, color: brand.primary }} />;
     case "audio":
-      return <AudioFileRoundedIcon sx={{ fontSize: 34, color: brand.primary }} />;
+      return (
+        <AudioFileRoundedIcon sx={{ fontSize: 34, color: brand.primary }} />
+      );
     default:
       return (
-        <InsertDriveFileRoundedIcon sx={{ fontSize: 34, color: brand.primary }} />
+        <InsertDriveFileRoundedIcon
+          sx={{ fontSize: 34, color: brand.primary }}
+        />
       );
   }
 };
@@ -116,6 +126,136 @@ const InventoryUploadCenterPage = () => {
   const fileInputRef = useRef(null);
 
   const totalFiles = useMemo(() => files.length, [files]);
+
+  // rawSearch: instant input value; search: debounced value used for filtering
+  const [rawSearch, setRawSearch] = useState("");
+  const [search, setSearch] = useState("");
+
+  // debounce the input so filtering is not too aggressive on large lists
+  useEffect(() => {
+    const id = window.setTimeout(
+      () => setSearch(String(rawSearch || "").trim()),
+      220,
+    );
+    return () => window.clearTimeout(id);
+  }, [rawSearch]);
+
+  const fileMatchesQuery = (file, q) => {
+    if (!q) return true;
+    const raw = String(q).trim();
+    if (!raw) return true;
+
+    // size query: e.g. '>10mb', '<= 256kb', '10mb' (treated as >=)
+    const sizeMatch = raw.match(
+      /^\s*([<>]=?)?\s*([\d,.]+)\s*(b|kb|mb|gb)?\s*$/i,
+    );
+    if (sizeMatch) {
+      const op = (sizeMatch[1] || "").trim();
+      const num = Number(String(sizeMatch[2] || "").replace(/,/g, ""));
+      if (!Number.isFinite(num)) return false;
+      const unit = (sizeMatch[3] || "b").toLowerCase();
+      const mul =
+        unit === "kb"
+          ? 1024
+          : unit === "mb"
+            ? 1024 * 1024
+            : unit === "gb"
+              ? 1024 * 1024 * 1024
+              : 1;
+      const threshold = Math.round(num * mul);
+      const fileSize = Number(file.sizeBytes || file.size || 0);
+
+      if (op === ">") return fileSize > threshold;
+      if (op === ">=") return fileSize >= threshold;
+      if (op === "<") return fileSize < threshold;
+      if (op === "<=") return fileSize <= threshold;
+      // default when no operator provided: match files >= threshold
+      return fileSize >= threshold;
+    }
+
+    const lowerQ = raw.toLowerCase();
+
+    // date query: try to parse an explicit date (YYYY-MM-DD, DD/MM/YYYY, etc.)
+    const parsed = Date.parse(raw);
+    if (!Number.isNaN(parsed)) {
+      const qDate = new Date(parsed);
+      const qY = qDate.getFullYear();
+      const qM = String(qDate.getMonth() + 1).padStart(2, "0");
+      const qD = String(qDate.getDate()).padStart(2, "0");
+      const qYMD = `${qY}-${qM}-${qD}`;
+
+      const created =
+        file.createdAt || file.uploadedAt || file.created_at || file.date || "";
+      if (created) {
+        const createdTs = Date.parse(created);
+        if (!Number.isNaN(createdTs)) {
+          const c = new Date(createdTs);
+          const cYMD = `${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, "0")}-${String(c.getDate()).padStart(2, "0")}`;
+          if (cYMD === qYMD) return true;
+        }
+        // fallback: if created string contains the query
+        if (String(created).toLowerCase().includes(lowerQ)) return true;
+      }
+      // also check other date-like fields in file
+    }
+
+    // extension query: '.pdf' or 'pdf'
+    const ext = lowerQ.replace(/^\./, "");
+    if (/^[a-z0-9]{1,6}$/.test(ext)) {
+      const name = String(file.originalName || "").toLowerCase();
+      const url = String(file.url || "").toLowerCase();
+      const kind = String(file.fileKind || "").toLowerCase();
+
+      if (name.endsWith(`.${ext}`)) return true;
+      if (
+        url.endsWith(`.${ext}`) ||
+        url.includes(`.${ext}?`) ||
+        url.includes(`.${ext}&`)
+      )
+        return true;
+      if (kind === ext) return true;
+      // allow X in ext to match substring of extension or mime-like
+      if (name.includes(`.${ext}`)) return true;
+    }
+
+    // generic recursive search across all fields
+    const seen = new Set();
+    const walk = (val) => {
+      if (val === null || val === undefined) return false;
+      if (
+        typeof val === "string" ||
+        typeof val === "number" ||
+        typeof val === "boolean"
+      ) {
+        try {
+          return String(val).toLowerCase().includes(lowerQ);
+        } catch (e) {
+          return false;
+        }
+      }
+      if (Array.isArray(val)) {
+        for (const item of val) if (walk(item)) return true;
+        return false;
+      }
+      if (typeof val === "object") {
+        if (seen.has(val)) return false;
+        seen.add(val);
+        for (const k of Object.keys(val)) {
+          if (walk(val[k])) return true;
+        }
+      }
+
+      return false;
+    };
+
+    return walk(file);
+  };
+
+  const displayedFiles = useMemo(() => {
+    const q = String(search || "").trim();
+    if (!q) return files;
+    return files.filter((f) => fileMatchesQuery(f, q));
+  }, [files, search]);
   const canUpload = hasActionPermission(user, location.pathname, "create");
   const canEdit = hasActionPermission(user, location.pathname, "update");
   const canDelete = hasActionPermission(user, location.pathname, "delete");
@@ -324,7 +464,10 @@ const InventoryUploadCenterPage = () => {
           alignItems={{ xs: "flex-start", lg: "center" }}
         >
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: brand.text }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 800, color: brand.text }}
+            >
               Upload Center
             </Typography>
             <Typography sx={{ color: brand.textSoft, mt: 0.5 }}>
@@ -332,16 +475,52 @@ const InventoryUploadCenterPage = () => {
             </Typography>
           </Box>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.25}
+            alignItems="center"
+          >
+            <TextField
+              size="small"
+              placeholder="Search files"
+              value={rawSearch}
+              onChange={(e) => setRawSearch(e.target.value)}
+              sx={{ minWidth: { xs: "100%", sm: 220 }, ...searchFieldSx }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    {rawSearch ? (
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setRawSearch("");
+                          setSearch("");
+                        }}
+                      >
+                        <CloseRoundedIcon sx={{ color: brand.textSoft }} />
+                      </IconButton>
+                    ) : (
+                      <SearchRoundedIcon sx={{ color: brand.textSoft }} />
+                    )}
+                  </InputAdornment>
+                ),
+              }}
+            />
+
             <Button
               variant="outlined"
               startIcon={<RefreshRoundedIcon />}
-              onClick={loadFiles}
+              onClick={() => {
+                setRawSearch("");
+                setSearch("");
+                loadFiles();
+              }}
               disabled={loading || uploading}
               sx={outlinedActionButtonSx}
             >
               Refresh
             </Button>
+
             {canUpload ? (
               <Button
                 variant="contained"
@@ -376,7 +555,7 @@ const InventoryUploadCenterPage = () => {
             alignContent: "flex-start",
           }}
         >
-          {files.map((file) => {
+          {displayedFiles.map((file) => {
             const fileUrl = buildServerUrl(file.url || "");
             const isImage = file.fileKind === "image";
             const isAvailable = file.isAvailable !== false;
@@ -442,27 +621,27 @@ const InventoryUploadCenterPage = () => {
                         />
                       </IconButton>
                     ) : null}
-                      <IconButton
-                        component={isAvailable ? "a" : "button"}
-                        href={isAvailable ? fileUrl : undefined}
-                        target={isAvailable ? "_blank" : undefined}
-                        rel={isAvailable ? "noopener noreferrer" : undefined}
-                        onClick={() => {
-                          if (isAvailable) {
-                            handleOpenFile(file, fileUrl);
-                            return;
-                          }
+                    <IconButton
+                      component={isAvailable ? "a" : "button"}
+                      href={isAvailable ? fileUrl : undefined}
+                      target={isAvailable ? "_blank" : undefined}
+                      rel={isAvailable ? "noopener noreferrer" : undefined}
+                      onClick={() => {
+                        if (isAvailable) {
+                          handleOpenFile(file, fileUrl);
+                          return;
+                        }
 
-                          setFeedback({
-                            type: "error",
-                            message:
-                              "This file is no longer available on the server. Upload it again after a Render restart or redeploy.",
-                          });
-                        }}
-                        sx={actionIconButtonSx}
-                      >
-                        <OpenInNewRoundedIcon
-                          sx={{ fontSize: 18, color: brand.primaryDark }}
+                        setFeedback({
+                          type: "error",
+                          message:
+                            "This file is no longer available on the server. Upload it again after a Render restart or redeploy.",
+                        });
+                      }}
+                      sx={actionIconButtonSx}
+                    >
+                      <OpenInNewRoundedIcon
+                        sx={{ fontSize: 18, color: brand.primaryDark }}
                       />
                     </IconButton>
                     {canDelete ? (
@@ -525,13 +704,19 @@ const InventoryUploadCenterPage = () => {
                 </Box>
 
                 <Stack spacing={0.65} sx={{ mt: "auto", pt: 2 }}>
-                  <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
+                  <Typography
+                    sx={{ color: brand.textSoft, fontSize: "0.9rem" }}
+                  >
                     Size: {formatFileSize(file.sizeBytes)}
                   </Typography>
-                  <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
+                  <Typography
+                    sx={{ color: brand.textSoft, fontSize: "0.9rem" }}
+                  >
                     Uploaded by: {file.createdBy || "System"}
                   </Typography>
-                  <Typography sx={{ color: brand.textSoft, fontSize: "0.9rem" }}>
+                  <Typography
+                    sx={{ color: brand.textSoft, fontSize: "0.9rem" }}
+                  >
                     Uploaded at: {file.createdAt || "-"}
                   </Typography>
                 </Stack>
@@ -610,7 +795,10 @@ const InventoryUploadCenterPage = () => {
               minRows={3}
               fullWidth
               error={Boolean(descriptionError)}
-              helperText={descriptionError || "This description will be shown on the file card."}
+              helperText={
+                descriptionError ||
+                "This description will be shown on the file card."
+              }
             />
           </Stack>
         </DialogContent>

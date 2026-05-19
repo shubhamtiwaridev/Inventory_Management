@@ -34,6 +34,8 @@ import createStockTransactionRouter from "./modules/inventory/stock-transaction/
 import uploadCenterRoutes from "./modules/inventory/upload-center/uploadCenterRoute.js";
 import warehouseRoutes from "./modules/inventory/warehouse/warehouseRoute.js";
 import dashboardRoutes from "./modules/dashboard/dashboardRoute.js";
+import spareItemRoutes from "./modules/spares/item/spareItemRoute.js";
+import spareSupplierRoutes from "./modules/spares/supplier/spareSupplierRoute.js";
 
 dotenv.config();
 connectDB();
@@ -47,6 +49,10 @@ app.set("etag", false);
 const defaultAllowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5175",
   "http://localhost:4173",
   "http://127.0.0.1:4173",
 ];
@@ -105,6 +111,9 @@ app.use("/api/machine-maintenance/tasks", taskRoutes);
 app.use("/api/machine-maintenance/user-allocations", userAllocationRoutes);
 app.use("/api/machine-maintenance/vendors", vendorRoutes);
 app.use("/api/machine-maintenance/complients", complientRoutes);
+
+app.use("/api/spares/items", spareItemRoutes);
+app.use("/api/spares/suppliers", spareSupplierRoutes);
 
 app.use("/api/configure/departments", departmentRoute);
 app.use("/api/configure/shift-timings", shiftTimingRoute);

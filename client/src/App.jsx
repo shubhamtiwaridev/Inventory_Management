@@ -445,7 +445,7 @@ function App() {
           </Route>
 
           <Route
-            path="/spares"
+            path="/spares/*"
             element={
               <PermissionRoute
                 sidebarItems={sparesSidebarItems}

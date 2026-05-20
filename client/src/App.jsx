@@ -9,6 +9,7 @@ import RouteLoader from "./components/RouteLoader.jsx";
 import { inventorySidebarItems } from "./components/sidebars/inventorySidebarItems.jsx";
 import { machineMaintenanceSidebarItems } from "./components/sidebars/machineMaintenanceSidebarItems.jsx";
 import { sparesSidebarItems } from "./components/sidebars/sparesSidebarItems.jsx";
+import { ecomSidebarItems } from "./components/sidebars/ecomSidebarItems.jsx";
 import {
   AssetListPage,
   BreakdownListPage,
@@ -29,6 +30,11 @@ import {
   InventoryTransactionPage,
   InventoryUploadCenterPage,
   InventoryWarehousePage,
+  EcomPage,
+  EcomOverviewPage,
+  EcomAmazonPage,
+  EcomFlipkartPage,
+  EcomMesshoPage,
   LogActivityPage,
   Login,
   MachineMaintenancePage,
@@ -88,7 +94,10 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
 
         <Route element={<PublicRoute />}>
-          <Route path="/register" element={renderLazyPage(<Register />, true)} />
+          <Route
+            path="/register"
+            element={renderLazyPage(<Register />, true)}
+          />
           <Route path="/login" element={renderLazyPage(<Login />, true)} />
           <Route
             path="/forgot-password"
@@ -538,6 +547,55 @@ function App() {
                   {renderLazyPage(<InventoryDownloadCenterPage />)}
                 </PermissionRoute>
               }
+            />
+          </Route>
+
+          <Route
+            path="/ecom/*"
+            element={
+              <PermissionRoute
+                sidebarItems={ecomSidebarItems}
+                requireModuleAccess
+              >
+                {renderLazyPage(<EcomPage />, true)}
+              </PermissionRoute>
+            }
+          >
+            <Route
+              path=""
+              element={withPermissionRoute(
+                renderLazyPage(<EcomOverviewPage />),
+                ecomSidebarItems,
+                "/ecom",
+                "Ecom Products",
+              )}
+            />
+            <Route
+              path="amazon"
+              element={withPermissionRoute(
+                renderLazyPage(<EcomAmazonPage />),
+                ecomSidebarItems,
+                "/ecom/amazon",
+                "Amazon",
+              )}
+            />
+            <Route
+              path="flipkart"
+              element={withPermissionRoute(
+                renderLazyPage(<EcomFlipkartPage />),
+                ecomSidebarItems,
+                "/ecom/flipkart",
+                "Flipkart",
+              )}
+            />
+            <Route
+              path="messho"
+              element={withPermissionRoute(
+                renderLazyPage(<EcomMesshoPage />),
+                ecomSidebarItems,
+                "/ecom/messho",
+                "Meesho",
+              )}
             />
           </Route>
         </Route>

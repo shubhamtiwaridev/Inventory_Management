@@ -2,7 +2,6 @@ import { lazy } from "react";
 
 const createPreloadableRoute = (loader) => {
   let loadedModulePromise;
-
   const load = () => {
     if (!loadedModulePromise) {
       loadedModulePromise = loader();
@@ -73,7 +72,8 @@ export const ConsumeEntryPage = createPreloadableRoute(
   () => import("../pages/machine-maintenance/assets/ConsumeEntryPage.jsx"),
 );
 export const ComplaintAssetsPage = createPreloadableRoute(
-  () => import("../pages/machine-maintenance/complient/ComplaintAssetsPage.jsx"),
+  () =>
+    import("../pages/machine-maintenance/complient/ComplaintAssetsPage.jsx"),
 );
 export const ComplaintSparePage = createPreloadableRoute(
   () => import("../pages/machine-maintenance/complient/ComplaintSparePage.jsx"),
@@ -83,14 +83,16 @@ export const ComplaintTaskMasterPage = createPreloadableRoute(
     import("../pages/machine-maintenance/complient/ComplaintTaskMasterPage.jsx"),
 );
 export const ComplaintVendorPage = createPreloadableRoute(
-  () => import("../pages/machine-maintenance/complient/ComplaintVendorPage.jsx"),
+  () =>
+    import("../pages/machine-maintenance/complient/ComplaintVendorPage.jsx"),
 );
 
 export const DepartmentListPage = createPreloadableRoute(
   () => import("../pages/machine-maintenance/configure/DepartmentListPage.jsx"),
 );
 export const ShiftTimingListPage = createPreloadableRoute(
-  () => import("../pages/machine-maintenance/configure/ShiftTimingListPage.jsx"),
+  () =>
+    import("../pages/machine-maintenance/configure/ShiftTimingListPage.jsx"),
 );
 export const PlantSiteListPage = createPreloadableRoute(
   () => import("../pages/machine-maintenance/configure/PlantSiteListPage.jsx"),
@@ -132,6 +134,21 @@ export const InventoryUploadCenterPage = createPreloadableRoute(
 );
 export const InventoryDownloadCenterPage = createPreloadableRoute(
   () => import("../pages/inventory/components/InventoryDownloadCenterPage.jsx"),
+);
+export const EcomPage = createPreloadableRoute(
+  () => import("../pages/ecom/EcomPage.jsx"),
+);
+export const EcomOverviewPage = createPreloadableRoute(
+  () => import("../pages/ecom/EcomProductsPage.jsx"),
+);
+export const EcomAmazonPage = createPreloadableRoute(
+  () => import("../pages/ecom/EcomAmazonPage.jsx"),
+);
+export const EcomFlipkartPage = createPreloadableRoute(
+  () => import("../pages/ecom/EcomFlipkartPage.jsx"),
+);
+export const EcomMesshoPage = createPreloadableRoute(
+  () => import("../pages/ecom/EcomMesshoPage.jsx"),
 );
 export const LogActivityPage = createPreloadableRoute(
   () => import("../pages/log-activity/LogActivityPage.jsx"),
@@ -188,7 +205,8 @@ const routePreloadConfigs = [
     preloaders: [SpareListPage.preload],
   },
   {
-    match: (pathname) => matchesRoutePath(pathname, "/machine-maintenance/tasks"),
+    match: (pathname) =>
+      matchesRoutePath(pathname, "/machine-maintenance/tasks"),
     preloaders: [TaskListPage.preload],
   },
   {

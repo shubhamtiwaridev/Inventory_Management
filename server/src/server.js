@@ -36,12 +36,16 @@ import warehouseRoutes from "./modules/inventory/warehouse/warehouseRoute.js";
 import dashboardRoutes from "./modules/dashboard/dashboardRoute.js";
 import spareItemRoutes from "./modules/spares/item/spareItemRoute.js";
 import spareSupplierRoutes from "./modules/spares/supplier/spareSupplierRoute.js";
+import ecomRoutes from "./modules/ecom/ecomRoute.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
-const serverRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const serverRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
 
 app.set("trust proxy", 1);
 app.set("etag", false);
@@ -125,6 +129,7 @@ app.use("/api/configure/task-categories", taskCategoryRoute);
 app.use("/api/configure/frequencies", frequencyRoute);
 app.use("/api/configure/contract-types", contractTypeRoute);
 app.use("/api/log-activities", logActivityRoutes);
+app.use("/api/ecom/products", ecomRoutes);
 
 const PORT = process.env.PORT || 5000;
 

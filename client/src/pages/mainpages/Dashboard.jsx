@@ -54,6 +54,16 @@ const brand = {
 
 const dashboardFallbackCards = [
   {
+    name: "ecom",
+    title: "Ecom",
+    path: "/ecom",
+    icon: "Inventory2RoundedIcon",
+    iconBg: "#F3F5F7",
+    iconColor: "#106C6B",
+    subtitle: "E-commerce overview",
+    subtitleTone: "info",
+  },
+  {
     name: "log-activity",
     title: "Log Activity",
     path: "/log-activity",
@@ -69,8 +79,9 @@ const dashboardCardOrder = {
   "machine-maintenance": 1,
   inventory: 2,
   spares: 3,
-  staff: 4,
-  "log-activity": 5,
+  ecom: 4,
+  staff: 5,
+  "log-activity": 6,
 };
 
 const softCardSx = {
@@ -303,6 +314,11 @@ const Dashboard = () => {
         value: String(lowStockSparesCount),
         subtitle: "Minimum quantity alerts",
         subtitleTone: lowStockSparesCount > 0 ? "error" : "success",
+      },
+      ecom: {
+        value: "0",
+        subtitle: "E-commerce overview",
+        subtitleTone: "info",
       },
       inventory: {
         value: String(inventoryValue),
@@ -747,32 +763,31 @@ const Dashboard = () => {
               gridTemplateColumns: {
                 xs: "1fr",
                 sm: "repeat(2, 1fr)",
-                lg: "repeat(5, minmax(0, 1fr))",
+                md: "repeat(3, minmax(0, 1fr))",
+                lg: "repeat(3, minmax(0, 1fr))",
               },
               gap: 2,
               mb: 2.5,
             }}
           >
             {cardsLoading ? (
-              Array.from({ length: dashboardFallbackCards.length }).map(
-                (_, index) => (
-                  <Paper
-                    key={index}
-                    elevation={0}
-                    sx={{
-                      ...softCardSx,
-                      p: 2.25,
-                      boxShadow: brand.shadowStrong,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      height: 120,
-                    }}
-                  >
-                    <LinearProgress sx={{ width: "60%" }} />
-                  </Paper>
-                ),
-              )
+              Array.from({ length: 6 }).map((_, index) => (
+                <Paper
+                  key={index}
+                  elevation={0}
+                  sx={{
+                    ...softCardSx,
+                    p: 2.25,
+                    boxShadow: brand.shadowStrong,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: 120,
+                  }}
+                >
+                  <LinearProgress sx={{ width: "60%" }} />
+                </Paper>
+              ))
             ) : visibleStats.length === 0 ? (
               <Paper
                 elevation={0}
@@ -797,7 +812,7 @@ const Dashboard = () => {
                 </Typography>
               </Paper>
             ) : (
-              visibleStats.map((item) => (
+              visibleStats.slice(0, 6).map((item) => (
                 <Paper
                   key={item.title}
                   elevation={0}

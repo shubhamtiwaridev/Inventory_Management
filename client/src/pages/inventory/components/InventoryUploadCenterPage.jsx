@@ -58,7 +58,6 @@ const hideScrollbarSx = {
     display: "none",
   },
 };
-
 const blurActiveElement = () => {
   const activeElement = document.activeElement;
 
@@ -229,7 +228,7 @@ const InventoryUploadCenterPage = () => {
       ) {
         try {
           return String(val).toLowerCase().includes(lowerQ);
-        } catch (e) {
+        } catch {
           return false;
         }
       }
@@ -256,6 +255,12 @@ const InventoryUploadCenterPage = () => {
     if (!q) return files;
     return files.filter((f) => fileMatchesQuery(f, q));
   }, [files, search]);
+  // live count based on immediate input (rawSearch) so counter updates while typing
+  const liveCount = useMemo(() => {
+    const q = String(rawSearch || "").trim();
+    if (!q) return null;
+    return files.filter((f) => fileMatchesQuery(f, q)).length;
+  }, [files, rawSearch]);
   const canUpload = hasActionPermission(user, location.pathname, "create");
   const canEdit = hasActionPermission(user, location.pathname, "update");
   const canDelete = hasActionPermission(user, location.pathname, "delete");
@@ -485,8 +490,26 @@ const InventoryUploadCenterPage = () => {
               placeholder="Search files"
               value={rawSearch}
               onChange={(e) => setRawSearch(e.target.value)}
-              sx={{ minWidth: { xs: "100%", sm: 220 }, ...searchFieldSx }}
+              sx={{
+                width: { xs: "100%", sm: 220 },
+                flexShrink: 0,
+                ...searchFieldSx,
+              }}
               InputProps={{
+                startAdornment: String(rawSearch || "").trim() ? (
+                  <InputAdornment position="start" sx={{ mr: 1 }}>
+                    <Typography
+                      sx={{
+                        color: brand.primaryDark,
+                        fontWeight: 700,
+                        whiteSpace: "nowrap",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      {liveCount ?? 0} Results
+                    </Typography>
+                  </InputAdornment>
+                ) : null,
                 endAdornment: (
                   <InputAdornment position="end">
                     {rawSearch ? (

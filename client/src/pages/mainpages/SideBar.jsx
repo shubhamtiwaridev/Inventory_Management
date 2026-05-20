@@ -82,6 +82,18 @@ const SideBar = ({
     preloadRouteModules(path);
   };
 
+  const handleNavigateAndBlur = (path) => {
+    if (!path) return;
+    try {
+      const active = document?.activeElement;
+      if (active && typeof active.blur === "function") active.blur();
+    } catch {
+      // ignore
+    }
+
+    navigate(path);
+  };
+
   return (
     <Box
       sx={{
@@ -177,7 +189,7 @@ const SideBar = ({
               startIcon={item.icon}
               fullWidth
               disableRipple
-              onClick={() => navigate(item.path)}
+              onClick={() => handleNavigateAndBlur(item.path)}
               onMouseEnter={() => handleRouteIntent(item.path)}
               onFocus={() => handleRouteIntent(item.path)}
               onTouchStart={() => handleRouteIntent(item.path)}

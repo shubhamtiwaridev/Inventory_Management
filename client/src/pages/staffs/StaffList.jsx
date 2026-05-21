@@ -13,6 +13,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   TextField,
   Typography,
 } from "@mui/material";
@@ -129,6 +130,8 @@ const StaffList = () => {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
 
   const fetchStaff = async () => {
     try {
@@ -202,9 +205,20 @@ const StaffList = () => {
     });
   }, [search, staffList]);
 
+  const paginatedRows = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return filteredRows.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredRows, page, rowsPerPage]);
+
   const handleRefresh = () => {
     setSearch("");
+    setPage(0);
     fetchStaff();
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
   };
 
   const handleDownload = () => {
@@ -380,9 +394,7 @@ const StaffList = () => {
 
               <TextField
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                }}
+                onChange={handleSearchChange}
                 placeholder="Search name, email, role..."
                 size="small"
                 sx={{
@@ -544,7 +556,7 @@ const StaffList = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredRows.map((row) => (
+                    paginatedRows.map((row) => (
                       <TableRow
                         key={row._id}
                         hover
@@ -637,6 +649,25 @@ const StaffList = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={filteredRows.length}
+              page={page}
+              onPageChange={(_, nextPage) => setPage(nextPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(event) => {
+                setRowsPerPage(Number(event.target.value));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[25, 50, 100, 250]}
+              sx={{
+                borderTop: `1px solid ${brand.border}`,
+                flexShrink: 0,
+                ".MuiTablePagination-toolbar": {
+                  px: 1.5,
+                },
+              }}
+            />
           </Box>
         </Paper>
       </Box>

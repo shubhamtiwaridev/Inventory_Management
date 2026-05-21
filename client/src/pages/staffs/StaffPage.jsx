@@ -13,6 +13,7 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
+  TablePagination,
   MenuItem,
   Paper,
   Stack,
@@ -219,6 +220,8 @@ const StaffPage = () => {
   const [staffList, setStaffList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
 
   const [openRegisterDialog, setOpenRegisterDialog] = useState(false);
   const [registerError, setRegisterError] = useState("");
@@ -228,8 +231,10 @@ const StaffPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registerUserPermissions, setRegisterUserPermissions] = useState({});
-  const [registerExpandedPermissionSections, setRegisterExpandedPermissionSections] =
-    useState({});
+  const [
+    registerExpandedPermissionSections,
+    setRegisterExpandedPermissionSections,
+  ] = useState({});
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -444,6 +449,11 @@ const StaffPage = () => {
     });
   }, [search, staffList]);
 
+  const paginatedRows = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return filteredRows.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredRows, page, rowsPerPage]);
+
   const resetRegisterForm = () => {
     setFormData({
       firstName: "",
@@ -609,7 +619,10 @@ const StaffPage = () => {
 
       getSectionFeatures(section).forEach((feature) => {
         const featureKey = buildPermissionKey(card.name, feature.label);
-        const defaultPermission = getDefaultPermissionRecord(card.name, feature);
+        const defaultPermission = getDefaultPermissionRecord(
+          card.name,
+          feature,
+        );
 
         nextPermissions[featureKey] = {
           ...defaultPermission,
@@ -709,7 +722,8 @@ const StaffPage = () => {
         ...prev[featureKey],
         enabled: prev[featureKey]?.enabled ?? true,
         actions: {
-          ...getDefaultPermissionRecord(cardName, feature, false, false).actions,
+          ...getDefaultPermissionRecord(cardName, feature, false, false)
+            .actions,
           ...prev[featureKey]?.actions,
           [action]: checked,
         },
@@ -993,7 +1007,13 @@ const StaffPage = () => {
 
   const handleRefresh = () => {
     setSearch("");
+    setPage(0);
     fetchStaff();
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setPage(0);
   };
 
   const handleDelete = async (id) => {
@@ -1167,9 +1187,7 @@ const StaffPage = () => {
 
               <TextField
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                }}
+                onChange={handleSearchChange}
                 placeholder="Search name, role, status..."
                 size="small"
                 sx={{
@@ -1463,7 +1481,9 @@ const StaffPage = () => {
                                               feature.label,
                                             );
                                             const permission =
-                                              registerUserPermissions[keyBase] ||
+                                              registerUserPermissions[
+                                                keyBase
+                                              ] ||
                                               getDefaultPermissionRecord(
                                                 card.name,
                                                 feature,
@@ -1982,165 +2002,168 @@ const StaffPage = () => {
 
                                     {showSectionChildren && (
                                       <Stack spacing={1}>
-                                        {section.children?.length > 0 ? (
-                                          sectionFeatures.map((feature) => {
-                                            const keyBase = buildPermissionKey(
-                                              card.name,
-                                              feature.label,
-                                            );
-                                            const permission =
-                                              userPermissions[keyBase] ||
-                                              getDefaultPermissionRecord(
-                                                card.name,
-                                                feature,
-                                              );
-
-                                            return (
-                                              <Box
-                                                key={feature.label}
-                                                sx={{
-                                                  p: 1,
-                                                  borderRadius: 2,
-                                                  border: `1px solid ${brand.border}`,
-                                                  backgroundColor: "#FFFFFF",
-                                                }}
-                                              >
-                                                <FormControlLabel
-                                                  control={
-                                                    <Checkbox
-                                                      size="small"
-                                                      checked={
-                                                        permission.enabled
-                                                      }
-                                                      onChange={(event) =>
-                                                        handlePermissionEnabledChange(
-                                                          card.name,
-                                                          feature,
-                                                          keyBase,
-                                                          event.target.checked,
-                                                        )
-                                                      }
-                                                    />
-                                                  }
-                                                  label={feature.label}
-                                                  sx={{
-                                                    mb: permission.enabled
-                                                      ? 1
-                                                      : 0,
-                                                    width: "100%",
-                                                    color: brand.text,
-                                                  }}
-                                                />
-
-                                                {permission.enabled && (
-                                                  <Stack
-                                                    direction="row"
-                                                    flexWrap="wrap"
-                                                    gap={1}
-                                                  >
-                                                    {getPermissionActionOptions(
-                                                      card.name,
-                                                      feature,
-                                                    ).map(
-                                                      ({ action, label }) => (
-                                                        <FormControlLabel
-                                                          key={`${keyBase}_${action}`}
-                                                          control={
-                                                            <Checkbox
-                                                              size="small"
-                                                              checked={Boolean(
-                                                                permission
-                                                                  .actions?.[
-                                                                  action
-                                                                ],
-                                                              )}
-                                                              onChange={(
-                                                                event,
-                                                              ) =>
-                                                                handlePermissionActionChange(
-                                                                  card.name,
-                                                                  feature,
-                                                                  keyBase,
-                                                                  action,
-                                                                  event.target
-                                                                    .checked,
-                                                                )
-                                                              }
-                                                            />
-                                                          }
-                                                          label={label}
-                                                          sx={{
-                                                            mr: 0,
-                                                            ml: 0,
-                                                            color:
-                                                              brand.textSoft,
-                                                          }}
-                                                        />
-                                                      ),
-                                                    )}
-                                                  </Stack>
-                                                )}
-                                              </Box>
-                                            );
-                                          })
-                                        ) : (
-                                          (() => {
-                                            const feature = sectionFeatures[0];
-                                            const keyBase = buildPermissionKey(
-                                              card.name,
-                                              feature.label,
-                                            );
-                                            const permission =
-                                              userPermissions[keyBase] ||
-                                              getDefaultPermissionRecord(
-                                                card.name,
-                                                feature,
-                                              );
-
-                                            return permission.enabled ? (
-                                              <Stack
-                                                direction="row"
-                                                flexWrap="wrap"
-                                                gap={1}
-                                              >
-                                                {getPermissionActionOptions(
+                                        {section.children?.length > 0
+                                          ? sectionFeatures.map((feature) => {
+                                              const keyBase =
+                                                buildPermissionKey(
+                                                  card.name,
+                                                  feature.label,
+                                                );
+                                              const permission =
+                                                userPermissions[keyBase] ||
+                                                getDefaultPermissionRecord(
                                                   card.name,
                                                   feature,
-                                                ).map(({ action, label }) => (
+                                                );
+
+                                              return (
+                                                <Box
+                                                  key={feature.label}
+                                                  sx={{
+                                                    p: 1,
+                                                    borderRadius: 2,
+                                                    border: `1px solid ${brand.border}`,
+                                                    backgroundColor: "#FFFFFF",
+                                                  }}
+                                                >
                                                   <FormControlLabel
-                                                    key={`${keyBase}_${action}`}
                                                     control={
                                                       <Checkbox
                                                         size="small"
-                                                        checked={Boolean(
-                                                          permission.actions?.[
-                                                            action
-                                                          ],
-                                                        )}
+                                                        checked={
+                                                          permission.enabled
+                                                        }
                                                         onChange={(event) =>
-                                                          handlePermissionActionChange(
+                                                          handlePermissionEnabledChange(
                                                             card.name,
                                                             feature,
                                                             keyBase,
-                                                            action,
                                                             event.target
                                                               .checked,
                                                           )
                                                         }
                                                       />
                                                     }
-                                                    label={label}
+                                                    label={feature.label}
                                                     sx={{
-                                                      mr: 0,
-                                                      ml: 0,
-                                                      color: brand.textSoft,
+                                                      mb: permission.enabled
+                                                        ? 1
+                                                        : 0,
+                                                      width: "100%",
+                                                      color: brand.text,
                                                     }}
                                                   />
-                                                ))}
-                                              </Stack>
-                                            ) : null;
-                                          })()
-                                        )}
+
+                                                  {permission.enabled && (
+                                                    <Stack
+                                                      direction="row"
+                                                      flexWrap="wrap"
+                                                      gap={1}
+                                                    >
+                                                      {getPermissionActionOptions(
+                                                        card.name,
+                                                        feature,
+                                                      ).map(
+                                                        ({ action, label }) => (
+                                                          <FormControlLabel
+                                                            key={`${keyBase}_${action}`}
+                                                            control={
+                                                              <Checkbox
+                                                                size="small"
+                                                                checked={Boolean(
+                                                                  permission
+                                                                    .actions?.[
+                                                                    action
+                                                                  ],
+                                                                )}
+                                                                onChange={(
+                                                                  event,
+                                                                ) =>
+                                                                  handlePermissionActionChange(
+                                                                    card.name,
+                                                                    feature,
+                                                                    keyBase,
+                                                                    action,
+                                                                    event.target
+                                                                      .checked,
+                                                                  )
+                                                                }
+                                                              />
+                                                            }
+                                                            label={label}
+                                                            sx={{
+                                                              mr: 0,
+                                                              ml: 0,
+                                                              color:
+                                                                brand.textSoft,
+                                                            }}
+                                                          />
+                                                        ),
+                                                      )}
+                                                    </Stack>
+                                                  )}
+                                                </Box>
+                                              );
+                                            })
+                                          : (() => {
+                                              const feature =
+                                                sectionFeatures[0];
+                                              const keyBase =
+                                                buildPermissionKey(
+                                                  card.name,
+                                                  feature.label,
+                                                );
+                                              const permission =
+                                                userPermissions[keyBase] ||
+                                                getDefaultPermissionRecord(
+                                                  card.name,
+                                                  feature,
+                                                );
+
+                                              return permission.enabled ? (
+                                                <Stack
+                                                  direction="row"
+                                                  flexWrap="wrap"
+                                                  gap={1}
+                                                >
+                                                  {getPermissionActionOptions(
+                                                    card.name,
+                                                    feature,
+                                                  ).map(({ action, label }) => (
+                                                    <FormControlLabel
+                                                      key={`${keyBase}_${action}`}
+                                                      control={
+                                                        <Checkbox
+                                                          size="small"
+                                                          checked={Boolean(
+                                                            permission
+                                                              .actions?.[
+                                                              action
+                                                            ],
+                                                          )}
+                                                          onChange={(event) =>
+                                                            handlePermissionActionChange(
+                                                              card.name,
+                                                              feature,
+                                                              keyBase,
+                                                              action,
+                                                              event.target
+                                                                .checked,
+                                                            )
+                                                          }
+                                                        />
+                                                      }
+                                                      label={label}
+                                                      sx={{
+                                                        mr: 0,
+                                                        ml: 0,
+                                                        color: brand.textSoft,
+                                                      }}
+                                                    />
+                                                  ))}
+                                                </Stack>
+                                              ) : null;
+                                            })()}
                                       </Stack>
                                     )}
                                   </Box>
@@ -2350,7 +2373,7 @@ const StaffPage = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredRows.map((row) => (
+                    paginatedRows.map((row) => (
                       <TableRow
                         key={row._id}
                         hover
@@ -2513,6 +2536,25 @@ const StaffPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+            <TablePagination
+              component="div"
+              count={filteredRows.length}
+              page={page}
+              onPageChange={(_, nextPage) => setPage(nextPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(event) => {
+                setRowsPerPage(Number(event.target.value));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[25, 50, 100, 250]}
+              sx={{
+                borderTop: `1px solid ${brand.border}`,
+                flexShrink: 0,
+                ".MuiTablePagination-toolbar": {
+                  px: 1.5,
+                },
+              }}
+            />
           </Box>
         </Paper>
       </Box>

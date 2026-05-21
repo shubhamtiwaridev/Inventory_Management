@@ -13,6 +13,7 @@ import {
   InputAdornment,
   Paper,
   Stack,
+  TablePagination,
   Table,
   TableBody,
   TableCell,
@@ -190,14 +191,18 @@ const mergeCardsWithFallbacks = (cards = []) => {
   const cardMap = new Map();
 
   cards.forEach((card) => {
-    const key = String(card?.name || "").trim().toLowerCase();
+    const key = String(card?.name || "")
+      .trim()
+      .toLowerCase();
 
     if (!key) return;
     cardMap.set(key, card);
   });
 
   staffTypeFallbackCards.forEach((card) => {
-    const key = String(card?.name || "").trim().toLowerCase();
+    const key = String(card?.name || "")
+      .trim()
+      .toLowerCase();
 
     if (!cardMap.has(key)) {
       cardMap.set(key, card);
@@ -233,6 +238,8 @@ const StaffType = () => {
     name: "",
     assignedCards: [],
   });
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
 
   const isSuperadminStaffType = useMemo(
     () =>
@@ -328,10 +335,16 @@ const StaffType = () => {
     });
   }, [rows, search]);
 
+  const paginatedRows = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return filteredRows.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredRows, page, rowsPerPage]);
+
   const handleRefresh = async () => {
     setSearch("");
     setShowForm(false);
     setErrorMessage("");
+    setPage(0);
     await loadStaffTypes();
   };
 
@@ -618,6 +631,7 @@ const StaffType = () => {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
+                  setPage(0);
                 }}
                 placeholder="Search Word"
                 size="small"
@@ -940,7 +954,7 @@ const StaffType = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredRows.map((row) => (
+                    paginatedRows.map((row) => (
                       <TableRow
                         key={row._id}
                         hover
@@ -1036,7 +1050,26 @@ const StaffType = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-        </Box>
+            <TablePagination
+              component="div"
+              count={filteredRows.length}
+              page={page}
+              onPageChange={(_, nextPage) => setPage(nextPage)}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(event) => {
+                setRowsPerPage(Number(event.target.value));
+                setPage(0);
+              }}
+              rowsPerPageOptions={[25, 50, 100, 250]}
+              sx={{
+                borderTop: `1px solid ${brand.border}`,
+                flexShrink: 0,
+                ".MuiTablePagination-toolbar": {
+                  px: 1.5,
+                },
+              }}
+            />
+          </Box>
         </Paper>
       </Box>
     </Box>

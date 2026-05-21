@@ -76,8 +76,10 @@ const isLogActivityPermission = (cardName, feature = {}) => {
   );
 };
 
-const isUploadCenterPermission = (feature = {}) =>
-  normalizePath(feature?.path || "") === "/inventory/upload-center";
+const isUploadCenterPermission = (feature = {}) => {
+  const p = normalizePath(feature?.path || "");
+  return p === "/inventory/upload-center" || p === "/ecom/upload-center";
+};
 
 const isDownloadCenterPermission = (feature = {}) =>
   normalizePath(feature?.path || "") === "/inventory/download-center";
@@ -154,9 +156,10 @@ const createStandalonePermissionCard = (card) => {
       .toLowerCase()
       .replace(/[-\s]+/g, "_") || "card";
   const cardTitle =
-    String(card?.title || card?.name || card?.label || "")
-      .trim() || formatCardLabel(cardName);
-  const cardPath = String(card?.path || `/${cardName}`).trim() || `/${cardName}`;
+    String(card?.title || card?.name || card?.label || "").trim() ||
+    formatCardLabel(cardName);
+  const cardPath =
+    String(card?.path || `/${cardName}`).trim() || `/${cardName}`;
 
   return {
     ...card,
@@ -213,7 +216,9 @@ export const getPermissionCardsForStaffType = (staffType) => {
   const matchedCards = ALL_CARDS.filter((card) =>
     assignedNames.includes(normalizeKey(card.name)),
   );
-  const matchedNames = new Set(matchedCards.map((card) => normalizeKey(card.name)));
+  const matchedNames = new Set(
+    matchedCards.map((card) => normalizeKey(card.name)),
+  );
   const fallbackCards = assignedCards
     .filter((card) => {
       const cardName = normalizeKey(card?.name || card?.title || card);
@@ -315,11 +320,15 @@ export const initializeUserPermissions = (
   enabled = true,
   actionState = true,
 ) =>
-  filterUserPermissionsForCards(staffTypeCards, {}, {
-    initializeMissing: true,
-    enabled,
-    actionState,
-  });
+  filterUserPermissionsForCards(
+    staffTypeCards,
+    {},
+    {
+      initializeMissing: true,
+      enabled,
+      actionState,
+    },
+  );
 
 export const getFeaturePermission = (
   userPermissions,

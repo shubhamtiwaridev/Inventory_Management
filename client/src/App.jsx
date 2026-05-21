@@ -35,6 +35,7 @@ import {
   EcomAmazonPage,
   EcomFlipkartPage,
   EcomMesshoPage,
+  EcomUploadCenterPage,
   LogActivityPage,
   Login,
   MachineMaintenancePage,
@@ -595,6 +596,15 @@ function App() {
                 ecomSidebarItems,
                 "/ecom/messho",
                 "Meesho",
+              )}
+            />
+            <Route
+              path="upload-center"
+              element={withPermissionRoute(
+                renderLazyPage(<EcomUploadCenterPage />),
+                ecomSidebarItems,
+                "/ecom/upload-center",
+                "Upload Center",
               )}
             />
           </Route>

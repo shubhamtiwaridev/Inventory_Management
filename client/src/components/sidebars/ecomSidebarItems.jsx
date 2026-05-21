@@ -3,6 +3,8 @@ import ShoppingCartRoundedIcon from "@mui/icons-material/ShoppingCartRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 import LocalMallRoundedIcon from "@mui/icons-material/LocalMallRounded";
+import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 
 export const ecomSidebarItems = [
   { label: "Dashboard", icon: <DashboardRoundedIcon />, path: "/dashboard" },
@@ -23,4 +25,14 @@ export const ecomSidebarItems = [
     path: "/ecom/flipkart",
   },
   { label: "Meesho", icon: <LocalMallRoundedIcon />, path: "/ecom/messho" },
+  {
+    label: "Upload Center",
+    icon: <CloudUploadRoundedIcon />,
+    path: "/ecom/upload-center",
+  },
+  {
+    label: "Download Center",
+    icon: <DownloadRoundedIcon />,
+    path: "/ecom/download-center",
+  },
 ];

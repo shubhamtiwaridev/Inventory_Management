@@ -32,6 +32,7 @@ import activityLogger from "./modules/log-activity/logActivityMiddleware.js";
 import goodsListRoutes from "./modules/inventory/goods-list/goodsListRoute.js";
 import createStockTransactionRouter from "./modules/inventory/stock-transaction/stockTransactionRoute.js";
 import uploadCenterRoutes from "./modules/inventory/upload-center/uploadCenterRoute.js";
+import ecomUploadCenterRoutes from "./modules/ecom/upload-center/uploadCenterRoute.js";
 import warehouseRoutes from "./modules/inventory/warehouse/warehouseRoute.js";
 import dashboardRoutes from "./modules/dashboard/dashboardRoute.js";
 import spareItemRoutes from "./modules/spares/item/spareItemRoute.js";
@@ -106,6 +107,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/inventory/goods-list", goodsListRoutes);
 app.use("/api/inventory/upload-center", uploadCenterRoutes);
 app.use("/api/inventory/warehouses", warehouseRoutes);
+app.use("/api/ecom/upload-center", ecomUploadCenterRoutes);
 app.use("/api/inventory/inbound", createStockTransactionRouter("inbound"));
 app.use("/api/inventory/outbound", createStockTransactionRouter("outbound"));
 

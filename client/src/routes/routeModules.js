@@ -135,6 +135,12 @@ export const InventoryUploadCenterPage = createPreloadableRoute(
 export const InventoryDownloadCenterPage = createPreloadableRoute(
   () => import("../pages/inventory/components/InventoryDownloadCenterPage.jsx"),
 );
+export const EcomUploadCenterPage = createPreloadableRoute(
+  () => import("../pages/ecom/components/EcomUploadCenterPage.jsx"),
+);
+export const EcomDownloadCenterPage = createPreloadableRoute(
+  () => import("../pages/ecom/components/EcomDownloadCenterPage.jsx"),
+);
 export const EcomPage = createPreloadableRoute(
   () => import("../pages/ecom/EcomPage.jsx"),
 );
@@ -336,6 +342,10 @@ const routePreloadConfigs = [
   {
     match: (pathname) => matchesRoutePath(pathname, "/inventory/upload-center"),
     preloaders: [InventoryUploadCenterPage.preload],
+  },
+  {
+    match: (pathname) => matchesRoutePath(pathname, "/ecom/upload-center"),
+    preloaders: [EcomUploadCenterPage.preload],
   },
   {
     match: (pathname) =>

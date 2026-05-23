@@ -82,6 +82,18 @@ const staffTypeFallbackCards = [
     subtitleTone: "info",
     allowInStaffTypes: true,
   },
+  {
+    _id: "system-ecom",
+    name: "ecom",
+    title: "E-commerce",
+    path: "/ecom",
+    icon: "ShoppingCartRoundedIcon",
+    iconBg: "#FEF3C7",
+    iconColor: "#D97706",
+    subtitle: "Manage e-commerce channels",
+    subtitleTone: "success",
+    allowInStaffTypes: true,
+  },
 ];
 
 const softCardSx = {
@@ -273,6 +285,26 @@ const StaffType = () => {
     }
   }, []);
 
+  const normalizeCardIds = useCallback(
+    (cardIds) => {
+      return cardIds
+        .map((cardId) => {
+          if (String(cardId || "").startsWith("system-")) {
+            const cardName = String(cardId)
+              .replace("system-", "")
+              .toLowerCase();
+            const realCard = availableCards.find(
+              (c) => String(c.name || "").toLowerCase() === cardName,
+            );
+            return realCard?._id || cardId;
+          }
+          return cardId;
+        })
+        .filter((cardId) => !String(cardId || "").startsWith("system-"));
+    },
+    [availableCards],
+  );
+
   const loadStaffTypes = useCallback(async () => {
     try {
       setLoading(true);
@@ -414,9 +446,12 @@ const StaffType = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    // Normalize card IDs - convert fallback IDs to real database IDs
+    const normalizedCardIds = normalizeCardIds(formData.assignedCards);
+
     const payload = {
       name: formData.name.trim(),
-      assignedCards: formData.assignedCards,
+      assignedCards: normalizedCardIds,
     };
 
     if (!payload.name) {

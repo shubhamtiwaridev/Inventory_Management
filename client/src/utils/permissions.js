@@ -1,6 +1,7 @@
 import { inventorySidebarItems } from "../components/sidebars/inventorySidebarItems";
 import { machineMaintenanceSidebarItems } from "../components/sidebars/machineMaintenanceSidebarItems";
 import { sparesSidebarItems } from "../components/sidebars/sparesSidebarItems";
+import { ecomSidebarItems } from "../components/sidebars/ecomSidebarItems";
 
 export const ACTIONS = ["create", "update", "delete"];
 
@@ -107,6 +108,7 @@ const allSidebarItems = [
   ...inventorySidebarItems,
   ...machineMaintenanceSidebarItems,
   ...sparesSidebarItems,
+  ...ecomSidebarItems,
 ];
 
 const buildCardGroups = (sidebarItems) => {

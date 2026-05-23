@@ -14,6 +14,18 @@ const SYSTEM_DEFAULT_CARDS = [
     allowInStaffTypes: true,
     createdBy: "System",
   },
+  {
+    name: "ecom",
+    title: "E-commerce",
+    path: "/ecom",
+    icon: "ShoppingCartRoundedIcon",
+    iconBg: "#FEF3C7",
+    iconColor: "#D97706",
+    subtitle: "Manage e-commerce channels",
+    subtitleTone: "success",
+    allowInStaffTypes: true,
+    createdBy: "System",
+  },
 ];
 
 const shouldAllowInStaffTypesByDefault = ({ name = "", path = "" } = {}) => {
@@ -94,7 +106,15 @@ export const createCard = async (req, res) => {
       allowInStaffTypes,
     } = req.body;
 
-    if (!name || !title || !path || !icon || !iconBg || !iconColor || !createdBy) {
+    if (
+      !name ||
+      !title ||
+      !path ||
+      !icon ||
+      !iconBg ||
+      !iconColor ||
+      !createdBy
+    ) {
       return res.status(400).json({
         success: false,
         message: "All card fields are required",
@@ -181,7 +201,7 @@ export const updateCard = async (req, res) => {
                 path: path.trim(),
               }),
       },
-      { returnDocument: "after", runValidators: true }
+      { returnDocument: "after", runValidators: true },
     );
 
     if (!card) {
@@ -216,7 +236,7 @@ export const deleteCard = async (req, res) => {
     const card = await Card.findByIdAndUpdate(
       id,
       { isActive: false },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
     if (!card) {
@@ -246,7 +266,7 @@ export const activateCard = async (req, res) => {
     const card = await Card.findByIdAndUpdate(
       id,
       { isActive: true },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
     if (!card) {

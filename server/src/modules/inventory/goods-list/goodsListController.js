@@ -182,17 +182,27 @@ const sanitizeLegacyImportedItem = (item = {}) => {
   };
 };
 
-const mapGoodsItem = (item) => ({
-  id: String(item._id),
-  goodsCode: isPlaceholderGoodsCode(item.goodsCode) ? "" : item.goodsCode || "",
-  goodsDesc: item.goodsDesc || "",
-  goodsSupplier: item.goodsSupplier || "",
-  goodsSku: item.goodsSku || "",
-  goodsBarcode: item.goodsBarcode || "",
-  createdBy: item.createdBy || "System",
-  createdAt: formatDateTime(item.createdAt),
-  updatedAt: formatDateTime(item.updatedAt),
-});
+const mapGoodsItem = (item, serialNumber = null) => {
+  const rawCode = item.goodsCode || "";
+  const displayCode =
+    isPlaceholderGoodsCode(rawCode) || !normalizeValue(rawCode)
+      ? serialNumber != null
+        ? String(serialNumber)
+        : ""
+      : rawCode;
+
+  return {
+    id: String(item._id),
+    goodsCode: displayCode,
+    goodsDesc: item.goodsDesc || "",
+    goodsSupplier: item.goodsSupplier || "",
+    goodsSku: item.goodsSku || "",
+    goodsBarcode: item.goodsBarcode || "",
+    createdBy: item.createdBy || "System",
+    createdAt: formatDateTime(item.createdAt),
+    updatedAt: formatDateTime(item.updatedAt),
+  };
+};
 
 const normalizeGoodsPayload = (payload = {}) => ({
   goodsCode: normalizeValue(payload.goodsCode),
@@ -318,9 +328,11 @@ const withImportPlaceholderCode = (payload = {}, rowIndex = 0) => {
     return payload;
   }
 
+  // Assign a simple sequential serial number (1-based) as goodsCode
+  // for rows that don't provide a goodsCode in the imported Excel.
   return {
     ...payload,
-    goodsCode: `${IMPORT_PLACEHOLDER_CODE_PREFIX}${Date.now()}_${rowIndex}`,
+    goodsCode: String(rowIndex + 1),
   };
 };
 
@@ -475,12 +487,14 @@ export const getGoodsItems = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
+    const sanitized = items
+      .map((item) => sanitizeLegacyImportedItem(item))
+      .filter(Boolean);
+    const mapped = sanitized.map((item, idx) => mapGoodsItem(item, idx + 1));
+
     return res.status(200).json({
       success: true,
-      data: items
-        .map((item) => sanitizeLegacyImportedItem(item))
-        .filter(Boolean)
-        .map(mapGoodsItem),
+      data: mapped,
     });
   } catch (error) {
     return res.status(500).json({

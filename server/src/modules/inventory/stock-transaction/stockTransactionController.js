@@ -40,9 +40,6 @@ const getUserName = (req) =>
 const getTransactionType = (req) =>
   req.inventoryTransactionType === "outbound" ? "outbound" : "inbound";
 
-const getEntryPrefix = (transactionType) =>
-  transactionType === "outbound" ? "OUT" : "IN";
-
 const mapTransactionItem = (item) => ({
   id: String(item._id),
   transactionType: item.transactionType || "inbound",
@@ -63,6 +60,7 @@ const mapTransactionItem = (item) => ({
 });
 
 const normalizeTransactionPayload = (payload = {}) => ({
+  entryNo: normalizeValue(payload.entryNo),
   goodsItemId: normalizeValue(payload.goodsItemId),
   warehouseId: normalizeValue(payload.warehouseId),
   quantity: Number(payload.quantity),
@@ -73,6 +71,10 @@ const normalizeTransactionPayload = (payload = {}) => ({
 });
 
 const getValidationError = (payload = {}) => {
+  if (!normalizeValue(payload.entryNo)) {
+    return "Challan no is required";
+  }
+
   if (!normalizeValue(payload.goodsItemId)) {
     return "Goods item is required";
   }
@@ -111,23 +113,6 @@ const buildWarehouseSnapshot = (warehouse) => ({
   warehouseName: normalizeValue(warehouse.warehouseName),
 });
 
-const getNextEntryNo = async (transactionType) => {
-  const prefix = getEntryPrefix(transactionType);
-  const latestItem = await StockTransaction.findOne({ transactionType })
-    .sort({ createdAt: -1 })
-    .select("entryNo")
-    .lean();
-
-  const latestNumber = Number(
-    String(latestItem?.entryNo || "")
-      .replace(prefix, "")
-      .replace(/[^0-9]/g, ""),
-  );
-  const nextNumber = Number.isFinite(latestNumber) ? latestNumber + 1 : 1;
-
-  return `${prefix}-${String(nextNumber).padStart(3, "0")}`;
-};
-
 const getValidatedGoodsItem = async (goodsItemId) => {
   return GoodsList.findById(goodsItemId)
     .select("goodsCode goodsDesc")
@@ -136,6 +121,29 @@ const getValidatedGoodsItem = async (goodsItemId) => {
 
 const getValidatedWarehouse = async (warehouseId) => {
   return Warehouse.findById(warehouseId).select("warehouseName").lean();
+};
+
+const findDuplicateChallan = async ({
+  transactionType,
+  entryNo,
+  excludedId = null,
+} = {}) => {
+  const normalizedEntryNo = normalizeValue(entryNo);
+
+  if (!normalizedEntryNo) {
+    return null;
+  }
+
+  return StockTransaction.findOne({
+    ...(excludedId ? { _id: { $ne: excludedId } } : {}),
+    transactionType,
+    entryNo: {
+      $regex: `^${normalizedEntryNo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+      $options: "i",
+    },
+  })
+    .select("entryNo")
+    .lean();
 };
 
 const toObjectId = (value) => {
@@ -351,6 +359,18 @@ export const createStockTransaction = async (req, res) => {
       return res.status(400).json({ success: false, message: validationError });
     }
 
+    const duplicateChallan = await findDuplicateChallan({
+      transactionType,
+      entryNo: payload.entryNo,
+    });
+
+    if (duplicateChallan) {
+      return res.status(409).json({
+        success: false,
+        message: "Challan no already exists",
+      });
+    }
+
     const [goodsItem, warehouse] = await Promise.all([
       getValidatedGoodsItem(payload.goodsItemId),
       getValidatedWarehouse(payload.warehouseId),
@@ -393,7 +413,7 @@ export const createStockTransaction = async (req, res) => {
 
     const item = await StockTransaction.create({
       transactionType,
-      entryNo: await getNextEntryNo(transactionType),
+      entryNo: payload.entryNo,
       ...buildGoodsSnapshot(goodsItem),
       ...buildWarehouseSnapshot(warehouse),
       quantity: payload.quantity,
@@ -441,6 +461,19 @@ export const updateStockTransaction = async (req, res) => {
       });
     }
 
+    const duplicateChallan = await findDuplicateChallan({
+      transactionType,
+      entryNo: payload.entryNo,
+      excludedId: req.params.id,
+    });
+
+    if (duplicateChallan) {
+      return res.status(409).json({
+        success: false,
+        message: "Challan no already exists",
+      });
+    }
+
     const [goodsItem, warehouse] = await Promise.all([
       getValidatedGoodsItem(payload.goodsItemId),
       getValidatedWarehouse(payload.warehouseId),
@@ -483,6 +516,7 @@ export const updateStockTransaction = async (req, res) => {
     }
 
     Object.assign(currentItem, {
+      entryNo: payload.entryNo,
       ...buildGoodsSnapshot(goodsItem),
       ...buildWarehouseSnapshot(warehouse),
       quantity: payload.quantity,

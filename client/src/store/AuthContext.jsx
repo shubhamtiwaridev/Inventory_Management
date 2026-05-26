@@ -200,9 +200,10 @@ export const AuthProvider = ({ children }) => {
     setAuthToken(data.token);
     setStoredAuthUser(data.user);
     setUser(data.user);
+    fetchMe().catch(() => {});
 
     return data;
-  }, []);
+  }, [fetchMe]);
 
   const logout = useCallback(async () => {
     try {

@@ -31,7 +31,16 @@ const getUserFromToken = async (token) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password").lean();
+    const user = await User.findById(decoded.id)
+      .select("-password")
+      .populate({
+        path: "staffType",
+        populate: {
+          path: "assignedCards",
+          select: "name title path icon iconBg iconColor subtitle subtitleTone",
+        },
+      })
+      .lean();
     return user || null;
   } catch (error) {
     if (isDevelopment) {

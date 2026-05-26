@@ -33,6 +33,7 @@ import {
   EcomPage,
   EcomOverviewPage,
   EcomAmazonPage,
+  EcomDownloadCenterPage,
   EcomFlipkartPage,
   EcomMesshoPage,
   EcomUploadCenterPage,
@@ -129,18 +130,41 @@ function App() {
             element={renderLazyPage(<Dashboard />, true)}
           />
 
-          <Route path="/staff" element={renderLazyPage(<StaffPage />, true)} />
+          <Route
+            path="/staff"
+            element={withPermissionRoute(
+              renderLazyPage(<StaffPage />, true),
+              [],
+              "/staff",
+              "Staff",
+            )}
+          />
           <Route
             path="/staff-list"
-            element={renderLazyPage(<StaffList />, true)}
+            element={withPermissionRoute(
+              renderLazyPage(<StaffList />, true),
+              [],
+              "/staff-list",
+              "Staff List",
+            )}
           />
           <Route
             path="/staff-type"
-            element={renderLazyPage(<StaffType />, true)}
+            element={withPermissionRoute(
+              renderLazyPage(<StaffType />, true),
+              [],
+              "/staff-type",
+              "Staff Type",
+            )}
           />
           <Route
             path="/log-activity"
-            element={renderLazyPage(<LogActivityPage />, true)}
+            element={withPermissionRoute(
+              renderLazyPage(<LogActivityPage />, true),
+              [],
+              "/log-activity",
+              "Log Activity",
+            )}
           />
 
           <Route
@@ -605,6 +629,15 @@ function App() {
                 ecomSidebarItems,
                 "/ecom/upload-center",
                 "Upload Center",
+              )}
+            />
+            <Route
+              path="download-center"
+              element={withPermissionRoute(
+                renderLazyPage(<EcomDownloadCenterPage />),
+                ecomSidebarItems,
+                "/ecom/download-center",
+                "Download Center",
               )}
             />
           </Route>

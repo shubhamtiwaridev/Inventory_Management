@@ -95,7 +95,7 @@ const downloadDefinitions = [
     label: "Inbound",
     icon: <MoveToInboxRoundedIcon sx={{ color: brand.primary }} />,
     columns: [
-      { key: "entryNo", label: "Entry No" },
+      { key: "entryNo", label: "Challan No" },
       { key: "goodsCode", label: "Goods Code" },
       { key: "goodsDesc", label: "Goods Desc" },
       { key: "warehouseName", label: "Warehouse" },
@@ -111,7 +111,7 @@ const downloadDefinitions = [
     label: "Outbound",
     icon: <OutboxRoundedIcon sx={{ color: brand.primary }} />,
     columns: [
-      { key: "entryNo", label: "Entry No" },
+      { key: "entryNo", label: "Challan No" },
       { key: "goodsCode", label: "Goods Code" },
       { key: "goodsDesc", label: "Goods Desc" },
       { key: "warehouseName", label: "Warehouse" },

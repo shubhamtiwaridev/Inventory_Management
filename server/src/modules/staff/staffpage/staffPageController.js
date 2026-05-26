@@ -78,6 +78,15 @@ const MODULE_PERMISSION_PATHS = {
     "/spares/re-orders",
     "/spares/suppliers",
   ],
+  ecom: [
+    "/ecom",
+    "/ecom/amazon",
+    "/ecom/flipkart",
+    "/ecom/messho",
+    "/ecom/upload-center",
+    "/ecom/download-center",
+  ],
+  log_activity: ["/log-activity"],
 };
 
 const normalizeKey = (value = "") =>

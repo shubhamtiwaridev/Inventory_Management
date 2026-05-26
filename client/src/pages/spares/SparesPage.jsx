@@ -24,9 +24,16 @@ import SettingsSuggestRoundedIcon from "@mui/icons-material/SettingsSuggestRound
 import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import ModuleLayout from "../../components/ModuleLayout";
 import { sparesSidebarItems } from "../../components/sidebars/sparesSidebarItems";
+import { useAuth } from "../../store/AuthContext.jsx";
+import {
+  getFirstAccessibleSidebarPath,
+  getVisibleSidebarItemsForUser,
+  hasActionPermission,
+  isSidebarFeatureVisible,
+} from "../../utils/permissions.js";
 import MachineMaintenanceFormView from "../machine-maintenance/components/MachineMaintenanceFormView";
 import { pageFormData } from "../machine-maintenance/components/machineMaintenanceUi";
 import {
@@ -691,7 +698,16 @@ const actionCopy = {
 
 const SparesPage = () => {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const page = getPageMeta(pathname);
+  const allowedSidebarItems = useMemo(
+    () => getVisibleSidebarItemsForUser(sparesSidebarItems, user),
+    [user],
+  );
+  const canViewCurrentPage = isSidebarFeatureVisible(user, pathname, page.title);
+  const canUsePrimaryAction =
+    hasActionPermission(user, pathname, "create") ||
+    hasActionPermission(user, pathname, "update");
   const [spares, setSpares] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -876,6 +892,8 @@ const SparesPage = () => {
   }, [actionDetails, page.actionType, selectableSpares]);
 
   const openActionDialog = () => {
+    if (!canUsePrimaryAction) return;
+
     setError("");
     setDialogOpen(true);
   };
@@ -965,8 +983,17 @@ const SparesPage = () => {
     }
   };
 
+  if (!canViewCurrentPage) {
+    return (
+      <Navigate
+        to={getFirstAccessibleSidebarPath(sparesSidebarItems, user)}
+        replace
+      />
+    );
+  }
+
   return (
-    <ModuleLayout sidebarItems={sparesSidebarItems} lockPageScroll>
+    <ModuleLayout sidebarItems={allowedSidebarItems} lockPageScroll>
       <Stack
         spacing={2.5}
         sx={{
@@ -1032,23 +1059,28 @@ const SparesPage = () => {
             >
               Refresh
             </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddRoundedIcon />}
-              onClick={openActionDialog}
-              sx={{
-                borderRadius: 1,
-                minHeight: 42,
-                px: 2,
-                backgroundColor: brand.primary,
-                boxShadow: "none",
-                fontWeight: 800,
-                whiteSpace: "nowrap",
-                "&:hover": { backgroundColor: "#0B5C5B", boxShadow: "none" },
-              }}
-            >
-              {page.action}
-            </Button>
+            {canUsePrimaryAction ? (
+              <Button
+                variant="contained"
+                startIcon={<AddRoundedIcon />}
+                onClick={openActionDialog}
+                sx={{
+                  borderRadius: 1,
+                  minHeight: 42,
+                  px: 2,
+                  backgroundColor: brand.primary,
+                  boxShadow: "none",
+                  fontWeight: 800,
+                  whiteSpace: "nowrap",
+                  "&:hover": {
+                    backgroundColor: "#0B5C5B",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                {page.action}
+              </Button>
+            ) : null}
           </Stack>
         </Stack>
 

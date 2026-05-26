@@ -55,6 +55,7 @@ const transactionConfigs = {
 };
 
 const getDefaultFormValues = () => ({
+  entryNo: "",
   goodsItemId: "",
   warehouseId: "",
   partnerName: "",
@@ -196,7 +197,7 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
 
   const tableColumns = useMemo(
     () => [
-      { key: "entryNo", label: "Entry No", width: 150, nowrap: true },
+      { key: "entryNo", label: "Challan No", width: 150, nowrap: true },
       { key: "goodsCode", label: "Goods Code", width: 150, nowrap: true },
       { key: "goodsDesc", label: "Goods Desc", width: 240 },
       { key: "warehouseName", label: "Warehouse", width: 180 },
@@ -323,6 +324,7 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
 
     setEditingRow(row);
     setFormValues({
+      entryNo: row.entryNo || "",
       goodsItemId: matchedGoodsItem?.id || "",
       warehouseId: matchedWarehouse?.id || "",
       partnerName: row.partnerName || "",
@@ -377,6 +379,10 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
 
     const nextErrors = {};
 
+    if (!String(formValues.entryNo || "").trim()) {
+      nextErrors.entryNo = "Challan no is required";
+    }
+
     if (!String(formValues.goodsItemId || "").trim()) {
       nextErrors.goodsItemId = "Goods item is required";
     }
@@ -409,6 +415,7 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
     }
 
     const payload = {
+      entryNo: formValues.entryNo,
       goodsItemId: formValues.goodsItemId,
       warehouseId: formValues.warehouseId,
       partnerName: formValues.partnerName,
@@ -540,6 +547,19 @@ const InventoryTransactionPage = ({ type = "inbound" }) => {
             }}
           >
             <Stack spacing={2}>
+              <TextField
+                label="Challan No"
+                value={formValues.entryNo}
+                onChange={(event) =>
+                  handleFieldChange("entryNo", event.target.value)
+                }
+                required
+                error={Boolean(formErrors.entryNo)}
+                helperText={formErrors.entryNo || " "}
+                fullWidth
+                sx={textFieldStyles}
+              />
+
               <TextField
                 select
                 label="Goods Item"

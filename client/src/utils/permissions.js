@@ -275,11 +275,11 @@ export const filterUserPermissionsForCards = (
   { initializeMissing = false, enabled = true, actionState = true } = {},
 ) => {
   const filteredPermissions = {};
-  const assignedNames = getAssignedCardNames(staffTypeCards);
+  const permissionCards = getPermissionCardsForStaffType({
+    assignedCards: staffTypeCards,
+  });
 
-  ALL_CARDS.filter((card) =>
-    assignedNames.includes(normalizeKey(card.name)),
-  ).forEach((card) => {
+  permissionCards.forEach((card) => {
     getCardSections(card).forEach((section) => {
       getSectionFeatures(section).forEach((feature) => {
         const featureKey = buildPermissionKey(card.name, feature.label);
@@ -351,10 +351,27 @@ const hasExplicitPermissions = (user) =>
 const hasAssignedCard = (user, cardName) => {
   if (isSuperadminRole(user?.roles)) return true;
 
-  const assignedCards = user?.staffType?.assignedCards || [];
+  const assignedCards = Array.isArray(user?.staffType?.assignedCards)
+    ? user.staffType.assignedCards
+    : Array.isArray(user?.assignedCards)
+      ? user.assignedCards
+      : [];
   const assignedNames = getAssignedCardNames(assignedCards);
 
   return assignedNames.includes(normalizeKey(cardName));
+};
+
+const hasEnabledPermissionForCard = (user, cardName) => {
+  if (isSuperadminRole(user?.roles)) return true;
+  if (!hasExplicitPermissions(user)) return false;
+
+  const targetCardName = normalizeKey(cardName);
+
+  return Object.values(user.permissions || {}).some(
+    (permission) =>
+      normalizeKey(permission?.card || getSidebarRootKey(permission?.path)) ===
+        targetCardName && Boolean(permission?.enabled),
+  );
 };
 
 export const isDashboardCardVisible = (user, card) => {
@@ -368,10 +385,14 @@ export const isDashboardCardVisible = (user, card) => {
     hasAssignedCard(user, cardName) || hasAssignedCard(user, pathRoot);
 
   if (!hasCardAccess) return false;
+  if (!hasEnabledPermissionForCard(user, pathRoot || cardName)) return false;
   if (!pathRoot) return true;
   if (!hasAssignedCard(user, pathRoot)) return true;
 
-  return isSidebarFeatureVisible(user, cardPath, card.title || card.name);
+  return (
+    isSidebarFeatureVisible(user, cardPath, card.title || card.name) ||
+    hasEnabledPermissionForCard(user, pathRoot)
+  );
 };
 
 export const getVisibleDashboardCardsForUser = (cards = [], user) =>
@@ -400,7 +421,7 @@ export const isSidebarFeatureVisible = (user, path, label) => {
 
   if (!hasAssignedCard(user, cardName)) return false;
 
-  if (!hasExplicitPermissions(user)) return true;
+  if (!hasExplicitPermissions(user)) return false;
 
   const permission = findPermissionByPathOrLabel(user.permissions, path, label);
 
@@ -414,7 +435,7 @@ export const hasActionPermission = (user, path, action) => {
 
   if (!hasAssignedCard(user, cardName)) return false;
 
-  if (!hasExplicitPermissions(user)) return true;
+  if (!hasExplicitPermissions(user)) return false;
 
   const permission = findPermissionByPathOrLabel(user.permissions, path, "");
 
@@ -436,6 +457,7 @@ export const getVisibleSidebarItemsForUser = (sidebarItems = [], user) => {
         : getSidebarRootKey(item.path);
 
       if (!hasAssignedCard(user, itemRoot)) return null;
+      if (!hasEnabledPermissionForCard(user, itemRoot)) return null;
 
       const children = Array.isArray(item.children) ? item.children : [];
 

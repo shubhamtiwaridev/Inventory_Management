@@ -79,11 +79,19 @@ const isLogActivityPermission = (cardName, feature = {}) => {
 
 const isUploadCenterPermission = (feature = {}) => {
   const p = normalizePath(feature?.path || "");
-  return p === "/inventory/upload-center" || p === "/ecom/upload-center";
+  return (
+    p === "/inventory/upload-center" ||
+    p === "/ecom/upload-center" ||
+    p === "/machine-maintenance/upload-center"
+  );
 };
 
 const isDownloadCenterPermission = (feature = {}) =>
-  normalizePath(feature?.path || "") === "/inventory/download-center";
+  [
+    "/inventory/download-center",
+    "/ecom/download-center",
+    "/machine-maintenance/download-center",
+  ].includes(normalizePath(feature?.path || ""));
 
 export const getPermissionActionOptions = (cardName, feature = {}) => {
   if (isLogActivityPermission(cardName, feature)) {

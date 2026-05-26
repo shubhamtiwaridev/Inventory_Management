@@ -39,7 +39,9 @@ import {
   EcomUploadCenterPage,
   LogActivityPage,
   Login,
+  MachineMaintenanceDownloadCenterPage,
   MachineMaintenancePage,
+  MachineMaintenanceUploadCenterPage,
   PlantSiteListPage,
   Register,
   ShiftTimingListPage,
@@ -474,6 +476,24 @@ function App() {
                 machineMaintenanceSidebarItems,
                 "/machine-maintenance/configure/contract-type",
                 "Contract Type",
+              )}
+            />
+            <Route
+              path="upload-center"
+              element={withPermissionRoute(
+                renderLazyPage(<MachineMaintenanceUploadCenterPage />),
+                machineMaintenanceSidebarItems,
+                "/machine-maintenance/upload-center",
+                "Upload Center",
+              )}
+            />
+            <Route
+              path="download-center"
+              element={withPermissionRoute(
+                renderLazyPage(<MachineMaintenanceDownloadCenterPage />),
+                machineMaintenanceSidebarItems,
+                "/machine-maintenance/download-center",
+                "Download Center",
               )}
             />
           </Route>

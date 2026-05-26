@@ -33,6 +33,7 @@ import goodsListRoutes from "./modules/inventory/goods-list/goodsListRoute.js";
 import createStockTransactionRouter from "./modules/inventory/stock-transaction/stockTransactionRoute.js";
 import uploadCenterRoutes from "./modules/inventory/upload-center/uploadCenterRoute.js";
 import ecomUploadCenterRoutes from "./modules/ecom/upload-center/uploadCenterRoute.js";
+import machineMaintenanceUploadCenterRoutes from "./modules/machine-maintenance/upload-center/uploadCenterRoute.js";
 import warehouseRoutes from "./modules/inventory/warehouse/warehouseRoute.js";
 import dashboardRoutes from "./modules/dashboard/dashboardRoute.js";
 import spareItemRoutes from "./modules/spares/item/spareItemRoute.js";
@@ -117,6 +118,10 @@ app.use("/api/machine-maintenance/tasks", taskRoutes);
 app.use("/api/machine-maintenance/user-allocations", userAllocationRoutes);
 app.use("/api/machine-maintenance/vendors", vendorRoutes);
 app.use("/api/machine-maintenance/complients", complientRoutes);
+app.use(
+  "/api/machine-maintenance/upload-center",
+  machineMaintenanceUploadCenterRoutes,
+);
 
 app.use("/api/spares/items", spareItemRoutes);
 app.use("/api/spares/suppliers", spareSupplierRoutes);

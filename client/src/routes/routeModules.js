@@ -119,6 +119,18 @@ export const ContractTypeListPage = createPreloadableRoute(
   () =>
     import("../pages/machine-maintenance/configure/ContractTypeListPage.jsx"),
 );
+export const MachineMaintenanceUploadCenterPage = createPreloadableRoute(
+  () =>
+    import(
+      "../pages/machine-maintenance/upload-center/MachineMaintenanceUploadCenterPage.jsx"
+    ),
+);
+export const MachineMaintenanceDownloadCenterPage = createPreloadableRoute(
+  () =>
+    import(
+      "../pages/machine-maintenance/upload-center/MachineMaintenanceDownloadCenterPage.jsx"
+    ),
+);
 
 export const InventoryMasterListPage = createPreloadableRoute(
   () => import("../pages/inventory/components/InventoryMasterListPage.jsx"),
@@ -314,6 +326,16 @@ const routePreloadConfigs = [
         "/machine-maintenance/configure/contract-type",
       ),
     preloaders: [ContractTypeListPage.preload],
+  },
+  {
+    match: (pathname) =>
+      matchesRoutePath(pathname, "/machine-maintenance/upload-center"),
+    preloaders: [MachineMaintenanceUploadCenterPage.preload],
+  },
+  {
+    match: (pathname) =>
+      matchesRoutePath(pathname, "/machine-maintenance/download-center"),
+    preloaders: [MachineMaintenanceDownloadCenterPage.preload],
   },
   {
     match: (pathname) => matchesRoutePath(pathname, "/spares"),

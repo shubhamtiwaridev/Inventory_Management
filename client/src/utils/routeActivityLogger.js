@@ -163,6 +163,16 @@ const routeActivityDefinitions = [
     module: "Machine Maintenance",
     page: "Contract Type",
   },
+  {
+    path: "/machine-maintenance/upload-center",
+    module: "Machine Maintenance",
+    page: "Upload Center",
+  },
+  {
+    path: "/machine-maintenance/download-center",
+    module: "Machine Maintenance",
+    page: "Download Center",
+  },
 ];
 
 const matchRouteActivity = (pathname = "") => {

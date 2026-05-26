@@ -23,6 +23,8 @@ import StraightenRoundedIcon from "@mui/icons-material/StraightenRounded";
 import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import RepeatRoundedIcon from "@mui/icons-material/RepeatRounded";
 import AssignmentRoundedIcon from "@mui/icons-material/AssignmentRounded";
+import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
+import DownloadRoundedIcon from "@mui/icons-material/DownloadRounded";
 
 export const machineMaintenanceSidebarItems = [
   {
@@ -243,5 +245,17 @@ export const machineMaintenanceSidebarItems = [
         description: "Manage contract type master records.",
       },
     ],
+  },
+  {
+    label: "Upload Center",
+    icon: <CloudUploadRoundedIcon />,
+    path: "/machine-maintenance/upload-center",
+    description: "Upload and manage machine maintenance files.",
+  },
+  {
+    label: "Download Center",
+    icon: <DownloadRoundedIcon />,
+    path: "/machine-maintenance/download-center",
+    description: "Download machine maintenance datasets.",
   },
 ];

@@ -28,6 +28,7 @@ services:
        - ./client/.env.local
     environment:
       CHOKIDAR_USEPOLLING: "true"
+      VITE_API_PROXY_TARGET: http://server:5000
     depends_on:
       - server
     volumes:

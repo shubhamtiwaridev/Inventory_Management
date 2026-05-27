@@ -32,6 +32,12 @@ const uploadCenterFileSchema = new mongoose.Schema(
       default: "",
       maxlength: 500,
     },
+    module: {
+      type: String,
+      trim: true,
+      required: true,
+      default: "Uncategorized",
+    },
     relativePath: {
       type: String,
       trim: true,

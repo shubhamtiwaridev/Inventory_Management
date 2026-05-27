@@ -3,19 +3,16 @@ import path from "path";
 import UploadCenterFile from "./uploadCenterModel.js";
 
 const UPLOAD_CENTER_SELECT_FIELDS =
-  "originalName storedName mimeType sizeBytes extension description relativePath createdBy createdAt updatedAt";
+  "originalName storedName mimeType sizeBytes extension description module relativePath createdBy createdAt updatedAt";
 
 const pad = (value) => String(value).padStart(2, "0");
 
 const formatDateTime = (value) => {
   const date = new Date(value);
-
   if (Number.isNaN(date.getTime())) return "-";
-
   const hours = date.getHours();
   const hours12 = hours % 12 || 12;
   const amPm = hours >= 12 ? "PM" : "AM";
-
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${hours12}:${pad(date.getMinutes())} ${amPm}`;
 };
 
@@ -34,22 +31,18 @@ const normalizePublicPath = (value = "") => {
   const normalized = String(value || "")
     .replace(/\\/g, "/")
     .trim();
-
   if (!normalized) return "";
   if (/^https?:\/\//i.test(normalized)) return normalized;
   if (normalized.startsWith("/")) return normalized;
   if (normalized.startsWith("uploads/")) return `/${normalized}`;
-
   return `/${normalized.replace(/^\/+/, "")}`;
 };
 
 const buildPublicFileUrl = (req, value = "") => {
   const normalizedPath = normalizePublicPath(value);
-
   if (!normalizedPath || /^https?:\/\//i.test(normalizedPath)) {
     return normalizedPath;
   }
-
   const forwardedProto = String(req?.get?.("x-forwarded-proto") || "")
     .split(",")[0]
     .trim();
@@ -57,11 +50,9 @@ const buildPublicFileUrl = (req, value = "") => {
   const host =
     String(req?.get?.("x-forwarded-host") || "").trim() ||
     String(req?.get?.("host") || "").trim();
-
   if (!host) {
     return normalizedPath;
   }
-
   return `${protocol}://${host}${normalizedPath}`;
 };
 
@@ -70,21 +61,13 @@ const getAbsoluteFilePath = (relativePath = "") => {
     /^\/+/,
     "",
   );
-
-  if (!normalizedRelativePath) {
-    return "";
-  }
-
+  if (!normalizedRelativePath) return "";
   return path.resolve(process.cwd(), normalizedRelativePath);
 };
 
 const fileExists = async (relativePath = "") => {
   const absolutePath = getAbsoluteFilePath(relativePath);
-
-  if (!absolutePath) {
-    return false;
-  }
-
+  if (!absolutePath) return false;
   try {
     await fs.access(absolutePath);
     return true;
@@ -96,7 +79,6 @@ const fileExists = async (relativePath = "") => {
 const mapUploadCenterFile = async (item, req) => {
   const relativePath = normalizePublicPath(item.relativePath || "");
   const isAvailable = await fileExists(relativePath);
-
   return {
     id: String(item._id),
     originalName: item.originalName || "",
@@ -105,6 +87,7 @@ const mapUploadCenterFile = async (item, req) => {
     sizeBytes: Number(item.sizeBytes || 0),
     extension: item.extension || "",
     description: item.description || "",
+    module: item.module || "Uncategorized",
     relativePath,
     url: isAvailable ? buildPublicFileUrl(req, relativePath) : "",
     fileKind: getFileKind(item.mimeType || ""),
@@ -121,7 +104,6 @@ export const getUploadCenterFiles = async (req, res) => {
       .select(UPLOAD_CENTER_SELECT_FIELDS)
       .sort({ createdAt: -1 })
       .lean();
-
     return res.status(200).json({
       success: true,
       data: await Promise.all(
@@ -129,12 +111,10 @@ export const getUploadCenterFiles = async (req, res) => {
       ),
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to fetch uploaded files",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch uploaded files",
+    });
   }
 };
 
@@ -142,11 +122,13 @@ export const uploadCenterFiles = async (req, res) => {
   try {
     const files = Array.isArray(req.files) ? req.files : [];
     const description = String(req.body?.description || "").trim();
+    const moduleValue = String(req.body?.module || "").trim();
 
     if (files.length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, message: "At least one file is required" });
+      return res.status(400).json({
+        success: false,
+        message: "At least one file is required",
+      });
     }
 
     const rowsToInsert = files.map((file) => ({
@@ -156,6 +138,7 @@ export const uploadCenterFiles = async (req, res) => {
       sizeBytes: Number(file.size || 0),
       extension: path.extname(file.originalname || file.filename || ""),
       description,
+      module: moduleValue || "Uncategorized",
       relativePath: `/uploads/ecom-upload-center/${file.filename}`,
       createdBy: getUserName(req),
       updatedBy: getUserName(req),
@@ -171,15 +154,15 @@ export const uploadCenterFiles = async (req, res) => {
       data: await Promise.all(
         insertedItems.map((item) => mapUploadCenterFile(item.toObject(), req)),
       ),
-      summary: { uploadedCount: rowsToInsert.length },
+      summary: {
+        uploadedCount: rowsToInsert.length,
+      },
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to upload files",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to upload files",
+    });
   }
 };
 
@@ -200,25 +183,22 @@ export const updateUploadCenterFile = async (req, res) => {
     ).lean();
 
     if (!item) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Uploaded file not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Uploaded file not found",
+      });
     }
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Uploaded file updated successfully",
-        data: await mapUploadCenterFile(item, req),
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Uploaded file updated successfully",
+      data: await mapUploadCenterFile(item, req),
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to update uploaded file",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update uploaded file",
+    });
   }
 };
 
@@ -227,9 +207,10 @@ export const deleteUploadCenterFile = async (req, res) => {
     const item = await UploadCenterFile.findByIdAndDelete(req.params.id).lean();
 
     if (!item) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Uploaded file not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Uploaded file not found",
+      });
     }
 
     const normalizedRelativePath = String(item.relativePath || "").replace(
@@ -240,19 +221,15 @@ export const deleteUploadCenterFile = async (req, res) => {
 
     await fs.unlink(absolutePath).catch(() => null);
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Uploaded file deleted successfully",
-        data: await mapUploadCenterFile(item, req),
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Uploaded file deleted successfully",
+      data: await mapUploadCenterFile(item, req),
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to delete uploaded file",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete uploaded file",
+    });
   }
 };

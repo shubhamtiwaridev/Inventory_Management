@@ -20,12 +20,14 @@ export const getUploadCenterFiles = async () => {
 export const uploadFilesToUploadCenter = async ({
   files = [],
   description = "",
+  module = "",
 } = {}) => {
   const formData = new FormData();
   files.forEach((file) => {
     formData.append("files", file);
   });
   formData.append("description", description);
+  formData.append("module", module);
 
   return request("/machine-maintenance/upload-center", {
     method: "POST",

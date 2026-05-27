@@ -5,14 +5,15 @@ import {
   Button,
   Dialog,
   DialogActions,
-  IconButton,
   DialogContent,
   DialogTitle,
+  IconButton,
   InputAdornment,
   Paper,
   Stack,
   TextField,
   Typography,
+  MenuItem,
 } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import CloudUploadRoundedIcon from "@mui/icons-material/CloudUploadRounded";
@@ -44,6 +45,7 @@ import {
   uploadFilesToUploadCenter,
 } from "./ecomUploadCenterApi.js";
 import { logEcomActivity } from "./ecomActivityLogger.js";
+import { ecomSidebarItems } from "../../../components/sidebars/ecomSidebarItems.jsx";
 
 const pageCardSx = {
   p: 3,
@@ -58,9 +60,9 @@ const hideScrollbarSx = {
     display: "none",
   },
 };
+
 const blurActiveElement = () => {
   const activeElement = document.activeElement;
-
   if (activeElement instanceof HTMLElement) {
     activeElement.blur();
   }
@@ -68,19 +70,10 @@ const blurActiveElement = () => {
 
 const formatFileSize = (value = 0) => {
   const size = Number(value || 0);
-
-  if (size >= 1024 * 1024 * 1024) {
+  if (size >= 1024 * 1024 * 1024)
     return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-  }
-
-  if (size >= 1024 * 1024) {
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-  }
-
-  if (size >= 1024) {
-    return `${(size / 1024).toFixed(2)} KB`;
-  }
-
+  if (size >= 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  if (size >= 1024) return `${(size / 1024).toFixed(2)} KB`;
   return `${size} B`;
 };
 
@@ -115,28 +108,35 @@ const EcomUploadCenterPage = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]); // { file, id }
   const [description, setDescription] = useState("");
   const [descriptionError, setDescriptionError] = useState("");
+  const [selectedModule, setSelectedModule] = useState("");
+  const [moduleError, setModuleError] = useState("");
   const [editingFile, setEditingFile] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingDescription, setEditingDescription] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const fileInputRef = useRef(null);
 
-  const totalFiles = useMemo(() => files.length, [files]);
-
-  // rawSearch: instant input value; search: debounced value used for filtering
   const [rawSearch, setRawSearch] = useState("");
   const [search, setSearch] = useState("");
 
-  // debounce the input so filtering is not too aggressive on large lists
+  // Generate module options from ecom sidebar only
+  const moduleOptions = useMemo(() => {
+    const excludeLabels = ["Dashboard", "Upload Center", "Download Center"];
+    return ecomSidebarItems
+      .filter((item) => !excludeLabels.includes(item.label))
+      .map((item) => ({
+        value: item.label,
+        label: item.label,
+      }));
+  }, []);
+
+  // Debounce search
   useEffect(() => {
-    const id = window.setTimeout(
-      () => setSearch(String(rawSearch || "").trim()),
-      220,
-    );
-    return () => window.clearTimeout(id);
+    const id = setTimeout(() => setSearch(String(rawSearch || "").trim()), 220);
+    return () => clearTimeout(id);
   }, [rawSearch]);
 
   const fileMatchesQuery = (file, q) => {
@@ -144,7 +144,7 @@ const EcomUploadCenterPage = () => {
     const raw = String(q).trim();
     if (!raw) return true;
 
-    // size query: e.g. '>10mb', '<= 256kb', '10mb' (treated as >=)
+    // Size query
     const sizeMatch = raw.match(
       /^\s*([<>]=?)?\s*([\d,.]+)\s*(b|kb|mb|gb)?\s*$/i,
     );
@@ -163,26 +163,19 @@ const EcomUploadCenterPage = () => {
               : 1;
       const threshold = Math.round(num * mul);
       const fileSize = Number(file.sizeBytes || file.size || 0);
-
       if (op === ">") return fileSize > threshold;
       if (op === ">=") return fileSize >= threshold;
       if (op === "<") return fileSize < threshold;
       if (op === "<=") return fileSize <= threshold;
-      // default when no operator provided: match files >= threshold
       return fileSize >= threshold;
     }
 
     const lowerQ = raw.toLowerCase();
-
-    // date query: try to parse an explicit date (YYYY-MM-DD, DD/MM/YYYY, etc.)
+    // Date query
     const parsed = Date.parse(raw);
     if (!Number.isNaN(parsed)) {
       const qDate = new Date(parsed);
-      const qY = qDate.getFullYear();
-      const qM = String(qDate.getMonth() + 1).padStart(2, "0");
-      const qD = String(qDate.getDate()).padStart(2, "0");
-      const qYMD = `${qY}-${qM}-${qD}`;
-
+      const qYMD = `${qDate.getFullYear()}-${String(qDate.getMonth() + 1).padStart(2, "0")}-${String(qDate.getDate()).padStart(2, "0")}`;
       const created =
         file.createdAt || file.uploadedAt || file.created_at || file.date || "";
       if (created) {
@@ -192,55 +185,76 @@ const EcomUploadCenterPage = () => {
           const cYMD = `${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, "0")}-${String(c.getDate()).padStart(2, "0")}`;
           if (cYMD === qYMD) return true;
         }
-        // fallback: if created string contains the query
         if (String(created).toLowerCase().includes(lowerQ)) return true;
       }
-      // also check other date-like fields in file
     }
 
-    if (
-      String(file.originalName || "")
-        .toLowerCase()
-        .includes(lowerQ)
-    )
-      return true;
-    if (
-      String(file.description || "")
-        .toLowerCase()
-        .includes(lowerQ)
-    )
-      return true;
-    if (
-      String(file.createdBy || "")
-        .toLowerCase()
-        .includes(lowerQ)
-    )
-      return true;
-    if (
-      String(file.sizeBytes || "")
-        .toLowerCase()
-        .includes(lowerQ)
-    )
-      return true;
-    if (
-      String(file.fileKind || "")
-        .toLowerCase()
-        .includes(lowerQ)
-    )
-      return true;
+    // Extension query
+    const ext = lowerQ.replace(/^\./, "");
+    if (/^[a-z0-9]{1,6}$/.test(ext)) {
+      const name = String(file.originalName || "").toLowerCase();
+      const url = String(file.url || "").toLowerCase();
+      const kind = String(file.fileKind || "").toLowerCase();
+      if (name.endsWith(`.${ext}`)) return true;
+      if (url.endsWith(`.${ext}`) || url.includes(`.${ext}?`)) return true;
+      if (kind === ext) return true;
+      if (name.includes(`.${ext}`)) return true;
+    }
 
-    return false;
+    // Generic deep search
+    const seen = new Set();
+    const walk = (val) => {
+      if (val === null || val === undefined) return false;
+      if (
+        typeof val === "string" ||
+        typeof val === "number" ||
+        typeof val === "boolean"
+      ) {
+        return String(val).toLowerCase().includes(lowerQ);
+      }
+      if (Array.isArray(val)) {
+        for (const item of val) if (walk(item)) return true;
+        return false;
+      }
+      if (typeof val === "object") {
+        if (seen.has(val)) return false;
+        seen.add(val);
+        for (const k of Object.keys(val)) if (walk(val[k])) return true;
+      }
+      return false;
+    };
+    return walk(file);
   };
+
+  const displayedFiles = useMemo(() => {
+    const q = String(search || "").trim();
+    if (!q) return files;
+    return files.filter((f) => fileMatchesQuery(f, q));
+  }, [files, search]);
+
+  const liveCount = useMemo(() => {
+    const q = String(rawSearch || "").trim();
+    if (!q) return null;
+    return files.filter((f) => fileMatchesQuery(f, q)).length;
+  }, [files, rawSearch]);
+
+  const totalFiles = useMemo(() => files.length, [files]);
+  const canUpload = hasActionPermission(user, "/ecom/upload-center", "create");
+  const canEdit = hasActionPermission(user, "/ecom/upload-center", "update");
+  const canDelete = hasActionPermission(user, "/ecom/upload-center", "delete");
 
   const loadFiles = useCallback(async () => {
     try {
       setLoading(true);
-      const items = await getUploadCenterFiles();
-      setFiles(Array.isArray(items) ? items : []);
+      const rows = await getUploadCenterFiles();
+      setFiles(rows);
+      setFeedback((prev) =>
+        prev.type === "error" ? { type: "", message: "" } : prev,
+      );
     } catch (error) {
       setFeedback({
         type: "error",
-        message: error.message || "Failed to load files",
+        message: error.message || "Failed to load uploaded files",
       });
     } finally {
       setLoading(false);
@@ -251,71 +265,76 @@ const EcomUploadCenterPage = () => {
     loadFiles();
   }, [loadFiles]);
 
-  const displayedFiles = useMemo(() => {
-    const list = Array.isArray(files) ? files : [];
-    const q = String(search || "").trim();
+  useEffect(() => {
+    if (!feedback.message) return;
+    const timer = setTimeout(
+      () => setFeedback({ type: "", message: "" }),
+      5000,
+    );
+    return () => clearTimeout(timer);
+  }, [feedback]);
 
-    const filtered = list.filter((f) => fileMatchesQuery(f, q));
-
-    return filtered;
-  }, [files, search]);
-
-  const liveCount = useMemo(() => {
-    return displayedFiles.length;
-  }, [displayedFiles]);
-
-  const handleFileChange = (e) => {
-    const nextSelectedFiles = Array.from(e.target.files || []);
-    e.target.value = "";
-
-    if (nextSelectedFiles.length === 0) return;
-
-    setSelectedFiles(nextSelectedFiles);
+  // File queue helpers
+  const addFiles = (newFiles) => {
+    setSelectedFiles((prev) => {
+      const existingKeys = new Set(
+        prev.map((item) => `${item.file.name}|${item.file.size}`),
+      );
+      const uniqueNew = newFiles.filter(
+        (file) => !existingKeys.has(`${file.name}|${file.size}`),
+      );
+      return [
+        ...prev,
+        ...uniqueNew.map((file) => ({
+          file,
+          id: `${file.name}-${Date.now()}-${Math.random()}`,
+        })),
+      ];
+    });
   };
 
-  const handleOpenPicker = () => {
-    blurActiveElement();
-    setFeedback({ type: "", message: "" });
-    setUploadDialogOpen(true);
+  const removeFile = (id) => {
+    setSelectedFiles((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleOpenFileChooser = () => {
-    if (fileInputRef.current) fileInputRef.current.click();
-  };
-
-  const resetUploadDialog = () => {
-    blurActiveElement();
-    setUploadDialogOpen(false);
+  const clearAllFiles = () => {
     setSelectedFiles([]);
-    setDescription("");
-    setDescriptionError("");
   };
 
-  const handleStartUpload = async () => {
-    try {
-      if (selectedFiles.length === 0) {
-        setDescriptionError("Please choose at least one file.");
-        return;
-      }
+  const handleFileChange = (event) => {
+    const incoming = Array.from(event.target.files || []);
+    if (incoming.length) addFiles(incoming);
+    event.target.value = "";
+  };
 
+  const handleUploadSubmit = async () => {
+    if (selectedFiles.length === 0) {
+      setDescriptionError("Please add at least one file.");
+      return;
+    }
+    if (!selectedModule) {
+      setModuleError("Please select a module/category.");
+      return;
+    }
+    try {
       setUploading(true);
       setDescriptionError("");
-      setFeedback({ type: "", message: "" });
+      setModuleError("");
+      const actualFiles = selectedFiles.map((item) => item.file);
       const response = await uploadFilesToUploadCenter({
-        files: selectedFiles,
+        files: actualFiles,
         description,
+        module: selectedModule,
       });
-
-      if (Array.isArray(response?.data) && response.data.length > 0) {
+      if (Array.isArray(response?.data) && response.data.length) {
         setFiles((prev) => [...response.data, ...prev]);
       } else {
         await loadFiles();
       }
-
       resetUploadDialog();
       setFeedback({
         type: "success",
-        message: `${response?.summary?.uploadedCount || selectedFiles.length} file(s) uploaded successfully.`,
+        message: `${actualFiles.length} file(s) uploaded successfully.`,
       });
     } catch (error) {
       setFeedback({
@@ -327,12 +346,35 @@ const EcomUploadCenterPage = () => {
     }
   };
 
+  const resetUploadDialog = () => {
+    blurActiveElement();
+    setUploadDialogOpen(false);
+    setSelectedFiles([]);
+    setDescription("");
+    setDescriptionError("");
+    setSelectedModule("");
+    setModuleError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleDelete = async (file) => {
+    try {
+      await deleteUploadCenterFile(file.id);
+      setFiles((prev) => prev.filter((item) => item.id !== file.id));
+      setFeedback({ type: "success", message: "File deleted successfully." });
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error.message || "Failed to delete file",
+      });
+    }
+  };
+
   const handleOpenEditDialog = (file) => {
     blurActiveElement();
     setEditingFile(file);
     setEditingDescription(file.description || "");
     setEditDialogOpen(true);
-    setFeedback({ type: "", message: "" });
   };
 
   const handleCloseEditDialog = () => {
@@ -343,9 +385,8 @@ const EcomUploadCenterPage = () => {
     setEditDialogOpen(false);
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingFile) return;
-
+  const handleSaveDescription = async () => {
+    if (!editingFile?.id) return;
     try {
       setSavingEdit(true);
       const updatedFile = await updateUploadCenterFile(editingFile.id, {
@@ -353,39 +394,18 @@ const EcomUploadCenterPage = () => {
       });
       if (updatedFile) {
         setFiles((prev) =>
-          prev.map((file) => (file.id === editingFile.id ? updatedFile : file)),
+          prev.map((f) => (f.id === editingFile.id ? updatedFile : f)),
         );
       }
-      blurActiveElement();
-      setEditingFile(null);
-      setEditingDescription("");
-      setEditDialogOpen(false);
-      setFeedback({
-        type: "success",
-        message: "File description updated successfully.",
-      });
+      handleCloseEditDialog();
+      setFeedback({ type: "success", message: "File description updated." });
     } catch (error) {
       setFeedback({
         type: "error",
-        message: error.message || "Failed to update file description",
+        message: error.message || "Failed to update description",
       });
     } finally {
       setSavingEdit(false);
-    }
-  };
-
-  const handleDelete = async (file) => {
-    if (!file) return;
-
-    try {
-      await deleteUploadCenterFile(file.id);
-      setFiles((prev) => prev.filter((f) => f.id !== file.id));
-      setFeedback({ type: "success", message: "File deleted successfully" });
-    } catch (error) {
-      setFeedback({
-        type: "error",
-        message: error.message || "Failed to delete file",
-      });
     }
   };
 
@@ -406,8 +426,11 @@ const EcomUploadCenterPage = () => {
   };
 
   return (
-    <Stack spacing={3} sx={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-      {feedback.message ? (
+    <Stack
+      spacing={3}
+      sx={{ height: "100%", minHeight: 0, overflow: "hidden" }}
+    >
+      {feedback.message && (
         <Alert
           severity={feedback.type === "success" ? "success" : "error"}
           onClose={() => setFeedback({ type: "", message: "" })}
@@ -415,7 +438,7 @@ const EcomUploadCenterPage = () => {
         >
           {feedback.message}
         </Alert>
-      ) : null}
+      )}
 
       <input
         ref={fileInputRef}
@@ -460,7 +483,7 @@ const EcomUploadCenterPage = () => {
                 ...searchFieldSx,
               }}
               InputProps={{
-                startAdornment: String(rawSearch || "").trim() ? (
+                startAdornment: rawSearch.trim() ? (
                   <InputAdornment position="start" sx={{ mr: 1 }}>
                     <Typography
                       sx={{
@@ -493,7 +516,6 @@ const EcomUploadCenterPage = () => {
                 ),
               }}
             />
-
             <Button
               variant="outlined"
               startIcon={<RefreshRoundedIcon />}
@@ -507,25 +529,25 @@ const EcomUploadCenterPage = () => {
             >
               Refresh
             </Button>
-
-            {hasActionPermission(user, "/ecom/upload-center", "create") ? (
+            {canUpload && (
               <Button
                 variant="contained"
                 startIcon={<CloudUploadRoundedIcon />}
-                onClick={handleOpenPicker}
+                onClick={() => setUploadDialogOpen(true)}
                 disabled={uploading}
                 sx={filledActionButtonSx}
               >
                 {uploading ? "Uploading..." : "Upload Files"}
               </Button>
-            ) : null}
+            )}
           </Stack>
         </Stack>
       </Paper>
 
+      {/* Scrollable card grid */}
       <Box
         sx={{
-          flex: 1,
+          flex: "1 1 0%",
           minHeight: 0,
           overflowY: "auto",
           overflowX: "hidden",
@@ -546,7 +568,6 @@ const EcomUploadCenterPage = () => {
             const fileUrl = buildServerUrl(file.relativePath || file.url || "");
             const isImage = file.fileKind === "image";
             const isAvailable = file.isAvailable !== false;
-
             return (
               <Paper
                 key={file.id}
@@ -596,13 +617,8 @@ const EcomUploadCenterPage = () => {
                       getFileIcon(file)
                     )}
                   </Box>
-
                   <Stack direction="row" spacing={0.5}>
-                    {hasActionPermission(
-                      user,
-                      "/ecom/upload-center",
-                      "update",
-                    ) ? (
+                    {canEdit && (
                       <IconButton
                         onClick={() => handleOpenEditDialog(file)}
                         sx={actionIconButtonSx}
@@ -611,22 +627,19 @@ const EcomUploadCenterPage = () => {
                           sx={{ fontSize: 18, color: brand.primaryDark }}
                         />
                       </IconButton>
-                    ) : null}
+                    )}
                     <IconButton
                       component={isAvailable ? "a" : "button"}
                       href={isAvailable ? fileUrl : undefined}
                       target={isAvailable ? "_blank" : undefined}
                       rel={isAvailable ? "noopener noreferrer" : undefined}
                       onClick={() => {
-                        if (isAvailable) {
-                          handleOpenFile(file, fileUrl);
-                          return;
-                        }
-                        setFeedback({
-                          type: "error",
-                          message:
-                            "This file is no longer available on the server. Upload it again after a Render restart or redeploy.",
-                        });
+                        if (isAvailable) handleOpenFile(file, fileUrl);
+                        else
+                          setFeedback({
+                            type: "error",
+                            message: "File unavailable on server.",
+                          });
                       }}
                       sx={actionIconButtonSx}
                     >
@@ -634,11 +647,7 @@ const EcomUploadCenterPage = () => {
                         sx={{ fontSize: 18, color: brand.primaryDark }}
                       />
                     </IconButton>
-                    {hasActionPermission(
-                      user,
-                      "/ecom/upload-center",
-                      "delete",
-                    ) ? (
+                    {canDelete && (
                       <IconButton
                         onClick={() => handleDelete(file)}
                         sx={actionIconButtonSx}
@@ -647,10 +656,9 @@ const EcomUploadCenterPage = () => {
                           sx={{ fontSize: 18, color: brand.danger }}
                         />
                       </IconButton>
-                    ) : null}
+                    )}
                   </Stack>
                 </Stack>
-
                 <Box sx={{ mt: 2, minWidth: 0 }}>
                   <Typography
                     sx={{
@@ -666,7 +674,7 @@ const EcomUploadCenterPage = () => {
                   >
                     {file.originalName}
                   </Typography>
-                  {file.description ? (
+                  {file.description && (
                     <Typography
                       sx={{
                         mt: 1,
@@ -682,21 +690,27 @@ const EcomUploadCenterPage = () => {
                     >
                       {file.description}
                     </Typography>
-                  ) : null}
-                  {!isAvailable ? (
+                  )}
+                  {file.module && (
                     <Typography
                       sx={{
-                        mt: 1,
-                        color: brand.danger,
-                        fontSize: "0.88rem",
-                        lineHeight: 1.4,
+                        mt: 0.5,
+                        color: brand.primary,
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
                       }}
+                    >
+                      Module: {file.module}
+                    </Typography>
+                  )}
+                  {!isAvailable && (
+                    <Typography
+                      sx={{ mt: 1, color: brand.danger, fontSize: "0.88rem" }}
                     >
                       File unavailable on server
                     </Typography>
-                  ) : null}
+                  )}
                 </Box>
-
                 <Stack spacing={0.65} sx={{ mt: "auto", pt: 2 }}>
                   <Typography
                     sx={{ color: brand.textSoft, fontSize: "0.9rem" }}
@@ -718,23 +732,19 @@ const EcomUploadCenterPage = () => {
             );
           })}
         </Box>
-
-        {!loading && files.length === 0 ? (
+        {!loading && files.length === 0 && (
           <Paper elevation={0} sx={{ ...pageCardSx, mt: 0 }}>
             <Typography sx={{ color: brand.textSoft }}>
               No uploaded files found.
             </Typography>
           </Paper>
-        ) : null}
+        )}
       </Box>
 
+      {/* Upload Dialog */}
       <Dialog
         open={uploadDialogOpen}
-        onClose={() => {
-          if (!uploading) {
-            resetUploadDialog();
-          }
-        }}
+        onClose={resetUploadDialog}
         fullWidth
         maxWidth="sm"
       >
@@ -746,42 +756,105 @@ const EcomUploadCenterPage = () => {
             <Button
               variant="outlined"
               startIcon={<CloudUploadRoundedIcon />}
-              onClick={handleOpenFileChooser}
+              onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               sx={outlinedActionButtonSx}
             >
-              {selectedFiles.length > 0
-                ? `${selectedFiles.length} file(s) selected`
-                : "Choose Files"}
+              Add Files
             </Button>
-
-            {selectedFiles.length > 0 ? (
+            {selectedFiles.length > 0 && (
               <Box
                 sx={{
                   borderRadius: 3,
                   border: `1px solid ${brand.border}`,
                   backgroundColor: brand.softAlt,
                   p: 1.5,
+                  maxHeight: 240,
+                  overflow: "auto",
                 }}
               >
-                <Stack spacing={0.75}>
-                  {selectedFiles.map((file) => (
-                    <Typography
-                      key={`${file.name}-${file.size}`}
-                      sx={{ color: brand.textSoft, fontSize: "0.92rem" }}
+                <Stack spacing={1}>
+                  {selectedFiles.map(({ file, id }) => (
+                    <Stack
+                      key={id}
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{
+                        p: 1,
+                        borderRadius: 2,
+                        backgroundColor: brand.white,
+                        border: `1px solid ${brand.border}`,
+                      }}
                     >
-                      {file.name}
-                    </Typography>
+                      <Box sx={{ overflow: "hidden" }}>
+                        <Typography
+                          sx={{
+                            fontWeight: 600,
+                            fontSize: "0.85rem",
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {file.name}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{ color: brand.textSoft }}
+                        >
+                          {(file.size / 1024).toFixed(1)} KB
+                        </Typography>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        onClick={() => removeFile(id)}
+                        disabled={uploading}
+                      >
+                        <CloseRoundedIcon
+                          sx={{ fontSize: 18, color: brand.danger }}
+                        />
+                      </IconButton>
+                    </Stack>
                   ))}
                 </Stack>
+                <Button
+                  size="small"
+                  onClick={clearAllFiles}
+                  disabled={uploading}
+                  sx={{ mt: 1, color: brand.danger }}
+                >
+                  Remove all
+                </Button>
               </Box>
-            ) : null}
-
+            )}
+            <TextField
+              select
+              label="Upload For / Select Module"
+              value={selectedModule}
+              onChange={(e) => {
+                setSelectedModule(e.target.value);
+                setModuleError("");
+              }}
+              fullWidth
+              required
+              error={Boolean(moduleError)}
+              helperText={
+                moduleError || "Choose which module this file belongs to"
+              }
+            >
+              <MenuItem value="" disabled>
+                Select Upload Category
+              </MenuItem>
+              {moduleOptions.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               label="Description"
               value={description}
-              onChange={(event) => {
-                setDescription(event.target.value);
+              onChange={(e) => {
+                setDescription(e.target.value);
                 setDescriptionError("");
               }}
               placeholder="Write a short description for these file(s)"
@@ -806,16 +879,19 @@ const EcomUploadCenterPage = () => {
             Cancel
           </Button>
           <Button
-            onClick={handleStartUpload}
+            onClick={handleUploadSubmit}
             variant="contained"
             disabled={uploading}
             sx={filledActionButtonSx}
           >
-            {uploading ? "Uploading..." : "Upload"}
+            {uploading
+              ? "Uploading..."
+              : `Upload ${selectedFiles.length} file(s)`}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog
         open={editDialogOpen}
         onClose={handleCloseEditDialog}
@@ -833,7 +909,7 @@ const EcomUploadCenterPage = () => {
             <TextField
               label="Description"
               value={editingDescription}
-              onChange={(event) => setEditingDescription(event.target.value)}
+              onChange={(e) => setEditingDescription(e.target.value)}
               multiline
               minRows={4}
               fullWidth
@@ -851,7 +927,7 @@ const EcomUploadCenterPage = () => {
             Cancel
           </Button>
           <Button
-            onClick={handleSaveEdit}
+            onClick={handleSaveDescription}
             variant="contained"
             disabled={savingEdit}
             sx={filledActionButtonSx}

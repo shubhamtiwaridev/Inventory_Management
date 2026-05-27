@@ -4,11 +4,7 @@ import { buildApiUrl } from "../../../api/config.js";
 const request = async (path, options = {}) => {
   const response = await authFetch(buildApiUrl(path), options);
   const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(data.message || "Something went wrong");
-  }
-
+  if (!response.ok) throw new Error(data.message || "Something went wrong");
   return data;
 };
 
@@ -20,13 +16,12 @@ export const getUploadCenterFiles = async () => {
 export const uploadFilesToUploadCenter = async ({
   files = [],
   description = "",
+  module = "",
 } = {}) => {
   const formData = new FormData();
-  files.forEach((file) => {
-    formData.append("files", file);
-  });
+  files.forEach((file) => formData.append("files", file));
   formData.append("description", description);
-
+  formData.append("module", module);
   return request("/inventory/upload-center", {
     method: "POST",
     body: formData,
@@ -36,12 +31,9 @@ export const uploadFilesToUploadCenter = async ({
 export const updateUploadCenterFile = async (id, payload = {}) => {
   const response = await request(`/inventory/upload-center/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-
   return response?.data;
 };
 
@@ -49,6 +41,5 @@ export const deleteUploadCenterFile = async (id) => {
   const response = await request(`/inventory/upload-center/${id}`, {
     method: "DELETE",
   });
-
   return response?.data;
 };

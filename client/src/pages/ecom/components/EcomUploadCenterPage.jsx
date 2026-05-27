@@ -543,7 +543,7 @@ const EcomUploadCenterPage = () => {
           }}
         >
           {displayedFiles.map((file) => {
-            const fileUrl = buildServerUrl(file.url || "");
+            const fileUrl = buildServerUrl(file.relativePath || file.url || "");
             const isImage = file.fileKind === "image";
             const isAvailable = file.isAvailable !== false;
 

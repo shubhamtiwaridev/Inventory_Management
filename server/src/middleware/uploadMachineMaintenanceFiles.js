@@ -14,7 +14,6 @@ const allowedMimeTypes = [
   "image/jpeg",
   "image/png",
   "image/jpg",
-
   "video/mp4",
   "video/mpeg",
   "video/quicktime",
@@ -27,7 +26,6 @@ const allowedMimeTypes = [
   "video/ogg",
   "video/mp2t",
   "video/x-matroska",
-
   "application/octet-stream",
 ];
 
@@ -36,7 +34,6 @@ const allowedExtensions = [
   ".jpg",
   ".jpeg",
   ".png",
-
   ".mp4",
   ".mpeg",
   ".mpg",
@@ -65,7 +62,6 @@ const storage = multer.diskStorage({
       .basename(file.originalname || "file", extension)
       .replace(/[^a-zA-Z0-9-_]/g, "-")
       .toLowerCase();
-
     cb(null, `${Date.now()}-${safeBaseName}${extension}`);
   },
 });
@@ -73,13 +69,11 @@ const storage = multer.diskStorage({
 const isAllowedFile = (file) => {
   const extension = path.extname(file.originalname || "").toLowerCase();
   const mimeType = String(file.mimetype || "").toLowerCase();
-
   const extensionAllowed = allowedExtensions.includes(extension);
   const mimeAllowed =
     allowedMimeTypes.includes(mimeType) ||
     mimeType === "" ||
     mimeType === "application/octet-stream";
-
   return extensionAllowed && mimeAllowed;
 };
 
@@ -90,13 +84,11 @@ const fileFilter = (req, file, cb) => {
   ) {
     return cb(new Error("Unsupported upload field"));
   }
-
   if (!isAllowedFile(file)) {
     return cb(
       new Error("Only PDF, JPG, JPEG, PNG and video files are allowed"),
     );
   }
-
   cb(null, true);
 };
 

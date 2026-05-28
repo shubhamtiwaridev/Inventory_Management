@@ -42,12 +42,10 @@ export const getEcomProducts = async (req, res) => {
     const items = await EcomProduct.find().sort({ createdAt: -1 }).lean();
     return res.status(200).json({ success: true, data: items.map(mapProduct) });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to fetch ecom products",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch ecom products",
+    });
   }
 };
 
@@ -73,20 +71,16 @@ export const createEcomProduct = async (req, res) => {
       updatedBy: req.user?.name || "System",
     });
 
-    return res
-      .status(201)
-      .json({
-        success: true,
-        message: "Product created",
-        data: mapProduct(item.toObject()),
-      });
+    return res.status(201).json({
+      success: true,
+      message: "Product created",
+      data: mapProduct(item.toObject()),
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to create product",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to create product",
+    });
   }
 };
 
@@ -117,20 +111,16 @@ export const updateEcomProduct = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Product not found" });
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Product updated",
-        data: mapProduct(item),
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Product updated",
+      data: mapProduct(item),
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to update product",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to update product",
+    });
   }
 };
 
@@ -141,20 +131,16 @@ export const deleteEcomProduct = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Product not found" });
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Product deleted",
-        data: mapProduct(item),
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Product deleted",
+      data: mapProduct(item),
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to delete product",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete product",
+    });
   }
 };
 
@@ -202,8 +188,6 @@ export const importEcomProductsFromExcel = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "No importable rows" });
-
-    // replace collection with imported rows for simplicity
     await EcomProduct.deleteMany({});
     const toInsert = normalized.map((r) => ({
       ...r,
@@ -212,19 +196,15 @@ export const importEcomProductsFromExcel = async (req, res) => {
     }));
     const inserted = await EcomProduct.insertMany(toInsert, { ordered: false });
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Import completed",
-        data: inserted.map(mapProduct).reverse(),
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Import completed",
+      data: inserted.map(mapProduct).reverse(),
+    });
   } catch (error) {
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || "Failed to import products",
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to import products",
+    });
   }
 };

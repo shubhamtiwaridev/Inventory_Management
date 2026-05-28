@@ -328,8 +328,6 @@ const withImportPlaceholderCode = (payload = {}, rowIndex = 0) => {
     return payload;
   }
 
-  // Assign a simple sequential serial number (1-based) as goodsCode
-  // for rows that don't provide a goodsCode in the imported Excel.
   return {
     ...payload,
     goodsCode: String(rowIndex + 1),

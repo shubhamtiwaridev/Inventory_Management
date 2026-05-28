@@ -1,4 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   useCallback,
@@ -189,21 +188,24 @@ export const AuthProvider = ({ children }) => {
     return response?.data;
   }, []);
 
-  const login = useCallback(async (formData) => {
-    const response = await loginUser(formData);
-    const data = response?.data || {};
+  const login = useCallback(
+    async (formData) => {
+      const response = await loginUser(formData);
+      const data = response?.data || {};
 
-    if (!data?.token || !data?.user) {
-      throw new Error(data?.message || "Login failed");
-    }
+      if (!data?.token || !data?.user) {
+        throw new Error(data?.message || "Login failed");
+      }
 
-    setAuthToken(data.token);
-    setStoredAuthUser(data.user);
-    setUser(data.user);
-    fetchMe().catch(() => {});
+      setAuthToken(data.token);
+      setStoredAuthUser(data.user);
+      setUser(data.user);
+      fetchMe().catch(() => {});
 
-    return data;
-  }, [fetchMe]);
+      return data;
+    },
+    [fetchMe],
+  );
 
   const logout = useCallback(async () => {
     try {
